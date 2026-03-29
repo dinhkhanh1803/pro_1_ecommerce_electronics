@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   SearchIcon,
   ShoppingCartIcon,
@@ -7,10 +7,11 @@ import {
   UserIcon,
   ChevronDownIcon,
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 export function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCategories, setShowCategories] = useState(false);
-  const [user, setUser] = useState<{ name: string } | null>(null);
+
   const cartItemCount = 3;
   const categories = [
     "Electronics",
@@ -23,11 +24,8 @@ export function Navbar() {
     "Automotive",
   ];
 
-  useEffect(() => {
-    // Lấy user từ localStorage nếu đã login
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
-  }, []);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <nav className="sticky top-0 z-50 bg-white shadow-sm">
@@ -99,12 +97,24 @@ export function Navbar() {
             {/* User Menu */}
             <div className="flex items-center space-x-3">
               {user ? (
-                <Link
-                  to="/profile"
-                  className="font-medium text-gray-700 transition-colors hover:text-indigo-500"
-                >
-                  {user.name}
-                </Link>
+                <div>
+                  <Link
+                    to="/profile"
+                    className="font-medium text-gray-700 transition-colors hover:text-indigo-500"
+                  >
+                    {user.name}
+                  </Link>
+
+                  {/* <button
+                    onClick={() => {
+                      logout();
+                      navigate("/login");
+                    }}
+                    className="text-sm text-red-500"
+                  >
+                    Logout
+                  </button> */}
+                </div>
               ) : (
                 <>
                   <Link

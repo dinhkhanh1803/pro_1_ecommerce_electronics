@@ -35,6 +35,7 @@ import { ShipperDeliveries } from "./pages/shipper/ShipperDeliveries";
 import { ShipperDeliveryDetail } from "./pages/shipper/ShipperDeliveryDetail";
 import { ShipperCOD } from "./pages/shipper/ShipperCOD";
 import { ProtectedRoute } from "./pages/auth/ProtectedRoute";
+import OAuthSuccess from "./pages/auth/OAuthSuccess";
 
 export function App() {
   return (
@@ -43,6 +44,7 @@ export function App() {
         {/* Public Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/oauth-success" element={<OAuthSuccess />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>

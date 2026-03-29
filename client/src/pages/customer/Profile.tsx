@@ -7,18 +7,17 @@ export function Profile() {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [user, setUser] = useState<{
-    firstName: string;
-    lastName: string;
+    id?: string;
+    name: string;
     email: string;
-    phone: string;
-    gender: string;
-    dob: string;
+    phone?: string;
+    gender?: string;
+    dob?: string;
     role?: string;
   } | null>(null);
 
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
     phone: "",
     gender: "",
@@ -26,21 +25,23 @@ export function Profile() {
   });
 
   useEffect(() => {
-    // Lấy user từ localStorage (hoặc từ context/global state)
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-      setFormData({
-        firstName: parsedUser.firstName,
-        lastName: parsedUser.lastName,
-        email: parsedUser.email,
-        phone: parsedUser.phone,
-        gender: parsedUser.gender,
-        dob: parsedUser.dob,
-      });
+    if (!storedUser) {
+      navigate("/login");
+      return;
     }
-  }, []);
+
+    const parsedUser = JSON.parse(storedUser);
+
+    setUser(parsedUser);
+    setFormData({
+      name: parsedUser.name || "",
+      email: parsedUser.email || "",
+      phone: parsedUser.phone || "",
+      gender: parsedUser.gender || "",
+      dob: parsedUser.dob || "",
+    });
+  }, [navigate]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -54,16 +55,22 @@ export function Profile() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsEditing(false);
-    // Lưu dữ liệu user
-    const updatedUser = { ...user, ...formData };
-    setUser(updatedUser);
+
+    if (!user) return;
+
+    const updatedUser = {
+      ...user,
+      ...formData,
+    };
+
     localStorage.setItem("user", JSON.stringify(updatedUser));
+    setUser(updatedUser);
+    setIsEditing(false);
   };
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    setUser(null);
+    localStorage.removeItem("token");
     navigate("/login");
   };
 
@@ -91,8 +98,7 @@ export function Profile() {
         <div className="flex items-center space-x-6">
           <div className="relative">
             <img
-              src={`https://ui-avatars.com/api/?name=${formData.firstName}+${formData.lastName}&background=6366f1&color=fff&size=128`}
-              alt="Profile"
+              src={`https://ui-avatars.com/api/?name=${formData.name}&background=6366f1&color=fff&size=128`}
               className="object-cover w-24 h-24 border-4 border-white rounded-full shadow-sm"
             />
             {isEditing && (
@@ -128,7 +134,7 @@ export function Profile() {
               type="text"
               id="firstName"
               name="firstName"
-              value={formData.firstName}
+              value={formData.name}
               onChange={handleChange}
               disabled={!isEditing}
               className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
@@ -147,7 +153,7 @@ export function Profile() {
               type="text"
               id="lastName"
               name="lastName"
-              value={formData.lastName}
+              value={formData.name}
               onChange={handleChange}
               disabled={!isEditing}
               className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
