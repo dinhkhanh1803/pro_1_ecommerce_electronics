@@ -4,6 +4,8 @@ import {
   loginUser,
   getProfile,
   verifyOtp,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import passport from "../config/passport.js";
@@ -41,6 +43,10 @@ router.get(
 );
 
 router.post("/login", loginUser);
+
+router.post("/forgot-password", forgotPassword);
+router.put("/reset-password/:token", resetPassword);
+
 router.get("/profile", protect, getProfile);
 
 export default router;

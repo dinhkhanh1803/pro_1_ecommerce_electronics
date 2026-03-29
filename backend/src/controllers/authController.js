@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { sendEmail } from "../utils/sendEmail.js";
 import { otpStore } from "../utils/tmpOtpStore.js";
+import crypto from "crypto";
 
 // Tạo token
 const generateToken = (user) => {
@@ -111,4 +112,82 @@ export const loginUser = async (req, res) => {
 export const getProfile = async (req, res) => {
   if (!req.user) return res.status(401).json({ message: "Chưa đăng nhập" });
   res.json({ user: req.user });
+};
+
+// Gửi link reset password
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    // Không tiết lộ email có tồn tại hay không
+    if (!user) {
+      return res.json({
+        message: "Nếu email tồn tại, chúng tôi đã gửi link đặt lại mật khẩu.",
+      });
+    }
+
+    // Tạo token ngẫu nhiên
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    // Hash token trước khi lưu DB
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 phút
+
+    await user.save();
+
+    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+
+    await sendEmail(
+      user.email,
+      "ShopHub Reset Password",
+      `Click vào link để đặt lại mật khẩu: ${resetUrl}`,
+    );
+
+    res.json({
+      message: "Nếu email tồn tại, chúng tôi đã gửi link đặt lại mật khẩu.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Đặt lại mật khẩu
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { password } = req.body;
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(req.params.token)
+      .digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Token không hợp lệ hoặc đã hết hạn",
+      });
+    }
+
+    // Hash mật khẩu mới
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    res.json({ message: "Đặt lại mật khẩu thành công" });
+  } catch (error) {
+    next(error);
+  }
 };

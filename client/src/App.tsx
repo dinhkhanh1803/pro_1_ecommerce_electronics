@@ -36,6 +36,8 @@ import { ShipperDeliveryDetail } from "./pages/shipper/ShipperDeliveryDetail";
 import { ShipperCOD } from "./pages/shipper/ShipperCOD";
 import { ProtectedRoute } from "./pages/auth/ProtectedRoute";
 import OAuthSuccess from "./pages/auth/OAuthSuccess";
+import { ForgotPassword } from "./pages/auth/ForgotPassword";
+import { ResetPassword } from "./pages/auth/ResetPassword";
 
 export function App() {
   return (
@@ -45,6 +47,8 @@ export function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/oauth-success" element={<OAuthSuccess />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
