@@ -1,64 +1,19 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useCart } from '../../context/CartContext';
 import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
-import { Link } from 'react-router-dom';
-import { TrashIcon, MinusIcon, PlusIcon, TagIcon } from 'lucide-react';
+import { MinusIcon, PlusIcon, TagIcon, Trash2Icon, ArrowRightIcon } from 'lucide-react';
+
 export function Cart() {
-  const [couponCode, setCouponCode] = useState('');
-  const [cartItems, setCartItems] = useState([
-  {
-    id: '1',
-    name: 'Wireless Bluetooth Headphones',
-    price: 79.99,
-    quantity: 1,
-    image:
-    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop',
-    color: 'Black',
-    size: 'One Size'
-  },
-  {
-    id: '2',
-    name: 'Smart Watch Series 5',
-    price: 299.99,
-    quantity: 1,
-    image:
-    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&h=200&fit=crop',
-    color: 'Silver',
-    size: '42mm'
-  },
-  {
-    id: '3',
-    name: 'Premium Leather Backpack',
-    price: 89.99,
-    quantity: 2,
-    image:
-    'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200&h=200&fit=crop',
-    color: 'Brown',
-    size: 'Medium'
-  }]
-  );
-  const updateQuantity = (id: string, change: number) => {
-    setCartItems((items) =>
-    items.map((item) =>
-    item.id === id ?
-    {
-      ...item,
-      quantity: Math.max(1, item.quantity + change)
-    } :
-    item
-    )
-    );
-  };
-  const removeItem = (id: string) => {
-    setCartItems((items) => items.filter((item) => item.id !== id));
-  };
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-  const shipping = subtotal > 50 ? 0 : 9.99;
+  const { cartItems, updateQuantity, removeItem, subtotal } = useCart();
+  const [promoCode, setPromoCode] = useState('');
+  
   const discount = 0;
-  const total = subtotal + shipping - discount;
+  const shipping = cartItems.length > 0 ? 15.00 : 0;
+  const tax = subtotal * 0.1;
+  const total = subtotal + shipping + tax - discount;
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
@@ -80,65 +35,65 @@ export function Cart() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
-              {cartItems.map((item) =>
-            <div
-              key={item.id}
-              className="bg-white rounded-xl shadow-sm p-6">
-              
-                  <div className="flex items-center space-x-6">
-                    <img
+              {cartItems.length > 0 ? cartItems.map((item) => (
+              <div key={`${item.id}-${item.color}-${item.size}`} className="flex flex-col sm:flex-row items-start sm:items-center p-6 bg-white border-b border-gray-100 last:border-0 hover:bg-slate-50 transition-colors">
+                <img
                   src={item.image}
                   alt={item.name}
-                  className="w-24 h-24 object-cover rounded-lg" />
+                  className="object-cover w-24 h-24 rounded-2xl"
+                />
                 
-
-                    <div className="flex-1">
-                      <Link
-                    to={`/product/${item.id}`}
-                    className="font-semibold text-gray-900 hover:text-indigo-600 transition-colors">
-                    
+                <div className="flex-1 w-full sm:ml-6 mt-4 sm:mt-0">
+                  <div className="flex flex-col sm:flex-row sm:justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 hover:text-indigo-600 transition-colors cursor-pointer">
                         {item.name}
-                      </Link>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Color: {item.color} | Size: {item.size}
-                      </p>
-                      <p className="text-lg font-bold text-indigo-600 mt-2">
-                        ${item.price.toFixed(2)}
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Color: {item.color || 'N/A'} • Size: {item.size || 'N/A'}
                       </p>
                     </div>
-
-                    <div className="flex items-center space-x-3">
-                      <button
-                    onClick={() => updateQuantity(item.id, -1)}
-                    className="w-8 h-8 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors flex items-center justify-center">
-                    
-                        <MinusIcon className="h-4 w-4" />
+                    <p className="text-xl font-bold text-gray-900 mt-2 sm:mt-0">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="flex items-center space-x-3 bg-slate-50 border border-gray-200 rounded-xl p-1">
+                      <button 
+                        onClick={() => updateQuantity(item.id, -1)}
+                        className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-all"
+                      >
+                        <MinusIcon className="w-4 h-4" />
                       </button>
-                      <span className="text-lg font-semibold w-8 text-center">
+                      <span className="w-8 font-semibold text-center text-gray-900">
                         {item.quantity}
                       </span>
-                      <button
-                    onClick={() => updateQuantity(item.id, 1)}
-                    className="w-8 h-8 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors flex items-center justify-center">
-                    
-                        <PlusIcon className="h-4 w-4" />
+                      <button 
+                        onClick={() => updateQuantity(item.id, 1)}
+                        className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-all"
+                      >
+                        <PlusIcon className="w-4 h-4" />
                       </button>
                     </div>
-
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-gray-900">
-                        ${(item.price * item.quantity).toFixed(2)}
-                      </p>
-                      <button
-                    onClick={() => removeItem(item.id)}
-                    className="text-red-500 hover:text-red-600 transition-colors mt-2 flex items-center space-x-1">
                     
-                        <TrashIcon className="h-4 w-4" />
-                        <span className="text-sm">Remove</span>
-                      </button>
-                    </div>
+                    <button 
+                      onClick={() => removeItem(item.id)}
+                      className="flex items-center space-x-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors"
+                    >
+                      <Trash2Icon className="w-4 h-4" />
+                      <span className="hidden sm:inline">Remove</span>
+                    </button>
                   </div>
                 </div>
+              </div>
+            )) : (
+              <div className="p-8 text-center text-gray-500">
+                Your cart is currently empty.
+                <div className="mt-4">
+                  <Link to="/" className="text-indigo-600 font-semibold hover:underline">Continue Shopping</Link>
+                </div>
+              </div>
             )}
             </div>
 
@@ -157,8 +112,8 @@ export function Cart() {
                   <div className="flex space-x-2">
                     <input
                     type="text"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
                     placeholder="Enter code"
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                   
@@ -196,9 +151,10 @@ export function Cart() {
 
                 <Link
                 to="/checkout"
-                className="block w-full bg-indigo-500 text-white text-center px-6 py-3 rounded-xl font-semibold hover:bg-indigo-600 transition-colors">
+                className={`flex items-center justify-center space-x-2 w-full text-center px-6 py-4 rounded-xl font-bold text-lg transition-colors ${cartItems.length === 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed pointer-events-none' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
                 
-                  Proceed to Checkout
+                  <span>Proceed to Checkout</span>
+                  <ArrowRightIcon className="w-5 h-5" />
                 </Link>
 
                 <Link

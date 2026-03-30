@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
 import { ProductCard } from '../../components/ProductCard';
@@ -16,6 +16,21 @@ import {
 'lucide-react';
 export function Home() {
   const [activeSlide, setActiveSlide] = useState(0);
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/products?status=active')
+      .then(res => res.json())
+      .then(data => setFeaturedProducts(data.slice(0, 8)))
+      .catch(console.error);
+
+    fetch('http://localhost:5000/api/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data))
+      .catch(console.error);
+  }, []);
+
   const heroSlides = [
   {
     title: 'Summer Sale 2026',
@@ -36,127 +51,16 @@ export function Home() {
     gradient: 'from-blue-600 to-cyan-600'
   }];
 
-  const featuredProducts = [
-  {
-    id: '1',
-    name: 'Wireless Bluetooth Headphones',
-    price: 79.99,
-    oldPrice: 129.99,
-    rating: 4.5,
-    reviewCount: 234,
-    image:
-    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop',
-    badge: 'Sale'
-  },
-  {
-    id: '2',
-    name: 'Smart Watch Series 5',
-    price: 299.99,
-    rating: 4.8,
-    reviewCount: 567,
-    image:
-    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop',
-    badge: 'New'
-  },
-  {
-    id: '3',
-    name: 'Premium Leather Backpack',
-    price: 89.99,
-    oldPrice: 149.99,
-    rating: 4.6,
-    reviewCount: 189,
-    image:
-    'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&h=500&fit=crop'
-  },
-  {
-    id: '4',
-    name: 'Portable Bluetooth Speaker',
-    price: 49.99,
-    rating: 4.4,
-    reviewCount: 423,
-    image:
-    'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500&h=500&fit=crop'
-  },
-  {
-    id: '5',
-    name: 'Minimalist Desk Lamp',
-    price: 34.99,
-    rating: 4.7,
-    reviewCount: 156,
-    image:
-    'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=500&h=500&fit=crop'
-  },
-  {
-    id: '6',
-    name: 'Ergonomic Office Chair',
-    price: 199.99,
-    oldPrice: 299.99,
-    rating: 4.9,
-    reviewCount: 891,
-    image:
-    'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=500&h=500&fit=crop',
-    badge: 'Sale'
-  },
-  {
-    id: '7',
-    name: 'Stainless Steel Water Bottle',
-    price: 24.99,
-    rating: 4.5,
-    reviewCount: 312,
-    image:
-    'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=500&h=500&fit=crop'
-  },
-  {
-    id: '8',
-    name: 'Wireless Charging Pad',
-    price: 29.99,
-    rating: 4.3,
-    reviewCount: 267,
-    image:
-    'https://images.unsplash.com/photo-1591290619762-c588f0e8e0f7?w=500&h=500&fit=crop'
-  }];
-
-  const categories = [
-  {
-    name: 'Electronics',
-    icon: SmartphoneIcon,
-    color: 'bg-indigo-100 text-indigo-600'
-  },
-  {
-    name: 'Fashion',
-    icon: ShirtIcon,
-    color: 'bg-pink-100 text-pink-600'
-  },
-  {
-    name: 'Home & Garden',
-    icon: HomeIcon,
-    color: 'bg-green-100 text-green-600'
-  },
-  {
-    name: 'Sports',
-    icon: DumbbellIcon,
-    color: 'bg-orange-100 text-orange-600'
-  },
-  {
-    name: 'Books',
-    icon: BookOpenIcon,
-    color: 'bg-purple-100 text-purple-600'
-  },
-  {
-    name: 'Toys',
-    icon: ToyBrickIcon,
-    color: 'bg-yellow-100 text-yellow-600'
-  },
-  {
-    name: 'Beauty',
-    icon: SparklesIcon,
-    color: 'bg-rose-100 text-rose-600'
-  },
-  {
-    name: 'Automotive',
-    icon: CarIcon,
-    color: 'bg-blue-100 text-blue-600'
-  }];
+  const CATEGORY_STYLES = [
+    { icon: SmartphoneIcon, color: 'bg-indigo-100 text-indigo-600' },
+    { icon: ShirtIcon, color: 'bg-pink-100 text-pink-600' },
+    { icon: HomeIcon, color: 'bg-green-100 text-green-600' },
+    { icon: DumbbellIcon, color: 'bg-orange-100 text-orange-600' },
+    { icon: BookOpenIcon, color: 'bg-purple-100 text-purple-600' },
+    { icon: ToyBrickIcon, color: 'bg-yellow-100 text-yellow-600' },
+    { icon: SparklesIcon, color: 'bg-rose-100 text-rose-600' },
+    { icon: CarIcon, color: 'bg-blue-100 text-blue-600' }
+  ];
 
   const nextSlide = () => {
     setActiveSlide((prev) => (prev + 1) % heroSlides.length);
@@ -230,8 +134,22 @@ export function Home() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredProducts.map((product) =>
-          <ProductCard key={product.id} {...product} />
+          {featuredProducts.length > 0 ? (
+            featuredProducts.map((p) => (
+              <ProductCard
+                key={p._id}
+                id={p._id}
+                name={p.name}
+                price={p.price}
+                oldPrice={p.compareAtPrice}
+                rating={4.8}
+                reviewCount={p.sales || 0}
+                image={p.images?.[0] || 'https://via.placeholder.com/500'}
+                badge={p.compareAtPrice > p.price ? 'Sale' : undefined}
+              />
+            ))
+          ) : (
+            <p className="text-gray-500">Loading products...</p>
           )}
         </div>
       </div>
@@ -242,23 +160,28 @@ export function Home() {
           Shop by Category
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {categories.map((category) => {
-            const Icon = category.icon;
-            return (
-              <a
-                key={category.name}
-                href={`/products?category=${category.name}`}
-                className="bg-white rounded-xl p-6 text-center hover:shadow-lg transition-shadow">
-                
-                <div
-                  className={`w-16 h-16 ${category.color} rounded-xl flex items-center justify-center mx-auto mb-3`}>
+          {categories.length > 0 ? (
+            categories.map((category, index) => {
+              const style = CATEGORY_STYLES[index % CATEGORY_STYLES.length];
+              const Icon = style.icon;
+              return (
+                <a
+                  key={category._id}
+                  href={`/products?category=${category._id}`}
+                  className="bg-white rounded-xl p-6 text-center hover:shadow-lg transition-shadow">
                   
-                  <Icon className="h-8 w-8" />
-                </div>
-                <h3 className="font-semibold text-gray-900">{category.name}</h3>
-              </a>);
-
-          })}
+                  <div
+                    className={`w-16 h-16 ${style.color} rounded-xl flex items-center justify-center mx-auto mb-3`}>
+                    
+                    <Icon className="h-8 w-8" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900">{category.name}</h3>
+                </a>
+              );
+            })
+          ) : (
+            <p className="text-gray-500">Loading categories...</p>
+          )}
         </div>
       </div>
 

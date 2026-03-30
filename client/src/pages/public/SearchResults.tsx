@@ -1,51 +1,9 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
 import { ProductCard } from '../../components/ProductCard';
 import { FilterIcon, ChevronDownIcon, StarIcon } from 'lucide-react';
-// Mock data
-const MOCK_PRODUCTS = [
-{
-  id: '1',
-  name: 'Wireless Noise-Cancelling Headphones Pro',
-  price: 299.99,
-  oldPrice: 349.99,
-  rating: 4.8,
-  reviewCount: 1245,
-  image:
-  'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80',
-  badge: 'Sale'
-},
-{
-  id: '2',
-  name: 'Smart Watch Series 7',
-  price: 399.0,
-  rating: 4.9,
-  reviewCount: 856,
-  image:
-  'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&q=80'
-},
-{
-  id: '3',
-  name: 'Premium Leather Backpack',
-  price: 129.5,
-  rating: 4.5,
-  reviewCount: 342,
-  image:
-  'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&q=80'
-},
-{
-  id: '4',
-  name: 'Minimalist Desk Lamp',
-  price: 89.99,
-  oldPrice: 110.0,
-  rating: 4.2,
-  reviewCount: 128,
-  image:
-  'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=500&q=80',
-  badge: 'New'
-}];
 
 export function SearchResults() {
   const location = useLocation();
@@ -55,14 +13,49 @@ export function SearchResults() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState('popular');
-  const categories = ['Electronics', 'Audio', 'Accessories', 'Wearables'];
-  const toggleCategory = (category: string) => {
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data))
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    let url = `http://localhost:5000/api/products?status=active&search=${encodeURIComponent(query)}`;
+    
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        let filtered = data;
+        
+        if (selectedCategories.length > 0) {
+          filtered = filtered.filter((p: any) => selectedCategories.includes(p.category?._id || p.category));
+        }
+
+        filtered = filtered.filter((p: any) => p.price >= priceRange[0] && p.price <= priceRange[1]);
+        
+        if (sortBy === 'price-asc') filtered.sort((a: any, b: any) => a.price - b.price);
+        if (sortBy === 'price-desc') filtered.sort((a: any, b: any) => b.price - a.price);
+        
+        setProducts(filtered);
+        setLoading(false);
+      })
+      .catch(console.error);
+  }, [query, selectedCategories, priceRange, sortBy]);
+
+  const toggleCategory = (categoryId: string) => {
     setSelectedCategories((prev) =>
-    prev.includes(category) ?
-    prev.filter((c) => c !== category) :
-    [...prev, category]
+      prev.includes(categoryId) ?
+      prev.filter((c) => c !== categoryId) :
+      [...prev, categoryId]
     );
   };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <Navbar />
@@ -71,10 +64,10 @@ export function SearchResults() {
         {/* Header */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Search results for "{query}"
-            </h1>
-            <p className="text-gray-500 mt-1">Showing 1-24 of 142 results</p>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Search results for "{query}"
+              </h1>
+              <p className="text-gray-500 mt-1">Showing search results ({products.length})</p>
           </div>
 
           <div className="mt-4 md:mt-0 flex items-center space-x-4">
@@ -110,16 +103,16 @@ export function SearchResults() {
               <div className="space-y-3">
                 {categories.map((category) =>
                 <label
-                  key={category}
+                  key={category._id}
                   className="flex items-center space-x-3 cursor-pointer">
                   
                     <input
                     type="checkbox"
-                    checked={selectedCategories.includes(category)}
-                    onChange={() => toggleCategory(category)}
+                    checked={selectedCategories.includes(category._id)}
+                    onChange={() => toggleCategory(category._id)}
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
                   
-                    <span className="text-gray-700">{category}</span>
+                    <span className="text-gray-700">{category.name}</span>
                   </label>
                 )}
               </div>
@@ -208,18 +201,29 @@ export function SearchResults() {
 
           {/* Product Grid */}
           <div className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {MOCK_PRODUCTS.map((product) =>
-              <ProductCard key={product.id} {...product} />
-              )}
-              {MOCK_PRODUCTS.map((product) =>
-              <ProductCard
-                key={`${product.id}-copy`}
-                {...product}
-                id={`${product.id}-copy`} />
-
-              )}
-            </div>
+            {loading ? (
+              <p className="text-gray-500 py-12">Searching products...</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.length > 0 ? (
+                  products.map((p) => (
+                    <ProductCard
+                      key={p._id}
+                      id={p._id}
+                      name={p.name}
+                      price={p.price}
+                      oldPrice={p.compareAtPrice}
+                      rating={4.8}
+                      reviewCount={p.sales || 0}
+                      image={p.images?.[0] || 'https://via.placeholder.com/500'}
+                      badge={p.compareAtPrice > p.price ? 'Sale' : undefined}
+                    />
+                  ))
+                ) : (
+                  <p className="col-span-3 text-gray-500 py-12">No products match your search.</p>
+                )}
+              </div>
+            )}
 
             {/* Pagination */}
             <div className="mt-12 flex justify-center">

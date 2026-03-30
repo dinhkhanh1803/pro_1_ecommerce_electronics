@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { CartProvider } from "./context/CartContext";
 // Public Pages
 import { Home } from "./pages/public/Home";
 import { ProductListing } from "./pages/public/ProductListing";
@@ -42,63 +43,65 @@ import { ResetPassword } from "./pages/auth/ResetPassword";
 
 export function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public Auth Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/oauth-success" element={<OAuthSuccess />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
+    <CartProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Auth Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/oauth-success" element={<OAuthSuccess />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-        {/* Protected Routes */}
-        <Route element={<ProtectedRoute />}>
-          {/* Public Pages (now protected) */}
-          <Route path="/" element={<Home />} />
-          <Route path="/products" element={<ProductListing />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/search" element={<SearchResults />} />
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            {/* Public Pages (now protected) */}
+            <Route path="/" element={<Home />} />
+            <Route path="/products" element={<ProductListing />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/search" element={<SearchResults />} />
 
-          {/* Customer Pages */}
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/orders" element={<OrderHistory />} />
-          <Route path="/orders/:id" element={<OrderDetail />} />
-          <Route path="/wishlist" element={<Wishlist />} />
-          <Route path="/chat" element={<Chat />} />
+            {/* Customer Pages */}
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/orders" element={<OrderHistory />} />
+            <Route path="/orders/:id" element={<OrderDetail />} />
+            <Route path="/wishlist" element={<Wishlist />} />
+            <Route path="/chat" element={<Chat />} />
 
-          {/* Seller Pages */}
-          <Route path="/seller/dashboard" element={<SellerRevenue />} />
-          <Route path="/seller/products" element={<SellerProducts />} />
-          <Route path="/seller/products/new" element={<SellerProductForm />} />
-          <Route
-            path="/seller/products/:id/edit"
-            element={<SellerProductForm />}
-          />
-          <Route path="/seller/orders" element={<SellerOrders />} />
-          <Route path="/seller/promotions" element={<SellerPromotions />} />
-          <Route path="/seller/reviews" element={<SellerReviews />} />
-          <Route path="/seller/messages" element={<Chat />} />
+            {/* Seller Pages */}
+            <Route path="/seller/dashboard" element={<SellerRevenue />} />
+            <Route path="/seller/products" element={<SellerProducts />} />
+            <Route path="/seller/products/new" element={<SellerProductForm />} />
+            <Route
+              path="/seller/products/:id/edit"
+              element={<SellerProductForm />}
+            />
+            <Route path="/seller/orders" element={<SellerOrders />} />
+            <Route path="/seller/promotions" element={<SellerPromotions />} />
+            <Route path="/seller/reviews" element={<SellerReviews />} />
+            <Route path="/seller/messages" element={<Chat />} />
 
-          {/* Admin Pages */}
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/categories" element={<AdminCategories />} />
-          <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/products" element={<AdminProducts />} />
-          <Route path="/admin/orders" element={<AdminOrders />} />
-          <Route path="/admin/finance" element={<AdminFinance />} />
-          <Route path="/admin/cms" element={<AdminCMS />} />
+            {/* Admin Pages */}
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/categories" element={<AdminCategories />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/products" element={<AdminProducts />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
+            <Route path="/admin/finance" element={<AdminFinance />} />
+            <Route path="/admin/cms" element={<AdminCMS />} />
 
-          {/* Shipper Pages */}
-          <Route path="/shipper/deliveries" element={<ShipperDeliveries />} />
-          <Route
-            path="/shipper/deliveries/:id"
-            element={<ShipperDeliveryDetail />}
-          />
-          <Route path="/shipper/cod" element={<ShipperCOD />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+            {/* Shipper Pages */}
+            <Route path="/shipper/deliveries" element={<ShipperDeliveries />} />
+            <Route
+              path="/shipper/deliveries/:id"
+              element={<ShipperDeliveryDetail />}
+            />
+            <Route path="/shipper/cod" element={<ShipperCOD />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </CartProvider>
   );
 }

@@ -1,43 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
 import { ProductCard } from '../../components/ProductCard';
 import { ChevronRightIcon, SlidersHorizontalIcon } from 'lucide-react';
 export function ProductListing() {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const defaultCategory = searchParams.get('category');
+
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    defaultCategory ? [defaultCategory] : []
+  );
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState('popular');
   const [currentPage, setCurrentPage] = useState(1);
-  const categories = [
-  'Electronics',
-  'Fashion',
-  'Home & Garden',
-  'Sports',
-  'Books',
-  'Toys',
-  'Beauty',
-  'Automotive'];
 
   const brands = ['Apple', 'Samsung', 'Sony', 'Nike', 'Adidas', 'Canon'];
-  const products = Array(12).
-  fill(null).
-  map((_, i) => ({
-    id: `${i + 1}`,
-    name: `Product ${i + 1}`,
-    price: 29.99 + i * 10,
-    oldPrice: i % 3 === 0 ? 49.99 + i * 10 : undefined,
-    rating: 4 + i % 2 * 0.5,
-    reviewCount: 100 + i * 20,
-    image: `https://images.unsplash.com/photo-${1523275335684 + i}?w=500&h=500&fit=crop`,
-    badge: i % 4 === 0 ? 'Sale' : undefined
-  }));
-  const toggleCategory = (category: string) => {
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data))
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    let url = 'http://localhost:5000/api/products?status=active';
+    if (selectedCategories.length > 0) {
+      url += `&category=${selectedCategories[0]}`;
+    }
+    
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        let filtered = data;
+        if (priceMin) filtered = filtered.filter((p: any) => p.price >= Number(priceMin));
+        if (priceMax) filtered = filtered.filter((p: any) => p.price <= Number(priceMax));
+        if (sortBy === 'price-low') filtered.sort((a: any, b: any) => a.price - b.price);
+        if (sortBy === 'price-high') filtered.sort((a: any, b: any) => b.price - a.price);
+        
+        setProducts(filtered);
+        setLoading(false);
+      })
+      .catch(console.error);
+  }, [selectedCategories, priceMin, priceMax, sortBy]);
+
+  const toggleCategory = (categoryId: string) => {
     setSelectedCategories((prev) =>
-    prev.includes(category) ?
-    prev.filter((c) => c !== category) :
-    [...prev, category]
+      prev.includes(categoryId) ?
+      prev.filter((c) => c !== categoryId) :
+      [...prev, categoryId]
     );
   };
   return (
@@ -93,16 +113,16 @@ export function ProductListing() {
                 <div className="space-y-2">
                   {categories.map((category) =>
                   <label
-                    key={category}
+                    key={category._id}
                     className="flex items-center space-x-2 cursor-pointer">
                     
                       <input
                       type="checkbox"
-                      checked={selectedCategories.includes(category)}
-                      onChange={() => toggleCategory(category)}
+                      checked={selectedCategories.includes(category._id)}
+                      onChange={() => toggleCategory(category._id)}
                       className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" />
                     
-                      <span className="text-sm text-gray-700">{category}</span>
+                      <span className="text-sm text-gray-700">{category.name}</span>
                     </label>
                   )}
                 </div>
@@ -152,7 +172,7 @@ export function ProductListing() {
               <p className="text-gray-600">
                 Showing{' '}
                 <span className="font-semibold text-gray-900">1-12</span> of{' '}
-                <span className="font-semibold text-gray-900">156</span>{' '}
+                <span className="font-semibold text-gray-900">{products.length}</span>{' '}
                 products
               </p>
               <div className="flex items-center space-x-3">
@@ -172,11 +192,29 @@ export function ProductListing() {
             </div>
 
             {/* Product Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {products.map((product) =>
-              <ProductCard key={product.id} {...product} />
-              )}
-            </div>
+            {loading ? (
+              <p className="text-gray-500 py-12">Loading products...</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {products.length > 0 ? (
+                  products.map((p) => (
+                    <ProductCard
+                      key={p._id}
+                      id={p._id}
+                      name={p.name}
+                      price={p.price}
+                      oldPrice={p.compareAtPrice}
+                      rating={4.8}
+                      reviewCount={p.sales || 0}
+                      image={p.images?.[0] || 'https://via.placeholder.com/500'}
+                      badge={p.compareAtPrice > p.price ? 'Sale' : undefined}
+                    />
+                  ))
+                ) : (
+                  <p className="col-span-3 text-gray-500 text-center py-12">No products found matching your criteria.</p>
+                )}
+              </div>
+            )}
 
             {/* Pagination */}
             <div className="flex items-center justify-center space-x-2">

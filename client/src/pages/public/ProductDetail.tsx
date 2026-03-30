@@ -1,4 +1,6 @@
-import React, { useState, memo } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useCart } from '../../context/CartContext';
 import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
 import { ProductCard } from '../../components/ProductCard';
@@ -12,16 +14,49 @@ import {
   RotateCcwIcon } from
 'lucide-react';
 export function ProductDetail() {
+  const { id } = useParams();
+  const { addToCart } = useCart();
+  const [product, setProduct] = useState<any>(null);
+  const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
+
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedColor, setSelectedColor] = useState('Black');
   const [selectedSize, setSelectedSize] = useState('M');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
-  const images = [
-  'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop',
-  'https://images.unsplash.com/photo-1484704849700-f032a568e944?w=800&h=800&fit=crop',
-  'https://images.unsplash.com/photo-1545127398-14699f92334b?w=800&h=800&fit=crop',
-  'https://images.unsplash.com/photo-1487215078519-e21cc028cb29?w=800&h=800&fit=crop'];
+
+  useEffect(() => {
+    fetch(`http://localhost:5000/api/products/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        setProduct(data);
+        if (data.category && data.category._id) {
+          fetch(`http://localhost:5000/api/products?category=${data.category._id}&status=active`)
+            .then(r => r.json())
+            .then(related => setRelatedProducts(related.filter((p: any) => p._id !== data._id).slice(0, 4)))
+            .catch(console.error);
+        }
+      })
+      .catch(console.error);
+  }, [id]);
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    addToCart({
+      id: product._id,
+      name: product.name,
+      price: product.price,
+      quantity,
+      image: product.images?.[0] || 'https://via.placeholder.com/500',
+      color: selectedColor,
+      size: selectedSize
+    });
+    alert('Added to cart!');
+  };
+
+  const images = product?.images?.length ? product.images : [
+    'https://via.placeholder.com/800'
+  ];
 
   const colors = ['Black', 'White', 'Blue', 'Red'];
   const sizes = ['S', 'M', 'L', 'XL'];
@@ -53,43 +88,15 @@ export function ProductDetail() {
     avatar: 'https://i.pravatar.cc/150?img=3'
   }];
 
-  const relatedProducts = [
-  {
-    id: '2',
-    name: 'Wireless Earbuds Pro',
-    price: 129.99,
-    rating: 4.7,
-    reviewCount: 342,
-    image:
-    'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500&h=500&fit=crop'
-  },
-  {
-    id: '3',
-    name: 'Premium Headphone Stand',
-    price: 24.99,
-    rating: 4.5,
-    reviewCount: 156,
-    image:
-    'https://images.unsplash.com/photo-1625948515291-69613efd103f?w=500&h=500&fit=crop'
-  },
-  {
-    id: '4',
-    name: 'Audio Cable Kit',
-    price: 19.99,
-    rating: 4.3,
-    reviewCount: 89,
-    image:
-    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=500&fit=crop'
-  },
-  {
-    id: '5',
-    name: 'Carrying Case',
-    price: 29.99,
-    rating: 4.6,
-    reviewCount: 234,
-    image:
-    'https://images.unsplash.com/photo-1585076800183-dd5b8b6c3c5e?w=500&h=500&fit=crop'
-  }];
+
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-gray-500">Loading product...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -113,8 +120,8 @@ export function ProductDetail() {
             Electronics
           </a>
           <ChevronRightIcon className="h-4 w-4" />
-          <span className="text-gray-900 font-medium">
-            Wireless Bluetooth Headphones
+          <span className="text-gray-900 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">
+            {product.name}
           </span>
         </div>
 
@@ -131,7 +138,7 @@ export function ProductDetail() {
                 
               </div>
               <div className="grid grid-cols-4 gap-4">
-                {images.map((image, index) =>
+                {images.map((image: string, index: number) =>
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
@@ -150,30 +157,32 @@ export function ProductDetail() {
             {/* Product Info */}
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                Premium Wireless Bluetooth Headphones
+                {product.name}
               </h1>
 
               <div className="flex items-center space-x-4 mb-6">
-                <StarRating rating={4.5} size="lg" />
-                <span className="text-gray-600">(234 reviews)</span>
+                <StarRating rating={4.8} size="lg" />
+                <span className="text-gray-600">({product.sales || 0} reviews)</span>
               </div>
 
               <div className="flex items-baseline space-x-4 mb-6">
                 <span className="text-4xl font-bold text-indigo-600">
-                  $79.99
+                  ${product.price?.toFixed(2)}
                 </span>
-                <span className="text-2xl text-gray-400 line-through">
-                  $129.99
-                </span>
-                <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  38% OFF
-                </span>
+                {product.compareAtPrice && product.compareAtPrice > product.price && (
+                  <>
+                    <span className="text-2xl text-gray-400 line-through">
+                      ${product.compareAtPrice.toFixed(2)}
+                    </span>
+                    <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
+                      Sale
+                    </span>
+                  </>
+                )}
               </div>
 
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                Experience premium sound quality with our wireless Bluetooth
-                headphones. Featuring active noise cancellation, 30-hour battery
-                life, and comfortable over-ear design.
+              <p className="text-gray-600 mb-6 leading-relaxed whitespace-pre-line">
+                {product.description}
               </p>
 
               {/* Color Selection */}
@@ -210,8 +219,8 @@ export function ProductDetail() {
 
               {/* Stock Status */}
               <div className="mb-6">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700">
-                  In Stock (47 available)
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${product.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {product.stock > 0 ? `In Stock (${product.stock} available)` : 'Out of Stock'}
                 </span>
               </div>
 
@@ -239,9 +248,13 @@ export function ProductDetail() {
 
               {/* Action Buttons */}
               <div className="flex space-x-4 mb-8">
-                <button className="flex-1 bg-indigo-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-600 transition-colors flex items-center justify-center space-x-2">
+                <button 
+                  onClick={handleAddToCart}
+                  disabled={product.stock <= 0}
+                  className="flex-1 bg-indigo-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-600 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
+                >
                   <ShoppingCartIcon className="h-5 w-5" />
-                  <span>Add to Cart</span>
+                  <span>{product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}</span>
                 </button>
                 <button className="px-6 py-3 border-2 border-indigo-500 text-indigo-500 rounded-xl font-semibold hover:bg-indigo-50 transition-colors">
                   <HeartIcon className="h-5 w-5" />
@@ -285,23 +298,9 @@ export function ProductDetail() {
 
           {activeTab === 'description' &&
           <div className="prose max-w-none">
-              <p className="text-gray-600 leading-relaxed mb-4">
-                Immerse yourself in superior sound quality with our Premium
-                Wireless Bluetooth Headphones. Engineered for audiophiles and
-                casual listeners alike, these headphones deliver crystal-clear
-                audio across all frequencies.
+              <p className="text-gray-600 leading-relaxed mb-4 whitespace-pre-line">
+                {product.description}
               </p>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Key Features:
-              </h3>
-              <ul className="list-disc list-inside space-y-2 text-gray-600">
-                <li>Active Noise Cancellation (ANC) technology</li>
-                <li>30-hour battery life with quick charge support</li>
-                <li>Premium memory foam ear cushions</li>
-                <li>Bluetooth 5.0 with multi-device pairing</li>
-                <li>Built-in microphone for hands-free calls</li>
-                <li>Foldable design with premium carrying case</li>
-              </ul>
             </div>
           }
 
@@ -415,8 +414,22 @@ export function ProductDetail() {
             Related Products
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedProducts.map((product) =>
-            <ProductCard key={product.id} {...product} />
+            {relatedProducts.length > 0 ? (
+              relatedProducts.map((p) => (
+                <ProductCard
+                  key={p._id}
+                  id={p._id}
+                  name={p.name}
+                  price={p.price}
+                  oldPrice={p.compareAtPrice}
+                  rating={4.8}
+                  reviewCount={p.sales || 0}
+                  image={p.images?.[0] || 'https://via.placeholder.com/500'}
+                  badge={p.compareAtPrice > p.price ? 'Sale' : undefined}
+                />
+              ))
+            ) : (
+              <p className="text-gray-500 col-span-4">No related products found.</p>
             )}
           </div>
         </div>

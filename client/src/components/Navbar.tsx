@@ -8,24 +8,29 @@ import {
   ChevronDownIcon,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
 export function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCategories, setShowCategories] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
 
-  const cartItemCount = 3;
-  const categories = [
-    "Electronics",
-    "Fashion",
-    "Home & Garden",
-    "Sports",
-    "Books",
-    "Toys",
-    "Beauty",
-    "Automotive",
-  ];
-
+  const { cartCount } = useCart();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data))
+      .catch(console.error);
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-white shadow-sm">
@@ -41,7 +46,7 @@ export function Navbar() {
 
           {/* Search Bar */}
           <div className="flex-1 max-w-2xl mx-8">
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"
                 placeholder="Search products..."
@@ -49,8 +54,10 @@ export function Navbar() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
-              <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-            </div>
+              <button type="submit" className="absolute left-3 top-2.5">
+                <SearchIcon className="h-5 w-5 text-gray-400 hover:text-indigo-500 transition-colors" />
+              </button>
+            </form>
           </div>
 
           {/* Right Side Actions */}
@@ -69,12 +76,12 @@ export function Navbar() {
                 <div className="absolute right-0 w-48 py-2 mt-2 bg-white border border-gray-100 shadow-lg rounded-xl">
                   {categories.map((category) => (
                     <Link
-                      key={category}
-                      to={`/products?category=${category}`}
+                      key={category._id}
+                      to={`/products?category=${category._id}`}
                       className="block px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
                       onClick={() => setShowCategories(false)}
                     >
-                      {category}
+                      {category.name}
                     </Link>
                   ))}
                 </div>
@@ -87,9 +94,9 @@ export function Navbar() {
               className="relative text-gray-700 transition-colors hover:text-indigo-500"
             >
               <ShoppingCartIcon className="w-6 h-6" />
-              {cartItemCount > 0 && (
+              {cartCount > 0 && (
                 <span className="absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-indigo-500 rounded-full -top-2 -right-2">
-                  {cartItemCount}
+                  {cartCount}
                 </span>
               )}
             </Link>
