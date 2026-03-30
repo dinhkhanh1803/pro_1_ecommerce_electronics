@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
@@ -38,6 +38,11 @@ const ADMIN_SIDEBAR = [
   icon: UsersIcon,
   label: 'Users',
   path: '/admin/users'
+},
+{
+  icon: PackageIcon,
+  label: 'Categories',
+  path: '/admin/categories'
 },
 {
   icon: PackageIcon,
@@ -169,14 +174,42 @@ const MOCK_TRANSACTIONS = [
 export function AdminFinance() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  const filteredTransactions = MOCK_TRANSACTIONS.filter((trx) => {
+  
+  const [overview, setOverview] = useState<any>({ revenueData: [], metrics: {}, paymentMethods: [] });
+  const [transactions, setTransactions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const headers = { Authorization: `Bearer ${token}` };
+    
+    fetch(`http://localhost:5000/api/finance/overview`, { headers })
+      .then(res => res.json())
+      .then(data => setOverview(data))
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const headers = { Authorization: `Bearer ${token}` };
+    
+    fetch(`http://localhost:5000/api/finance/transactions?type=${typeFilter}`, { headers })
+      .then(res => res.json())
+      .then(data => setTransactions(data))
+      .catch(console.error);
+  }, [typeFilter]);
+
+  const filteredTransactions = transactions.filter((trx) => {
     const matchesType = typeFilter === 'all' || trx.type === typeFilter;
+    const fromName = trx.fromUser?.name || 'System';
+    const toName = trx.toUser?.name || 'System';
     const matchesSearch =
-    trx.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    trx.from.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    trx.to.toLowerCase().includes(searchQuery.toLowerCase());
+      trx._id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      fromName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      toName.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesType && matchesSearch;
   });
+
+  const { revenueData = [], metrics = {}, paymentMethods = [] } = overview;
   return (
     <DashboardLayout
       sidebarItems={ADMIN_SIDEBAR}
@@ -198,7 +231,7 @@ export function AdminFinance() {
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Total Processing Volume
           </h3>
-          <p className="text-2xl font-bold text-gray-900">$2.4M</p>
+          <p className="text-2xl font-bold text-gray-900">${(metrics.totalVolume || 0).toLocaleString()}</p>
           <p className="text-xs text-gray-500 mt-2">Last 30 days</p>
         </div>
 
@@ -215,7 +248,7 @@ export function AdminFinance() {
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Platform Revenue (Fees)
           </h3>
-          <p className="text-2xl font-bold text-gray-900">$120,000</p>
+          <p className="text-2xl font-bold text-gray-900">${(metrics.platformRevenue || 0).toLocaleString()}</p>
           <p className="text-xs text-gray-500 mt-2">Last 30 days</p>
         </div>
 
@@ -228,7 +261,7 @@ export function AdminFinance() {
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Pending Payouts
           </h3>
-          <p className="text-2xl font-bold text-gray-900">$45,200</p>
+          <p className="text-2xl font-bold text-gray-900">${(metrics.pendingPayouts || 0).toLocaleString()}</p>
           <p className="text-xs text-gray-500 mt-2">To 142 sellers</p>
         </div>
 
@@ -243,7 +276,7 @@ export function AdminFinance() {
             </span>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">Refunds</h3>
-          <p className="text-2xl font-bold text-gray-900">$3,400</p>
+          <p className="text-2xl font-bold text-gray-900">${(metrics.refunds || 0).toLocaleString()}</p>
           <p className="text-xs text-gray-500 mt-2">Last 30 days</p>
         </div>
       </div>
@@ -270,7 +303,7 @@ export function AdminFinance() {
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                data={REVENUE_DATA}
+                data={revenueData}
                 margin={{
                   top: 10,
                   right: 10,
@@ -362,7 +395,7 @@ export function AdminFinance() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={PAYMENT_METHODS}
+                    data={paymentMethods}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -370,7 +403,7 @@ export function AdminFinance() {
                     paddingAngle={5}
                     dataKey="value">
                     
-                    {PAYMENT_METHODS.map((entry, index) =>
+                    {paymentMethods.map((entry: any, index: number) =>
                     <Cell key={`cell-${index}`} fill={entry.color} />
                     )}
                   </Pie>
@@ -386,7 +419,7 @@ export function AdminFinance() {
               </ResponsiveContainer>
             </div>
             <div className="w-full space-y-3">
-              {PAYMENT_METHODS.map((method) =>
+              {paymentMethods.map((method: any) =>
               <div
                 key={method.name}
                 className="flex items-center justify-between">
@@ -477,14 +510,14 @@ export function AdminFinance() {
               {filteredTransactions.length > 0 ?
               filteredTransactions.map((trx) =>
               <tr
-                key={trx.id}
+                key={trx._id}
                 className="hover:bg-gray-50 transition-colors">
                 
                     <td className="p-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {trx.id}
+                        {trx._id}
                       </div>
-                      <div className="text-xs text-gray-500">{trx.date}</div>
+                      <div className="text-xs text-gray-500">{new Date(trx.createdAt).toLocaleString()}</div>
                     </td>
                     <td className="p-4">
                       <span
@@ -495,10 +528,10 @@ export function AdminFinance() {
                     </td>
                     <td className="p-4">
                       <div className="text-sm text-gray-900">
-                        <span className="text-gray-500">From:</span> {trx.from}
+                        <span className="text-gray-500">From:</span> {trx.fromUser?.name || 'System'}
                       </div>
                       <div className="text-sm text-gray-900">
-                        <span className="text-gray-500">To:</span> {trx.to}
+                        <span className="text-gray-500">To:</span> {trx.toUser?.name || 'System'}
                       </div>
                     </td>
                     <td className="p-4 text-sm font-medium text-gray-900">

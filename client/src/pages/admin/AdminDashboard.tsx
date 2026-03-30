@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import {
   UsersIcon,
@@ -33,6 +33,11 @@ const ADMIN_SIDEBAR = [
   icon: UsersIcon,
   label: 'Users',
   path: '/admin/users'
+},
+{
+  icon: PackageIcon,
+  label: 'Categories',
+  path: '/admin/categories'
 },
 {
   icon: PackageIcon,
@@ -164,6 +169,17 @@ const RECENT_ACTIVITY = [
 }];
 
 export function AdminDashboard() {
+  const [stats, setStats] = useState<any>({});
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    fetch("http://localhost:5000/api/dashboard/stats", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => setStats(data))
+      .catch(console.error);
+  }, []);
   return (
     <DashboardLayout
       sidebarItems={ADMIN_SIDEBAR}
@@ -185,9 +201,9 @@ export function AdminDashboard() {
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Total Users
           </h3>
-          <p className="text-2xl font-bold text-gray-900">24,592</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.totalUsers || 0}</p>
           <p className="text-xs text-gray-500 mt-2">
-            1,204 Sellers • 23,388 Customers
+            {stats.totalSellers || 0} Sellers • {(stats.totalUsers || 0) - (stats.totalSellers || 0)} Customers
           </p>
         </div>
 
@@ -204,8 +220,8 @@ export function AdminDashboard() {
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Total Products
           </h3>
-          <p className="text-2xl font-bold text-gray-900">142,300</p>
-          <p className="text-xs text-gray-500 mt-2">845 pending approval</p>
+          <p className="text-2xl font-bold text-gray-900">{(stats.activeProducts || 0) + (stats.pendingProducts || 0)}</p>
+          <p className="text-xs text-gray-500 mt-2">{stats.pendingProducts || 0} pending approval</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -221,7 +237,7 @@ export function AdminDashboard() {
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Platform Revenue
           </h3>
-          <p className="text-2xl font-bold text-gray-900">$1.2M</p>
+          <p className="text-2xl font-bold text-gray-900">${(stats.revenue || 0).toLocaleString()}</p>
           <p className="text-xs text-gray-500 mt-2">
             This month (5% commission)
           </p>
@@ -240,7 +256,7 @@ export function AdminDashboard() {
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Total Orders
           </h3>
-          <p className="text-2xl font-bold text-gray-900">84,205</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.totalOrders || 0}</p>
           <p className="text-xs text-gray-500 mt-2">1,204 active deliveries</p>
         </div>
       </div>

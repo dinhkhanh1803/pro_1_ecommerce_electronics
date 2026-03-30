@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -96,13 +97,46 @@ const MOCK_PRODUCTS = [
 }];
 
 export function SellerProducts() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [productsList, setProductsList] = useState<any[]>([]);
+
+  const fetchProducts = async () => {
+    try {
+      if (!user?.id) return;
+      const res = await fetch(`http://localhost:5000/api/products?seller=${user.id}`);
+      const data = await res.json();
+      setProductsList(data);
+    } catch (error) {
+      console.error("Error fetching products", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [user]);
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this product?")) {
+      try {
+        const token = localStorage.getItem("token");
+        await fetch(`http://localhost:5000/api/products/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        fetchProducts();
+      } catch (error) {
+        console.error("Error deleting product", error);
+      }
+    }
+  };
+
   const toggleSelectAll = () => {
-    if (selectedProducts.length === MOCK_PRODUCTS.length) {
+    if (selectedProducts.length === productsList.length) {
       setSelectedProducts([]);
     } else {
-      setSelectedProducts(MOCK_PRODUCTS.map((p) => p.id));
+      setSelectedProducts(productsList.map((p) => p._id));
     }
   };
   const toggleSelectProduct = (id: string) => {
@@ -172,8 +206,8 @@ export function SellerProducts() {
                   <input
                     type="checkbox"
                     checked={
-                    selectedProducts.length === MOCK_PRODUCTS.length &&
-                    MOCK_PRODUCTS.length > 0
+                    selectedProducts.length === productsList.length &&
+                    productsList.length > 0
                     }
                     onChange={toggleSelectAll}
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer" />
@@ -201,23 +235,23 @@ export function SellerProducts() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {MOCK_PRODUCTS.map((product) =>
+              {productsList.map((product) =>
               <tr
-                key={product.id}
+                key={product._id}
                 className="hover:bg-gray-50 transition-colors group">
                 
                   <td className="p-4">
                     <input
                     type="checkbox"
-                    checked={selectedProducts.includes(product.id)}
-                    onChange={() => toggleSelectProduct(product.id)}
+                    checked={selectedProducts.includes(product._id)}
+                    onChange={() => toggleSelectProduct(product._id)}
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer" />
                   
                   </td>
                   <td className="p-4">
                     <div className="flex items-center space-x-3">
                       <img
-                      src={product.image}
+                      src={product.images && product.images.length > 0 ? product.images[0] : "https://via.placeholder.com/150"}
                       alt={product.name}
                       className="w-12 h-12 rounded-lg object-cover border border-gray-200" />
                     
@@ -225,15 +259,15 @@ export function SellerProducts() {
                         <p className="text-sm font-medium text-gray-900 line-clamp-1">
                           {product.name}
                         </p>
-                        <p className="text-xs text-gray-500">{product.id}</p>
+                        <p className="text-xs text-gray-500">{product._id}</p>
                       </div>
                     </div>
                   </td>
                   <td className="p-4 text-sm text-gray-600">
-                    {product.category}
+                    {product.category?.name || "Unknown"}
                   </td>
                   <td className="p-4 text-sm font-medium text-gray-900">
-                    ${product.price.toFixed(2)}
+                    ${product.price ? product.price.toFixed(2) : "0.00"}
                   </td>
                   <td className="p-4">
                     <span
@@ -249,13 +283,14 @@ export function SellerProducts() {
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Link
-                      to={`/seller/products/${product.id}/edit`}
+                      to={`/seller/products/${product._id}/edit`}
                       className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
                       title="Edit">
                       
                         <EditIcon className="h-4 w-4" />
                       </Link>
                       <button
+                      onClick={() => handleDelete(product._id)}
                       className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                       title="Delete">
                       

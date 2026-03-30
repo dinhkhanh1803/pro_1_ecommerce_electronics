@@ -25,6 +25,7 @@ import { SellerPromotions } from "./pages/seller/SellerPromotions";
 import { SellerReviews } from "./pages/seller/SellerReviews";
 // Admin Pages
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { AdminCategories } from "./pages/admin/AdminCategories";
 import { AdminUsers } from "./pages/admin/AdminUsers";
 import { AdminProducts } from "./pages/admin/AdminProducts";
 import { AdminOrders } from "./pages/admin/AdminOrders";
@@ -82,6 +83,7 @@ export function App() {
 
           {/* Admin Pages */}
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/categories" element={<AdminCategories />} />
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/admin/orders" element={<AdminOrders />} />

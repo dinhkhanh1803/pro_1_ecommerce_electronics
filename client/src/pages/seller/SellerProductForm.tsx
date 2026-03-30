@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import {
@@ -11,7 +11,8 @@ import {
   ChevronLeftIcon,
   UploadCloudIcon,
   XIcon,
-  PlusIcon } from
+  PlusIcon,
+  Trash2Icon } from
 'lucide-react';
 const SELLER_SIDEBAR = [
 {
@@ -82,6 +83,49 @@ export function SellerProductForm() {
   const removeVariant = (id: number) => {
     setVariants(variants.filter((v) => v.id !== id));
   };
+
+  const [categories, setCategories] = useState<any[]>([]);
+  useEffect(() => {
+    fetch('http://localhost:5000/api/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data))
+      .catch(console.error);
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        name: (document.getElementById('name') as HTMLInputElement)?.value,
+        description: (document.getElementById('description') as HTMLTextAreaElement)?.value,
+        category: (document.getElementById('category') as HTMLSelectElement)?.value,
+        brand: (document.getElementById('brand') as HTMLInputElement)?.value,
+        price: Number((document.getElementById('price') as HTMLInputElement)?.value),
+        compareAtPrice: Number((document.getElementById('compareAtPrice') as HTMLInputElement)?.value) || undefined,
+        sku: (document.getElementById('sku') as HTMLInputElement)?.value,
+        stock: Number((document.getElementById('stock') as HTMLInputElement)?.value),
+        images,
+        variants: variants.map(v => ({ name: v.name, priceAdd: v.price, stock: v.stock }))
+      };
+      const token = localStorage.getItem("token");
+      const res = await fetch('http://localhost:5000/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        navigate('/seller/products');
+      } else {
+        alert("Failed to create product");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <DashboardLayout
       sidebarItems={SELLER_SIDEBAR}
@@ -98,7 +142,7 @@ export function SellerProductForm() {
         </Link>
       </div>
 
-      <form className="max-w-4xl mx-auto space-y-8">
+      <form className="max-w-4xl mx-auto space-y-8" onSubmit={handleSubmit}>
         {/* Basic Info */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 md:p-8 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">
@@ -152,9 +196,9 @@ export function SellerProductForm() {
                   required>
                   
                   <option value="">Select a category</option>
-                  <option value="electronics">Electronics</option>
-                  <option value="fashion">Fashion</option>
-                  <option value="home">Home & Garden</option>
+                  {categories.map((cat: any) => (
+                    <option key={cat._id} value={cat._id}>{cat.name}</option>
+                  ))}
                 </select>
               </div>
               <div>

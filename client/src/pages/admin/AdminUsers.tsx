@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
@@ -25,6 +25,11 @@ const ADMIN_SIDEBAR = [
   icon: UsersIcon,
   label: 'Users',
   path: '/admin/users'
+},
+{
+  icon: PackageIcon,
+  label: 'Categories',
+  path: '/admin/categories'
 },
 {
   icon: PackageIcon,
@@ -108,18 +113,43 @@ const MOCK_USERS = [
 export function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-  const filteredUsers = MOCK_USERS.filter((user) => {
+  const [usersList, setUsersList] = useState<any[]>([]);
+
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/api/users?role=${roleFilter}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setUsersList(data);
+    } catch (error) {
+      console.error("Error fetching users", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [roleFilter]);
+
+  const filteredUsers = usersList.filter((user) => {
     const matchesSearch =
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    return matchesSearch && matchesRole;
+      user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
   });
-  const handleToggleLock = (userId: string, currentStatus: string) => {
-    console.log(
-      `Toggling lock for user ${userId}. Current status: ${currentStatus}`
-    );
-    // In a real app, this would trigger an API call to lock/unlock the user
+
+  const handleToggleLock = async (userId: string, currentStatus: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`http://localhost:5000/api/users/${userId}/lock`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchUsers();
+    } catch (error) {
+      console.error("Error toggling lock", error);
+    }
   };
   return (
     <DashboardLayout
@@ -190,13 +220,13 @@ export function AdminUsers() {
               {filteredUsers.length > 0 ?
               filteredUsers.map((user) =>
               <tr
-                key={user.id}
+                key={user._id}
                 className="hover:bg-gray-50 transition-colors group">
                 
                     <td className="p-4">
                       <div className="flex items-center space-x-3">
                         <img
-                      src={user.avatar}
+                      src={user.avatar || `https://ui-avatars.com/api/?name=${user.name}&background=6366f1&color=fff`}
                       alt={user.name}
                       className="w-10 h-10 rounded-full object-cover border border-gray-200" />
                     
@@ -226,7 +256,7 @@ export function AdminUsers() {
                       </span>
                     </td>
                     <td className="p-4 text-sm text-gray-600">
-                      {user.joinDate}
+                      {new Date(user.createdAt).toLocaleDateString()}
                     </td>
                     <td className="p-4 text-sm font-medium text-gray-900">
                       {user.orders}
@@ -236,7 +266,7 @@ export function AdminUsers() {
                         {user.role !== 'admin' &&
                     <button
                       onClick={() =>
-                      handleToggleLock(user.id, user.status)
+                      handleToggleLock(user._id, user.status)
                       }
                       className={`p-1.5 rounded-lg transition-colors ${user.status === 'active' ? 'text-gray-400 hover:text-red-600 hover:bg-red-50' : 'text-red-500 hover:text-green-600 hover:bg-green-50'}`}
                       title={

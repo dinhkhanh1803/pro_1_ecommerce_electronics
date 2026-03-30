@@ -26,6 +26,11 @@ const ADMIN_SIDEBAR = [
 },
 {
   icon: PackageIcon,
+  label: 'Categories',
+  path: '/admin/categories'
+},
+{
+  icon: PackageIcon,
   label: 'Products',
   path: '/admin/products'
 },

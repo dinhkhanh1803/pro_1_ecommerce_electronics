@@ -1,5 +1,11 @@
+import authRoutes from "./authRoutes.js";
+import categoryRoutes from "./categoryRoutes.js";
+import productRoutes from "./productRoutes.js";
+import userRoutes from "./userRoutes.js";
+import financeRoutes from "./financeRoutes.js";
+import cmsRoutes from "./cmsRoutes.js";
+import dashboardRoutes from "./dashboardRoutes.js";
 import express from "express";
-import authRoutes from "./authRoutes.js"; // import auth routes
 
 const router = express.Router();
 
@@ -10,5 +16,11 @@ router.get("/", (req, res) => {
 
 // Auth routes
 router.use("/auth", authRoutes);
+router.use("/categories", categoryRoutes);
+router.use("/products", productRoutes);
+router.use("/users", userRoutes);
+router.use("/finance", financeRoutes);
+router.use("/cms", cmsRoutes);
+router.use("/dashboard", dashboardRoutes);
 
 export default router;

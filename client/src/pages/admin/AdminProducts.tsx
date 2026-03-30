@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
@@ -24,6 +24,11 @@ const ADMIN_SIDEBAR = [
   icon: UsersIcon,
   label: 'Users',
   path: '/admin/users'
+},
+{
+  icon: PackageIcon,
+  label: 'Categories',
+  path: '/admin/categories'
 },
 {
   icon: PackageIcon,
@@ -96,6 +101,22 @@ const MOCK_PRODUCTS = [
 export function AdminProducts() {
   const [activeTab, setActiveTab] = useState('pending');
   const [searchQuery, setSearchQuery] = useState('');
+  const [productsList, setProductsList] = useState<any[]>([]);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/products");
+      const data = await res.json();
+      setProductsList(data);
+    } catch (error) {
+      console.error("Error fetching products", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
   const tabs = [
   {
     id: 'pending',
@@ -110,16 +131,30 @@ export function AdminProducts() {
     label: 'Rejected'
   }];
 
-  const filteredProducts = MOCK_PRODUCTS.filter((product) => {
+  const filteredProducts = productsList.filter((product) => {
     const matchesTab = product.status === activeTab;
+    const sellerName = product.seller?.name || '';
     const matchesSearch =
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.seller.toLowerCase().includes(searchQuery.toLowerCase());
+      product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sellerName.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
-  const handleAction = (id: string, action: 'approve' | 'reject') => {
-    console.log(`${action} product ${id}`);
-    // In a real app, this would trigger an API call to update the product status
+  const handleAction = async (id: string, action: 'approve' | 'reject') => {
+    try {
+      const status = action === 'approve' ? 'active' : 'rejected';
+      const token = localStorage.getItem("token");
+      await fetch(`http://localhost:5000/api/products/${id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      });
+      fetchProducts();
+    } catch (error) {
+      console.error(`Error ${action} product`, error);
+    }
   };
   return (
     <DashboardLayout
@@ -194,13 +229,13 @@ export function AdminProducts() {
               {filteredProducts.length > 0 ?
               filteredProducts.map((product) =>
               <tr
-                key={product.id}
+                key={product._id}
                 className="hover:bg-gray-50 transition-colors group">
                 
                     <td className="p-4">
                       <div className="flex items-center space-x-3">
                         <img
-                      src={product.image}
+                      src={product.images && product.images.length > 0 ? product.images[0] : "https://via.placeholder.com/150"}
                       alt={product.name}
                       className="w-12 h-12 rounded-lg object-cover border border-gray-200" />
                     
@@ -208,21 +243,21 @@ export function AdminProducts() {
                           <p className="text-sm font-medium text-gray-900 line-clamp-1">
                             {product.name}
                           </p>
-                          <p className="text-xs text-gray-500">{product.id}</p>
+                          <p className="text-xs text-gray-500">{product._id}</p>
                         </div>
                       </div>
                     </td>
                     <td className="p-4 text-sm font-medium text-gray-900">
-                      {product.seller}
+                      {product.seller?.name || "Unknown"}
                     </td>
                     <td className="p-4 text-sm text-gray-600">
-                      {product.category}
+                      {product.category?.name || "Unknown"}
                     </td>
                     <td className="p-4 text-sm font-medium text-gray-900">
-                      ${product.price.toFixed(2)}
+                      ${product.price ? product.price.toFixed(2) : "0.00"}
                     </td>
                     <td className="p-4 text-sm text-gray-600">
-                      {product.submittedAt}
+                      {new Date(product.createdAt).toLocaleDateString()}
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
@@ -230,7 +265,7 @@ export function AdminProducts() {
                     <>
                             <button
                         onClick={() =>
-                        handleAction(product.id, 'approve')
+                        handleAction(product._id, 'approve')
                         }
                         className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-green-200 bg-green-50/50"
                         title="Approve">
@@ -238,7 +273,7 @@ export function AdminProducts() {
                               <CheckIcon className="h-4 w-4" />
                             </button>
                             <button
-                        onClick={() => handleAction(product.id, 'reject')}
+                        onClick={() => handleAction(product._id, 'reject')}
                         className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-200 bg-red-50/50"
                         title="Reject">
                         

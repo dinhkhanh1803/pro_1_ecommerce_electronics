@@ -6,13 +6,19 @@ const userSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
 
-    password: { type: String, required: false }, // sửa ở đây
-    googleId: { type: String }, // thêm field này
+    password: { type: String, required: false },
+    googleId: { type: String },
 
     role: {
       type: String,
       enum: ["customer", "seller", "admin", "shipper"],
       default: "customer",
+    },
+
+    status: {
+      type: String,
+      enum: ["active", "locked"],
+      default: "active",
     },
 
     verified: { type: Boolean, default: false },

@@ -273,7 +273,7 @@ export function Profile() {
             <button
               type="button"
               onClick={goToRoleDashboard}
-              className="px-6 py-2 font-medium text-white transition-colors bg-green-600 rounded-xl hover:bg-green-700"
+              className={`px-6 py-2 font-medium text-white transition-colors bg-green-600 rounded-xl hover:bg-green-700 ${user.role === 'customer' ? 'hidden' : ''}`}
             >
               {user.role === "admin"
                 ? "Admin Dashboard"

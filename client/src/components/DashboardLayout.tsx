@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+
 import {
   MenuIcon,
   BellIcon,
@@ -29,6 +32,8 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { user, logout } = useAuth();
+const navigate = useNavigate();
   const location = useLocation();
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -88,8 +93,13 @@ export function DashboardLayout({
         </nav>
 
         <div className="p-4 border-t border-gray-200">
-          <button
-            className={`flex items-center w-full text-gray-600 hover:text-red-600 transition-colors ${!isSidebarOpen && 'justify-center'}`}>
+         <button
+            onClick={() => {
+            logout();
+            navigate("/login");
+          }}
+          className={`flex items-center w-full text-gray-600 hover:text-red-600 transition-colors ${!isSidebarOpen && 'justify-center'}`}
+        >
             
             <LogOutIcon className="h-5 w-5 shrink-0" />
             {isSidebarOpen && <span className="ml-3 font-medium">Logout</span>}
@@ -145,7 +155,7 @@ export function DashboardLayout({
                   alt="User avatar" />
                 
                 <span className="hidden md:block text-sm font-medium text-gray-700">
-                  Admin User
+                   {user?.name}
                 </span>
                 <ChevronDownIcon className="hidden md:block h-4 w-4 text-gray-500" />
               </button>
@@ -167,7 +177,13 @@ export function DashboardLayout({
                     Settings
                   </Link>
                   <div className="border-t border-gray-100 my-1"></div>
-                  <button className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                  <button
+                  onClick={() =>   {
+                    logout();
+                    navigate("/login");
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                >
                     <LogOutIcon className="h-4 w-4 mr-2 text-red-500" />
                     Sign out
                   </button>
@@ -181,5 +197,4 @@ export function DashboardLayout({
         <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">{children}</div>
       </main>
     </div>);
-
 }

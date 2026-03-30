@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
@@ -27,6 +27,11 @@ const ADMIN_SIDEBAR = [
   icon: UsersIcon,
   label: 'Users',
   path: '/admin/users'
+},
+{
+  icon: PackageIcon,
+  label: 'Categories',
+  path: '/admin/categories'
 },
 {
   icon: PackageIcon,
@@ -81,7 +86,29 @@ const MOCK_BANNERS = [
 
 export function AdminCMS() {
   const [activeTab, setActiveTab] = useState('banners');
-  const [banners, setBanners] = useState(MOCK_BANNERS);
+  const [banners, setBanners] = useState<any[]>([]);
+  const [settings, setSettings] = useState<any>({});
+
+  const fetchBanners = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/cms/banners");
+      const data = await res.json();
+      setBanners(data);
+    } catch (err) {}
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/cms/settings");
+      const data = await res.json();
+      setSettings(data);
+    } catch (err) {}
+  };
+
+  useEffect(() => {
+    fetchBanners();
+    fetchSettings();
+  }, []);
   const tabs = [
   {
     id: 'banners',
@@ -96,17 +123,50 @@ export function AdminCMS() {
     label: 'Site Settings'
   }];
 
-  const handleToggleStatus = (id: string, currentStatus: string) => {
-    setBanners(
-      banners.map((b) =>
-      b.id === id ?
-      {
-        ...b,
-        status: currentStatus === 'active' ? 'draft' : 'active'
-      } :
-      b
-      )
-    );
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`http://localhost:5000/api/cms/banners/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: currentStatus === 'active' ? 'draft' : 'active' })
+      });
+      fetchBanners();
+    } catch (err) {}
+  };
+
+  const handleDeleteBanner = async (id: string) => {
+    if (confirm("Are you sure?")) {
+      try {
+        const token = localStorage.getItem("token");
+        await fetch(`http://localhost:5000/api/cms/banners/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        fetchBanners();
+      } catch (err) {}
+    }
+  };
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem("token");
+      const payload = {
+        siteName: (document.getElementById('siteName') as HTMLInputElement)?.value,
+        supportEmail: (document.getElementById('supportEmail') as HTMLInputElement)?.value,
+        siteDescription: (document.getElementById('siteDescription') as HTMLTextAreaElement)?.value,
+        commissionRate: Number((document.getElementById('commissionRate') as HTMLInputElement)?.value),
+        currency: (document.getElementById('currency') as HTMLSelectElement)?.value,
+      };
+      
+      const res = await fetch('http://localhost:5000/api/cms/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) alert("Settings saved successfully!");
+    } catch (err) {}
   };
   return (
     <DashboardLayout
@@ -156,7 +216,7 @@ export function AdminCMS() {
             <div className="divide-y divide-gray-200">
               {banners.map((banner) =>
             <div
-              key={banner.id}
+              key={banner._id}
               className="p-4 flex items-center grid grid-cols-12 gap-4 hover:bg-gray-50 transition-colors group">
               
                   <div className="col-span-1 flex items-center">
@@ -180,7 +240,7 @@ export function AdminCMS() {
                       <p className="text-sm font-medium text-gray-900">
                         {banner.title}
                       </p>
-                      <p className="text-xs text-gray-500">{banner.id}</p>
+                      <p className="text-xs text-gray-500">{banner._id}</p>
                     </div>
                   </div>
 
@@ -193,7 +253,7 @@ export function AdminCMS() {
                   <div className="col-span-2 flex items-center">
                     <button
                   onClick={() =>
-                  handleToggleStatus(banner.id, banner.status)
+                  handleToggleStatus(banner._id, banner.status)
                   }
                   className="focus:outline-none">
                   
@@ -209,6 +269,7 @@ export function AdminCMS() {
                       <EditIcon className="h-4 w-4" />
                     </button>
                     <button
+                  onClick={() => handleDeleteBanner(banner._id)}
                   className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                   title="Delete">
                   
@@ -246,7 +307,7 @@ export function AdminCMS() {
             General Settings
           </h3>
 
-          <form className="space-y-8 max-w-3xl">
+          <form className="space-y-8 max-w-3xl" onSubmit={handleSaveSettings}>
             {/* Basic Info */}
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -256,7 +317,8 @@ export function AdminCMS() {
                   </label>
                   <input
                   type="text"
-                  defaultValue="ShopHub"
+                  id="siteName"
+                  defaultValue={settings.siteName || "ShopHub"}
                   className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
                 
                 </div>
@@ -266,7 +328,8 @@ export function AdminCMS() {
                   </label>
                   <input
                   type="email"
-                  defaultValue="support@shophub.com"
+                  id="supportEmail"
+                  defaultValue={settings.supportEmail || "support@shophub.com"}
                   className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
                 
                 </div>
@@ -278,7 +341,8 @@ export function AdminCMS() {
                 </label>
                 <textarea
                 rows={3}
-                defaultValue="The premier multi-vendor marketplace for all your shopping needs."
+                id="siteDescription"
+                defaultValue={settings.siteDescription || "The premier multi-vendor marketplace for all your shopping needs."}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y" />
               
               </div>
@@ -322,7 +386,8 @@ export function AdminCMS() {
                   </label>
                   <input
                   type="number"
-                  defaultValue="5"
+                  id="commissionRate"
+                  defaultValue={settings.commissionRate || 5}
                   className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
                 
                 </div>
@@ -330,7 +395,7 @@ export function AdminCMS() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Currency
                   </label>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none bg-white">
+                  <select id="currency" defaultValue={settings.currency || "USD"} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none bg-white">
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
                     <option value="GBP">GBP (£)</option>
@@ -341,7 +406,7 @@ export function AdminCMS() {
 
             <div className="flex justify-end pt-6 border-t border-gray-200">
               <button
-              type="button"
+              type="submit"
               className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors">
               
                 Save Settings
