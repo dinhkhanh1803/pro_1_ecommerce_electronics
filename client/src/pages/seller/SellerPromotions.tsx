@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
@@ -10,402 +10,405 @@ import {
   MessageSquareIcon,
   PlusIcon,
   SearchIcon,
-  FilterIcon,
-  EditIcon,
   Trash2Icon,
   CopyIcon,
-  CheckIcon } from
-'lucide-react';
-const SELLER_SIDEBAR = [
-{
-  icon: BarChart2Icon,
-  label: 'Dashboard',
-  path: '/seller/dashboard'
-},
-{
-  icon: PackageIcon,
-  label: 'Products',
-  path: '/seller/products'
-},
-{
-  icon: ShoppingBagIcon,
-  label: 'Orders',
-  path: '/seller/orders'
-},
-{
-  icon: TagIcon,
-  label: 'Promotions',
-  path: '/seller/promotions'
-},
-{
-  icon: StarIcon,
-  label: 'Reviews',
-  path: '/seller/reviews'
-},
-{
-  icon: MessageSquareIcon,
-  label: 'Messages',
-  path: '/seller/messages'
-}];
+  CheckIcon,
+  XIcon,
+  RefreshCwIcon,
+} from 'lucide-react';
 
-// Mock Data
-const MOCK_PROMOTIONS = [
-{
-  id: 'PRM-001',
-  code: 'SUMMER20',
+const API = 'http://localhost:5000/api';
+
+const SELLER_SIDEBAR = [
+  { icon: BarChart2Icon, label: 'Dashboard', path: '/seller/dashboard' },
+  { icon: PackageIcon, label: 'Products', path: '/seller/products' },
+  { icon: ShoppingBagIcon, label: 'Orders', path: '/seller/orders' },
+  { icon: TagIcon, label: 'Promotions', path: '/seller/promotions' },
+  { icon: StarIcon, label: 'Reviews', path: '/seller/reviews' },
+  { icon: MessageSquareIcon, label: 'Messages', path: '/seller/messages' },
+];
+
+const emptyForm = {
+  code: '',
   type: 'percentage',
-  value: 20,
-  minOrder: 50,
-  usageCount: 145,
-  usageLimit: 500,
-  startDate: '2023-06-01',
-  endDate: '2023-08-31',
-  status: 'active'
-},
-{
-  id: 'PRM-002',
-  code: 'WELCOME10',
-  type: 'fixed',
-  value: 10,
-  minOrder: 0,
-  usageCount: 89,
-  usageLimit: null,
-  startDate: '2023-01-01',
-  endDate: '2023-12-31',
-  status: 'active'
-},
-{
-  id: 'PRM-003',
-  code: 'FLASH50',
-  type: 'percentage',
-  value: 50,
-  minOrder: 100,
-  usageCount: 50,
-  usageLimit: 50,
-  startDate: '2023-10-24',
-  endDate: '2023-10-25',
-  status: 'draft'
-},
-{
-  id: 'PRM-004',
-  code: 'FREESHIP',
-  type: 'shipping',
-  value: 0,
-  minOrder: 75,
-  usageCount: 312,
-  usageLimit: null,
-  startDate: '2023-09-01',
-  endDate: '2023-09-30',
-  status: 'cancelled'
-}];
+  value: '',
+  minOrder: '',
+  usageLimit: '',
+  startDate: '',
+  endDate: '',
+  status: 'active',
+};
+
+function generateCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
 
 export function SellerPromotions() {
+  const [promotions, setPromotions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const token = localStorage.getItem('token');
+
+  const fetchPromotions = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/coupons`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setPromotions(Array.isArray(data) ? data : []);
+    } catch {
+      setPromotions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPromotions();
+  }, []);
+
   const handleCopy = (code: string) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
   };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.code.trim()) { setFormError('Vui lòng nhập mã.'); return; }
+    if (!form.value && form.type !== 'shipping') { setFormError('Vui lòng nhập giá trị giảm.'); return; }
+    setSaving(true);
+    setFormError('');
+    try {
+      const res = await fetch(`${API}/coupons`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          ...form,
+          value: Number(form.value) || 0,
+          minOrder: Number(form.minOrder) || 0,
+          usageLimit: form.usageLimit ? Number(form.usageLimit) : null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setFormError(data.message || 'Tạo thất bại'); return; }
+      setPromotions(prev => [data, ...prev]);
+      setIsModalOpen(false);
+      setForm(emptyForm);
+    } catch {
+      setFormError('Không thể kết nối server');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Xóa mã giảm giá này?')) return;
+    try {
+      await fetch(`${API}/coupons/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPromotions(prev => prev.filter(p => p._id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const filtered = promotions.filter(p =>
+    p.code.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const discountLabel = (p: any) => {
+    if (p.type === 'percentage') return `${p.value}% Giảm`;
+    if (p.type === 'fixed') return `Giảm ${p.value.toLocaleString('vi-VN')}đ`;
+    return 'Miễn phí ship';
+  };
+
   return (
-    <DashboardLayout
-      sidebarItems={SELLER_SIDEBAR}
-      title="Promotions"
-      role="Seller">
-      
-      {/* Header Actions */}
+    <DashboardLayout sidebarItems={SELLER_SIDEBAR} title="Khuyến mãi" role="Seller">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="flex items-center space-x-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search promotions..."
+              placeholder="Tìm mã giảm giá..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
           </div>
-          <button className="p-2 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
-            <FilterIcon className="h-5 w-5" />
-          </button>
         </div>
-
         <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-medium w-full sm:w-auto justify-center">
-          
+          onClick={() => { setIsModalOpen(true); setForm(emptyForm); setFormError(''); }}
+          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-medium w-full sm:w-auto justify-center"
+        >
           <PlusIcon className="h-4 w-4 mr-2" />
-          Create Promotion
+          Tạo mã giảm giá
         </button>
       </div>
 
-      {/* Promotions Table */}
+      {/* Table */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Code
-                </th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Discount
-                </th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Min. Order
-                </th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Usage
-                </th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Duration
-                </th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="p-4 w-16"></th>
+                {['Mã', 'Loại giảm', 'Đơn tối thiểu', 'Lượt dùng', 'Thời gian', 'Trạng thái', ''].map(h => (
+                  <th key={h} className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {MOCK_PROMOTIONS.map((promo) =>
-              <tr
-                key={promo.id}
-                className="hover:bg-gray-50 transition-colors group">
-                
+              {loading ? (
+                <tr><td colSpan={7} className="p-8 text-center text-gray-400">Đang tải...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={7} className="p-8 text-center text-gray-400">Chưa có mã giảm giá nào</td></tr>
+              ) : filtered.map(promo => (
+                <tr key={promo._id} className="hover:bg-gray-50 transition-colors group">
                   <td className="p-4">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded-md border border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-gray-900 bg-gray-100 px-2.5 py-1 rounded-lg border border-gray-200 text-sm">
                         {promo.code}
                       </span>
                       <button
-                      onClick={() => handleCopy(promo.code)}
-                      className="p-1 text-gray-400 hover:text-indigo-600 transition-colors"
-                      title="Copy code">
-                      
-                        {copiedCode === promo.code ?
-                      <CheckIcon className="h-4 w-4 text-green-500" /> :
-
-                      <CopyIcon className="h-4 w-4" />
-                      }
+                        onClick={() => handleCopy(promo.code)}
+                        className="p-1 text-gray-400 hover:text-indigo-600 transition-colors"
+                        title="Copy"
+                      >
+                        {copiedCode === promo.code
+                          ? <CheckIcon className="h-4 w-4 text-green-500" />
+                          : <CopyIcon className="h-4 w-4" />}
                       </button>
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className="text-sm font-medium text-gray-900">
-                      {promo.type === 'percentage' && `${promo.value}% Off`}
-                      {promo.type === 'fixed' && `$${promo.value} Off`}
-                      {promo.type === 'shipping' && 'Free Shipping'}
+                    <span className={`text-sm font-semibold px-2.5 py-1 rounded-full ${
+                      promo.type === 'percentage' ? 'bg-purple-100 text-purple-700' :
+                      promo.type === 'fixed' ? 'bg-blue-100 text-blue-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      {discountLabel(promo)}
                     </span>
                   </td>
                   <td className="p-4 text-sm text-gray-600">
-                    {promo.minOrder > 0 ? `$${promo.minOrder}` : 'None'}
+                    {promo.minOrder > 0 ? promo.minOrder.toLocaleString('vi-VN') + 'đ' : 'Không giới hạn'}
                   </td>
                   <td className="p-4">
                     <div className="flex flex-col">
                       <span className="text-sm font-medium text-gray-900">
-                        {promo.usageCount}{' '}
-                        {promo.usageLimit ? `/ ${promo.usageLimit}` : 'used'}
+                        {promo.usageCount}{promo.usageLimit ? ` / ${promo.usageLimit}` : ''} lần
                       </span>
-                      {promo.usageLimit &&
-                    <div className="w-24 h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
+                      {promo.usageLimit && (
+                        <div className="w-20 h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
                           <div
-                        className="h-full bg-indigo-500 rounded-full"
-                        style={{
-                          width: `${promo.usageCount / promo.usageLimit * 100}%`
-                        }} />
-                      
+                            className="h-full bg-indigo-500 rounded-full"
+                            style={{ width: `${(promo.usageCount / promo.usageLimit) * 100}%` }}
+                          />
                         </div>
-                    }
+                      )}
                     </div>
                   </td>
-                  <td className="p-4">
-                    <div className="text-sm text-gray-900">
-                      {promo.startDate}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      to {promo.endDate}
-                    </div>
+                  <td className="p-4 text-sm text-gray-600">
+                    {promo.startDate ? new Date(promo.startDate).toLocaleDateString('vi-VN') : '—'}
+                    {promo.endDate && ` → ${new Date(promo.endDate).toLocaleDateString('vi-VN')}`}
                   </td>
                   <td className="p-4">
                     <StatusBadge status={promo.status as any} />
                   </td>
                   <td className="p-4 text-right">
-                    <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
-                      className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
-                      title="Edit">
-                      
-                        <EditIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                      className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                      title="Delete">
-                      
+                        onClick={() => handleDelete(promo._id)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                        title="Xóa"
+                      >
                         <Trash2Icon className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Create Promotion Modal */}
-      {isCreateModalOpen &&
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-6 relative animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+      {/* Create Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 relative max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">
-                Create Promotion
-              </h3>
+              <h3 className="text-xl font-bold text-gray-900">Tạo mã giảm giá</h3>
               <button
-              onClick={() => setIsCreateModalOpen(false)}
-              className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors">
-              
-                <Trash2Icon className="h-5 w-5" />{' '}
-                {/* Using Trash2Icon as XIcon is not imported here, wait, I should use XIcon but it's not in imports. Let's just use a text 'X' or import it. I'll use text 'X' for now or a generic button */}
-                <span className="sr-only">Close</span>
-                <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor">
-                
-                  <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12" />
-                
-                </svg>
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <XIcon className="h-5 w-5" />
               </button>
             </div>
 
-            <form className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Discount Code
-                  </label>
-                  <div className="flex space-x-2">
-                    <input
-                    type="text"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent uppercase font-mono"
-                    placeholder="e.g. SUMMER20" />
-                  
-                    <button
+            <form onSubmit={handleCreate} className="space-y-5">
+              {/* Code */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mã giảm giá *</label>
+                <div className="flex gap-2">
+                  <input
+                    name="code"
+                    value={form.code}
+                    onChange={handleFormChange}
+                    placeholder="VD: SUMMER20"
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl font-mono uppercase text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required
+                  />
+                  <button
                     type="button"
-                    className="px-3 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200">
-                    
-                      Generate
-                    </button>
-                  </div>
+                    onClick={() => setForm(prev => ({ ...prev, code: generateCode() }))}
+                    className="px-3 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 flex items-center gap-1"
+                  >
+                    <RefreshCwIcon className="h-3.5 w-3.5" />
+                    Tự động
+                  </button>
                 </div>
+              </div>
+
+              {/* Type + Value */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Discount Type
-                  </label>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none bg-white">
-                    <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed Amount ($)</option>
-                    <option value="shipping">Free Shipping</option>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Loại giảm</label>
+                  <select
+                    name="type"
+                    value={form.type}
+                    onChange={handleFormChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                  >
+                    <option value="percentage">% Phần trăm</option>
+                    <option value="fixed">Số tiền cố định (đ)</option>
+                    <option value="shipping">Miễn phí ship</option>
                   </select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Discount Value
+                    Giá trị {form.type === 'percentage' ? '(%)' : form.type === 'fixed' ? '(đ)' : '(bỏ qua)'}
                   </label>
                   <input
-                  type="number"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="20" />
-                
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Minimum Order Amount ($)
-                  </label>
-                  <input
-                  type="number"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="0.00" />
-                
+                    name="value"
+                    type="number"
+                    value={form.value}
+                    onChange={handleFormChange}
+                    disabled={form.type === 'shipping'}
+                    placeholder={form.type === 'percentage' ? '20' : '50000'}
+                    min="0"
+                    max={form.type === 'percentage' ? '100' : undefined}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
+                  />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Min order + Usage limit */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Start Date
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Đơn tối thiểu (đ)</label>
                   <input
-                  type="date"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
-                
+                    name="minOrder"
+                    type="number"
+                    value={form.minOrder}
+                    onChange={handleFormChange}
+                    placeholder="0"
+                    min="0"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    End Date
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Giới hạn lượt dùng</label>
                   <input
-                  type="date"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
-                
+                    name="usageLimit"
+                    type="number"
+                    value={form.usageLimit}
+                    onChange={handleFormChange}
+                    placeholder="Để trống = không giới hạn"
+                    min="1"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
                 </div>
               </div>
 
+              {/* Dates */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ngày bắt đầu</label>
+                  <input
+                    name="startDate"
+                    type="date"
+                    value={form.startDate}
+                    onChange={handleFormChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ngày kết thúc</label>
+                  <input
+                    name="endDate"
+                    type="date"
+                    value={form.endDate}
+                    onChange={handleFormChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Status */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Usage Limits
-                </label>
-                <div className="space-y-3 mt-2">
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                    type="checkbox"
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
-                  
-                    <span className="text-sm text-gray-700">
-                      Limit total number of times this discount can be used
-                    </span>
-                  </label>
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                    type="checkbox"
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
-                  
-                    <span className="text-sm text-gray-700">
-                      Limit to one use per customer
-                    </span>
-                  </label>
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                <select
+                  name="status"
+                  value={form.status}
+                  onChange={handleFormChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                >
+                  <option value="active">Kích hoạt</option>
+                  <option value="draft">Nháp</option>
+                </select>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+              {formError && (
+                <p className="text-red-500 text-sm">{formError}</p>
+              )}
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                 <button
-                type="button"
-                onClick={() => setIsCreateModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50">
-                
-                  Cancel
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2.5 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 text-sm"
+                >
+                  Hủy
                 </button>
                 <button
-                type="submit"
-                className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700">
-                
-                  Save Promotion
+                  type="submit"
+                  disabled={saving}
+                  className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 text-sm disabled:opacity-60"
+                >
+                  {saving ? 'Đang lưu...' : 'Tạo mã'}
                 </button>
               </div>
             </form>
           </div>
         </div>
-      }
-    </DashboardLayout>);
-
+      )}
+    </DashboardLayout>
+  );
 }

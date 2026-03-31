@@ -5,6 +5,7 @@ import userRoutes from "./userRoutes.js";
 import financeRoutes from "./financeRoutes.js";
 import cmsRoutes from "./cmsRoutes.js";
 import dashboardRoutes from "./dashboardRoutes.js";
+import couponRoutes from "./couponRoutes.js";
 import express from "express";
 
 const router = express.Router();
@@ -22,5 +23,6 @@ router.use("/users", userRoutes);
 router.use("/finance", financeRoutes);
 router.use("/cms", cmsRoutes);
 router.use("/dashboard", dashboardRoutes);
+router.use("/coupons", couponRoutes);
 
 export default router;

@@ -1,62 +1,50 @@
 import React, { useState } from 'react';
 import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
+import { useCart } from '../../context/CartContext';
+import { useLocation } from 'react-router-dom';
 import {
   CreditCardIcon,
   WalletIcon,
   BanknoteIcon,
   MapPinIcon,
-  TruckIcon } from
-'lucide-react';
+  TruckIcon,
+} from 'lucide-react';
+
+const formatVND = (price: number) =>
+  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+
+const SHIPPING_FEE = 30_000;
+const FREE_SHIP_THRESHOLD = 500_000;
+
 export function Checkout() {
+  const { cartItems, subtotal, clearCart } = useCart();
+  const location = useLocation();
+  const { discountAmount = 0, freeShipping = false, couponCode } = (location.state as any) || {};
+
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [selectedAddress, setSelectedAddress] = useState('new');
+
+  const shipping = freeShipping || subtotal >= FREE_SHIP_THRESHOLD ? 0 : SHIPPING_FEE;
+  const total = subtotal + shipping - discountAmount;
+
   const savedAddresses = [
   {
     id: '1',
-    name: 'Home',
-    fullName: 'John Doe',
-    phone: '+1 234 567 8900',
-    address: '123 Main Street, Apt 4B',
-    city: 'New York',
-    state: 'NY',
-    zip: '10001'
-  },
-  {
-    id: '2',
-    name: 'Office',
-    fullName: 'John Doe',
-    phone: '+1 234 567 8900',
-    address: '456 Business Ave, Suite 200',
-    city: 'New York',
-    state: 'NY',
-    zip: '10002'
+    name: 'Nhà',
+    fullName: 'Nguyễn Văn A',
+    phone: '0901 234 567',
+    address: '123 Đường Lê Lợi, Quận 1',
+    city: 'TP. Hồ Chí Minh',
+    state: '',
+    zip: '70000'
   }];
 
-  const cartItems = [
-  {
-    id: '1',
-    name: 'Wireless Bluetooth Headphones',
-    price: 79.99,
-    quantity: 1,
-    image:
-    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100&h=100&fit=crop'
-  },
-  {
-    id: '2',
-    name: 'Smart Watch Series 5',
-    price: 299.99,
-    quantity: 1,
-    image:
-    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&h=100&fit=crop'
-  }];
+  const handlePlaceOrder = async () => {
+    alert('Đặt hàng thành công! Cảm ơn bạn.');
+    clearCart();
+  };
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-  const shipping = 0;
-  const total = subtotal + shipping;
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
@@ -333,22 +321,22 @@ export function Checkout() {
               {/* Cart Items */}
               <div className="space-y-4 mb-6 pb-6 border-b border-gray-200">
                 {cartItems.map((item) =>
-                <div key={item.id} className="flex items-center space-x-3">
+                <div key={`${item.id}-${item.color}`} className="flex items-center space-x-3">
                     <img
                     src={item.image}
                     alt={item.name}
                     className="w-16 h-16 object-cover rounded-lg" />
                   
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900 text-sm">
+                      <p className="font-medium text-gray-900 text-sm line-clamp-1">
                         {item.name}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        Qty: {item.quantity}
+                      <p className="text-sm text-gray-500">
+                        x{item.quantity}
                       </p>
                     </div>
-                    <p className="font-semibold text-gray-900">
-                      ${item.price.toFixed(2)}
+                    <p className="font-semibold text-gray-900 text-sm">
+                      {formatVND(item.price * item.quantity)}
                     </p>
                   </div>
                 )}
@@ -356,23 +344,34 @@ export function Checkout() {
 
               {/* Price Breakdown */}
               <div className="space-y-3 mb-6 pb-6 border-b border-gray-200">
-                <div className="flex justify-between text-gray-600">
-                  <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                <div className="flex justify-between text-gray-600 text-sm">
+                  <span>Tạm tính</span>
+                  <span>{formatVND(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Shipping</span>
-                  <span className="text-green-600 font-semibold">Free</span>
+                <div className="flex justify-between text-gray-600 text-sm">
+                  <span>Vận chuyển</span>
+                  <span className={shipping === 0 ? 'text-green-600 font-semibold' : ''}>
+                    {shipping === 0 ? 'Miễn phí' : formatVND(shipping)}
+                  </span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600 text-sm">
+                    <span>Giảm giá {couponCode ? `(${couponCode})` : ''}</span>
+                    <span>-{formatVND(discountAmount)}</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-between text-xl font-bold text-gray-900 mb-6">
-                <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>Tổng cộng</span>
+                <span className="text-red-600">{formatVND(total)}</span>
               </div>
 
-              <button className="w-full bg-indigo-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-600 transition-colors">
-                Place Order
+              <button
+                onClick={handlePlaceOrder}
+                className="w-full bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                Đặt hàng ngay
               </button>
 
               <p className="text-xs text-gray-500 text-center mt-4">
