@@ -13,7 +13,8 @@ import {
   XIcon,
   PlusIcon,
   Trash2Icon } from
-'lucide-react';
+  'lucide-react';
+import { useParams } from 'react-router-dom';
 const SELLER_SIDEBAR = [
 {
   icon: BarChart2Icon,
@@ -48,8 +49,23 @@ const SELLER_SIDEBAR = [
 
 export function SellerProductForm() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [images, setImages] = useState<string[]>([]);
-  const [variants, setVariants] = useState([
+  const [uploadingCount, setUploadingCount] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [productData, setProductData] = useState({
+    name: '',
+    description: '',
+    category: '',
+    brand: '',
+    price: 0,
+    compareAtPrice: 0,
+    sku: '',
+    stock: 0
+  });
+
+  const [variants, setVariants] = useState<any[]>([
   {
     id: 1,
     name: 'Default',
@@ -57,15 +73,125 @@ export function SellerProductForm() {
     stock: 0
   }]
   );
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Mock upload - just add a placeholder image
-    if (e.target.files && e.target.files.length > 0) {
-      setImages([
-      ...images,
-      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=150&q=80']
-      );
+
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data))
+      .catch(console.error);
+
+    if (id) {
+      setLoading(true);
+      fetch(`http://localhost:5000/api/products/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          setProductData({
+            name: data.name || '',
+            description: data.description || '',
+            category: data.category?._id || data.category || '',
+            brand: data.brand || '',
+            price: data.price || 0,
+            compareAtPrice: data.compareAtPrice || 0,
+            sku: data.sku || '',
+            stock: data.stock || 0
+          });
+          setImages(data.images || []);
+          if (data.variants && data.variants.length > 0) {
+            setVariants(data.variants.map((v: any, index: number) => ({
+              id: index + 1,
+              name: v.name,
+              price: v.priceAdd,
+              stock: v.stock
+            })));
+          }
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoading(false);
+        });
     }
+  }, [id]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { id, value } = e.target;
+    setProductData(prev => ({
+      ...prev,
+      [id]: id === 'price' || id === 'compareAtPrice' || id === 'stock' ? Number(value) : value
+    }));
   };
+
+  const handleVariantChange = (index: number, field: string, value: any) => {
+    const newVariants = [...variants];
+    newVariants[index] = { 
+      ...newVariants[index], 
+      [field]: field === 'price' || field === 'stock' ? Number(value) : value 
+    };
+    setVariants(newVariants);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setUploadError('Bạn chưa đăng nhập');
+      return;
+    }
+
+    setUploadError(null);
+    const fileArray = Array.from(files);
+    setUploadingCount(prev => prev + fileArray.length);
+
+    const uploadPromises = fileArray.map(async (file) => {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const res = await fetch('http://localhost:5000/api/products/upload-image', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Upload thất bại');
+      }
+
+      const data = await res.json();
+      return data.url as string;
+    });
+
+    const results = await Promise.allSettled(uploadPromises);
+
+    const successUrls: string[] = [];
+    const errors: string[] = [];
+
+    results.forEach((result) => {
+      if (result.status === 'fulfilled') {
+        successUrls.push(result.value);
+      } else {
+        errors.push(result.reason?.message || 'Upload thất bại');
+      }
+    });
+
+    if (successUrls.length > 0) {
+      setImages(prev => [...prev, ...successUrls]);
+    }
+    if (errors.length > 0) {
+      setUploadError(errors.join(', '));
+    }
+
+    setUploadingCount(prev => prev - fileArray.length);
+    // Reset input để có thể upload lại cùng file
+    e.target.value = '';
+  };
+
   const removeImage = (index: number) => {
     setImages(images.filter((_, i) => i !== index));
   };
@@ -84,32 +210,22 @@ export function SellerProductForm() {
     setVariants(variants.filter((v) => v.id !== id));
   };
 
-  const [categories, setCategories] = useState<any[]>([]);
-  useEffect(() => {
-    fetch('http://localhost:5000/api/categories')
-      .then(res => res.json())
-      .then(data => setCategories(data))
-      .catch(console.error);
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const payload = {
-        name: (document.getElementById('name') as HTMLInputElement)?.value,
-        description: (document.getElementById('description') as HTMLTextAreaElement)?.value,
-        category: (document.getElementById('category') as HTMLSelectElement)?.value,
-        brand: (document.getElementById('brand') as HTMLInputElement)?.value,
-        price: Number((document.getElementById('price') as HTMLInputElement)?.value),
-        compareAtPrice: Number((document.getElementById('compareAtPrice') as HTMLInputElement)?.value) || undefined,
-        sku: (document.getElementById('sku') as HTMLInputElement)?.value,
-        stock: Number((document.getElementById('stock') as HTMLInputElement)?.value),
+        ...productData,
         images,
         variants: variants.map(v => ({ name: v.name, priceAdd: v.price, stock: v.stock }))
       };
       const token = localStorage.getItem("token");
-      const res = await fetch('http://localhost:5000/api/products', {
-        method: 'POST',
+      const url = id 
+        ? `http://localhost:5000/api/products/${id}` 
+        : 'http://localhost:5000/api/products';
+      const method = id ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
@@ -119,17 +235,28 @@ export function SellerProductForm() {
       if (res.ok) {
         navigate('/seller/products');
       } else {
-        alert("Failed to create product");
+        const errorData = await res.json();
+        alert(errorData.message || (id ? "Failed to update product" : "Failed to create product"));
       }
     } catch (err) {
       console.error(err);
     }
   };
 
+  if (loading) {
+    return (
+      <DashboardLayout sidebarItems={SELLER_SIDEBAR} title="Loading..." role="Seller">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout
       sidebarItems={SELLER_SIDEBAR}
-      title="Add Product"
+      title={id ? "Edit Product" : "Add Product"}
       role="Seller">
       
       <div className="mb-6">
@@ -160,6 +287,8 @@ export function SellerProductForm() {
               <input
                 type="text"
                 id="name"
+                value={productData.name}
+                onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="e.g. Wireless Noise-Cancelling Headphones Pro"
                 required />
@@ -176,6 +305,8 @@ export function SellerProductForm() {
               <textarea
                 id="description"
                 rows={5}
+                value={productData.description}
+                onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y"
                 placeholder="Describe your product..."
                 required />
@@ -192,6 +323,8 @@ export function SellerProductForm() {
                 </label>
                 <select
                   id="category"
+                  value={productData.category}
+                  onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none bg-white"
                   required>
                   
@@ -211,6 +344,8 @@ export function SellerProductForm() {
                 <input
                   type="text"
                   id="brand"
+                  value={productData.brand}
+                  onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   placeholder="e.g. Sony" />
                 
@@ -247,20 +382,40 @@ export function SellerProductForm() {
                 </div>
               )}
 
-              <label className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer">
-                <UploadCloudIcon className="h-6 w-6 mb-1" />
-                <span className="text-xs font-medium">Upload</span>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload} />
-                
-              </label>
+              {/* Loading placeholders khi đang upload */}
+              {Array.from({ length: uploadingCount }).map((_, i) => (
+                <div
+                  key={`uploading-${i}`}
+                  className="w-24 h-24 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50 flex flex-col items-center justify-center text-indigo-400">
+                  <svg className="animate-spin h-6 w-6 mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  <span className="text-xs font-medium">Uploading</span>
+                </div>
+              ))}
+
+              {images.length + uploadingCount < 8 && (
+                <label className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer">
+                  <UploadCloudIcon className="h-6 w-6 mb-1" />
+                  <span className="text-xs font-medium">Upload</span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    multiple
+                    disabled={uploadingCount > 0}
+                    onChange={handleImageUpload} />
+                </label>
+              )}
             </div>
+
+            {uploadError && (
+              <p className="text-sm text-red-600 font-medium">⚠️ {uploadError}</p>
+            )}
+
             <p className="text-sm text-gray-500">
-              Upload up to 8 images. Recommended size: 1000x1000px.
+              Upload tối đa 8 ảnh. Kích thước khuyến nghị: 1000x1000px. Tối đa 5MB/ảnh.
             </p>
           </div>
         </div>
@@ -288,6 +443,8 @@ export function SellerProductForm() {
                   id="price"
                   min="0"
                   step="0.01"
+                  value={productData.price}
+                  onChange={handleInputChange}
                   className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   placeholder="0.00"
                   required />
@@ -307,9 +464,11 @@ export function SellerProductForm() {
                 </span>
                 <input
                   type="number"
-                  id="comparePrice"
+                  id="compareAtPrice"
                   min="0"
                   step="0.01"
+                  value={productData.compareAtPrice}
+                  onChange={handleInputChange}
                   className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   placeholder="0.00" />
                 
@@ -329,6 +488,8 @@ export function SellerProductForm() {
               <input
                 type="text"
                 id="sku"
+                value={productData.sku}
+                onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="e.g. WH-1000XM4" />
               
@@ -344,6 +505,8 @@ export function SellerProductForm() {
                 type="number"
                 id="stock"
                 min="0"
+                value={productData.stock}
+                onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="0"
                 required />
@@ -378,6 +541,8 @@ export function SellerProductForm() {
                     <input
                     type="text"
                     placeholder="e.g. Size M, Color Red"
+                    value={variant.name}
+                    onChange={(e) => handleVariantChange(index, 'name', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
                   
                   </div>
@@ -388,6 +553,8 @@ export function SellerProductForm() {
                     <input
                     type="number"
                     placeholder="0.00"
+                    value={variant.price}
+                    onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
                   
                   </div>
@@ -398,6 +565,8 @@ export function SellerProductForm() {
                     <input
                     type="number"
                     placeholder="0"
+                    value={variant.stock}
+                    onChange={(e) => handleVariantChange(index, 'stock', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
                   
                   </div>
@@ -435,7 +604,7 @@ export function SellerProductForm() {
             type="submit"
             className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors">
             
-            Publish Product
+            {id ? "Update Product" : "Publish Product"}
           </button>
         </div>
       </form>
