@@ -13,6 +13,7 @@ import {
   ShieldCheckIcon,
   RotateCcwIcon,
   StarIcon,
+  MessageSquareIcon,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../hooks/useWishlist';
@@ -92,6 +93,7 @@ export function ProductDetail() {
       image: product.images?.[0] || 'https://via.placeholder.com/500',
       color: selectedVariant || 'Mặc định',
       size: selectedVariant || 'Mặc định',
+      seller: typeof product.seller === 'string' ? product.seller : product.seller?._id,
     });
     alert('Đã thêm vào giỏ hàng!');
   };
@@ -342,6 +344,23 @@ export function ProductDetail() {
                   <HeartIcon className={`h-5 w-5 transition-all ${id && isWishlisted(id) ? 'fill-red-400' : ''}`} />
                 </button>
               </div>
+
+              {/* Chat Button */}
+              {product.seller && (
+                <div className="mb-6">
+                  <button
+                    onClick={() => {
+                      const sellerId = typeof product.seller === 'string' ? product.seller : product.seller._id;
+                      if (!sellerId) return;
+                      window.location.href = `/chat?contactId=${sellerId}`;
+                    }}
+                    className="w-full flex items-center justify-center space-x-2 py-3 border-2 border-indigo-500 text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-all"
+                  >
+                    <MessageSquareIcon className="h-5 w-5" />
+                    <span>Trò chuyện với người bán</span>
+                  </button>
+                </div>
+              )}
 
               {/* Features */}
               <div className="grid grid-cols-3 gap-4 pt-5 border-t border-gray-100">

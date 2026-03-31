@@ -71,34 +71,41 @@ export function App() {
             <Route path="/chat" element={<Chat />} />
 
             {/* Seller Pages */}
-            <Route path="/seller/dashboard" element={<SellerRevenue />} />
-            <Route path="/seller/products" element={<SellerProducts />} />
-            <Route path="/seller/products/new" element={<SellerProductForm />} />
-            <Route
-              path="/seller/products/:id/edit"
-              element={<SellerProductForm />}
-            />
-            <Route path="/seller/orders" element={<SellerOrders />} />
-            <Route path="/seller/promotions" element={<SellerPromotions />} />
-            <Route path="/seller/reviews" element={<SellerReviews />} />
-            <Route path="/seller/messages" element={<Chat />} />
+            <Route element={<ProtectedRoute allowedRoles={["seller", "admin"]} />}>
+              <Route path="/seller/dashboard" element={<SellerRevenue />} />
+              <Route path="/seller/products" element={<SellerProducts />} />
+              <Route path="/seller/products/new" element={<SellerProductForm />} />
+              <Route
+                path="/seller/products/:id/edit"
+                element={<SellerProductForm />}
+              />
+              <Route path="/seller/orders" element={<SellerOrders />} />
+              <Route path="/seller/promotions" element={<SellerPromotions />} />
+              <Route path="/seller/reviews" element={<SellerReviews />} />
+              <Route path="/seller/messages" element={<Chat />} />
+            </Route>
 
             {/* Admin Pages */}
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/categories" element={<AdminCategories />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="/admin/products" element={<AdminProducts />} />
-            <Route path="/admin/orders" element={<AdminOrders />} />
-            <Route path="/admin/finance" element={<AdminFinance />} />
-            <Route path="/admin/cms" element={<AdminCMS />} />
+            <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/categories" element={<AdminCategories />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/products" element={<AdminProducts />} />
+              <Route path="/admin/orders" element={<AdminOrders />} />
+              <Route path="/admin/finance" element={<AdminFinance />} />
+              <Route path="/admin/cms" element={<AdminCMS />} />
+            </Route>
 
             {/* Shipper Pages */}
-            <Route path="/shipper/deliveries" element={<ShipperDeliveries />} />
-            <Route
-              path="/shipper/deliveries/:id"
-              element={<ShipperDeliveryDetail />}
-            />
-            <Route path="/shipper/cod" element={<ShipperCOD />} />
+            <Route element={<ProtectedRoute allowedRoles={["shipper", "admin"]} />}>
+              <Route path="/shipper/deliveries" element={<ShipperDeliveries />} />
+              <Route
+                path="/shipper/deliveries/:id"
+                element={<ShipperDeliveryDetail />}
+              />
+              <Route path="/shipper/cod" element={<ShipperCOD />} />
+            </Route>
+
           </Route>
         </Routes>
       </BrowserRouter>

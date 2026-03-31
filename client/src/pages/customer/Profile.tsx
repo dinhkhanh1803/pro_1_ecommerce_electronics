@@ -1,300 +1,205 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { CustomerLayout } from "../../components/CustomerLayout"; // Giả sử bạn có layout này
+import { CustomerLayout } from "../../components/CustomerLayout";
 import { CameraIcon } from "lucide-react";
 
 export function Profile() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [user, setUser] = useState<{
-    id?: string;
-    name: string;
-    email: string;
-    phone?: string;
-    gender?: string;
-    dob?: string;
-    role?: string;
-  } | null>(null);
+  const token = localStorage.getItem("token");
 
+  // User Data
+  const [user, setUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
-    gender: "",
     dob: "",
+    address: ""
   });
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) {
+    if (!token) {
       navigate("/login");
       return;
     }
+    fetchProfile();
+  }, [token, navigate]);
 
-    const parsedUser = JSON.parse(storedUser);
-
-    setUser(parsedUser);
-    setFormData({
-      name: parsedUser.name || "",
-      email: parsedUser.email || "",
-      phone: parsedUser.phone || "",
-      gender: parsedUser.gender || "",
-      dob: parsedUser.dob || "",
-    });
-  }, [navigate]);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const fetchProfile = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/users/profile", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setUser(data);
+      setFormData({
+        name: data.name || "",
+        email: data.email || "",
+        phone: data.phone || "",
+        dob: data.dob ? data.dob.split('T')[0] : "",
+        address: data.addresses?.[0] || ""
+      });
+    } catch (err) { console.error(err); }
+    setLoading(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!user) return;
-
-    const updatedUser = {
-      ...user,
-      ...formData,
-    };
-
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    setUser(updatedUser);
-    setIsEditing(false);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
-
-  const goToRoleDashboard = () => {
-    if (!user?.role) return;
-    switch (user.role) {
-      case "admin":
-        navigate("/admin/dashboard");
-        break;
-      case "seller":
-        navigate("/seller/dashboard");
-        break;
-      case "shipper":
-        navigate("/deliveries");
-        break;
-      default:
-        break;
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/users/profile", {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify(formData)
+      });
+      if (res.ok) {
+        setIsEditing(false);
+        alert("Cập nhật thông tin thành công!");
+        fetchProfile();
+      } else {
+        const errorData = await res.json();
+        alert(`Lỗi: ${errorData.message || "Không thể cập nhật thông tin"}`);
+      }
+    } catch (err) { 
+      console.error(err); 
+      alert("Có lỗi xảy ra khi kết nối tới máy chủ.");
     }
+    setLoading(false);
   };
 
   return (
-    <CustomerLayout title="Personal Information">
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-8">
-        {/* Avatar Upload */}
-        <div className="flex items-center space-x-6">
-          <div className="relative">
-            <img
-              src={`https://ui-avatars.com/api/?name=${formData.name}&background=6366f1&color=fff&size=128`}
-              className="object-cover w-24 h-24 border-4 border-white rounded-full shadow-sm"
-            />
-            {isEditing && (
+    <CustomerLayout title="Thông tin cá nhân">
+      <div className="max-w-4xl">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6">
+          <div className="flex items-center space-x-6">
+            <div className="relative group">
+              <img
+                src={`https://ui-avatars.com/api/?name=${formData.name}&background=6366f1&color=fff&size=200`}
+                className="w-24 h-24 rounded-full border-4 border-white shadow-xl group-hover:opacity-80 transition-opacity"
+              />
+              <button className="absolute bottom-1 right-1 p-2 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors">
+                <CameraIcon className="h-4 w-4" />
+              </button>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">{user?.name}</h2>
+              <p className="text-gray-500 font-medium">{user?.email}</p>
+              <div className="mt-2 flex items-center space-x-2">
+                <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full uppercase tracking-wider">
+                  Member Since {user?.createdAt ? new Date(user.createdAt).getFullYear() : '2024'}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 w-full sm:w-auto mt-6 sm:mt-0">
+            {user?.role === 'admin' && (
               <button
-                type="button"
-                className="absolute bottom-0 right-0 p-2 text-white transition-colors bg-indigo-600 rounded-full shadow-md hover:bg-indigo-700"
+                onClick={() => navigate('/admin/dashboard')}
+                className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100"
               >
-                <CameraIcon className="w-4 h-4" />
+                Quản trị viên
+              </button>
+            )}
+            {user?.role === 'seller' && (
+              <button
+                onClick={() => navigate('/seller/dashboard')}
+                className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+              >
+                Kênh người bán
+              </button>
+            )}
+            {!isEditing && (
+              <button 
+                onClick={() => setIsEditing(true)}
+                className="w-full sm:w-auto px-8 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+              >
+                Chỉnh sửa thông tin
               </button>
             )}
           </div>
-          <div>
-            <h3 className="text-lg font-medium text-gray-900">
-              Profile Picture
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              JPG, GIF or PNG. Max size of 800K
-            </p>
-          </div>
         </div>
 
-        {/* Form Fields */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {/* First Name */}
-          <div>
-            <label
-              htmlFor="firstName"
-              className="block mb-1 text-sm font-medium text-gray-700"
-            >
-              First Name
-            </label>
-            <input
-              type="text"
-              id="firstName"
-              name="firstName"
-              value={formData.name}
-              onChange={handleChange}
-              disabled={!isEditing}
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
-            />
+        <form onSubmit={handleUpdateProfile} className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Họ và tên</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                disabled={!isEditing}
+                className="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 font-medium"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Địa chỉ Email</label>
+              <input
+                type="email"
+                value={formData.email}
+                disabled
+                className="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl opacity-60 cursor-not-allowed font-medium"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Số điện thoại</label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                disabled={!isEditing}
+                placeholder="Chưa cập nhật"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 font-medium"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Ngày sinh</label>
+              <input
+                type="date"
+                value={formData.dob}
+                onChange={e => setFormData({ ...formData, dob: e.target.value })}
+                disabled={!isEditing}
+                className="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 font-medium"
+              />
+            </div>
+            <div className="md:col-span-2 space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Địa chỉ giao hàng</label>
+              <textarea
+                value={formData.address}
+                onChange={e => setFormData({ ...formData, address: e.target.value })}
+                disabled={!isEditing}
+                rows={3}
+                placeholder="Nhập địa chỉ của bạn để thanh toán nhanh hơn"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 font-medium resize-none"
+              />
+            </div>
           </div>
 
-          {/* Last Name */}
-          <div>
-            <label
-              htmlFor="lastName"
-              className="block mb-1 text-sm font-medium text-gray-700"
-            >
-              Last Name
-            </label>
-            <input
-              type="text"
-              id="lastName"
-              name="lastName"
-              value={formData.name}
-              onChange={handleChange}
-              disabled={!isEditing}
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
-            />
-          </div>
-
-          {/* Email */}
-          <div>
-            <label
-              htmlFor="email"
-              className="block mb-1 text-sm font-medium text-gray-700"
-            >
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              disabled={!isEditing}
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
-            />
-          </div>
-
-          {/* Phone */}
-          <div>
-            <label
-              htmlFor="phone"
-              className="block mb-1 text-sm font-medium text-gray-700"
-            >
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              disabled={!isEditing}
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
-            />
-          </div>
-
-          {/* Gender */}
-          <div>
-            <label
-              htmlFor="gender"
-              className="block mb-1 text-sm font-medium text-gray-700"
-            >
-              Gender
-            </label>
-            <select
-              id="gender"
-              name="gender"
-              value={formData.gender}
-              onChange={handleChange}
-              disabled={!isEditing}
-              className="w-full px-4 py-2 border border-gray-300 appearance-none rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
-            >
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          {/* DOB */}
-          <div>
-            <label
-              htmlFor="dob"
-              className="block mb-1 text-sm font-medium text-gray-700"
-            >
-              Date of Birth
-            </label>
-            <input
-              type="date"
-              id="dob"
-              name="dob"
-              value={formData.dob}
-              onChange={handleChange}
-              disabled={!isEditing}
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
-            />
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex flex-wrap justify-end pt-4 space-x-4 border-t border-gray-100">
-          {isEditing ? (
-            <>
+          {isEditing && (
+            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-100">
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="px-6 py-2 font-medium text-gray-700 transition-colors border border-gray-300 rounded-xl hover:bg-gray-50"
+                className="px-8 py-3.5 border border-gray-300 rounded-2xl font-bold text-gray-600 hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                Hủy bỏ
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 font-medium text-white transition-colors bg-indigo-600 rounded-xl hover:bg-indigo-700"
+                disabled={loading}
+                className="px-10 py-3.5 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all disabled:opacity-50"
               >
-                Save Changes
+                {loading ? "Đang lưu..." : "Lưu thay đổi"}
               </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setIsEditing(true)}
-              className="px-6 py-2 font-medium text-white transition-colors bg-indigo-600 rounded-xl hover:bg-indigo-700"
-            >
-              Edit Profile
-            </button>
+            </div>
           )}
-
-          {/* Role-based Dashboard Button */}
-          {user?.role && (
-            <button
-              type="button"
-              onClick={goToRoleDashboard}
-              className={`px-6 py-2 font-medium text-white transition-colors bg-green-600 rounded-xl hover:bg-green-700 ${user.role === 'customer' ? 'hidden' : ''}`}
-            >
-              {user.role === "admin"
-                ? "Admin Dashboard"
-                : user.role === "seller"
-                  ? "Seller Dashboard"
-                  : user.role === "shipper"
-                    ? "Deliveries"
-                    : ""}
-            </button>
-          )}
-
-          {/* Logout Button */}
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="px-6 py-2 font-medium text-white transition-colors bg-red-600 rounded-xl hover:bg-red-700"
-          >
-            Logout
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </CustomerLayout>
   );
 }

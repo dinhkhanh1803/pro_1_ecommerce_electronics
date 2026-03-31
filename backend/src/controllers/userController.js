@@ -73,3 +73,32 @@ export const removeFromWishlist = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// GET /api/users/profile - Lấy thông tin cá nhân của user đang đăng nhập
+export const getProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) { next(err); }
+};
+
+// PUT /api/users/profile - Cập nhật thông tin cá nhân của user
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { name, phone, address } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (name) user.name = name;
+    if (phone) user.phone = phone;
+    if (address) {
+      if (!user.addresses.includes(address)) {
+        user.addresses.push(address);
+      }
+    }
+
+    await user.save();
+    res.json({ message: "Profile updated successfully", user: { id: user._id, name: user.name, phone: user.phone, addresses: user.addresses } });
+  } catch (err) { next(err); }
+};
