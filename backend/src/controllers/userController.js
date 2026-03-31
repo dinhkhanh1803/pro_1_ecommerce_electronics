@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Product from "../models/Product.js";
 
 export const getAllUsers = async (req, res, next) => {
   try {
@@ -33,3 +34,42 @@ export const toggleUserLock = async (req, res, next) => {
     res.json(user);
   } catch (err) { next(err); }
 };
+
+// GET /api/users/wishlist — lấy danh sách wishlist của user đang đăng nhập
+export const getWishlist = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id).populate({
+      path: "wishlist",
+      populate: { path: "category", select: "name slug" },
+    });
+    res.json(user.wishlist || []);
+  } catch (err) { next(err); }
+};
+
+// POST /api/users/wishlist/:productId — toggle thêm/xóa khỏi wishlist
+export const toggleWishlist = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const productId = req.params.productId;
+
+    const exists = user.wishlist.some(id => id.toString() === productId);
+    if (exists) {
+      user.wishlist = user.wishlist.filter(id => id.toString() !== productId);
+    } else {
+      user.wishlist.push(productId);
+    }
+    await user.save();
+    res.json({ wishlisted: !exists, wishlist: user.wishlist });
+  } catch (err) { next(err); }
+};
+
+// DELETE /api/users/wishlist/:productId — xóa 1 sản phẩm khỏi wishlist
+export const removeFromWishlist = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+    user.wishlist = user.wishlist.filter(id => id.toString() !== req.params.productId);
+    await user.save();
+    res.json({ message: "Removed from wishlist", wishlist: user.wishlist });
+  } catch (err) { next(err); }
+};
+

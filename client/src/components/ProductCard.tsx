@@ -1,6 +1,11 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { StarIcon, HeartIcon, ShoppingCartIcon } from 'lucide-react';
+import { useWishlist } from '../hooks/useWishlist';
+
+// Giá trong DB đã là VNĐ — không cần convert
+const formatVND = (price: number) =>
+  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+
 interface ProductCardProps {
   id: string;
   name: string;
@@ -11,6 +16,7 @@ interface ProductCardProps {
   image: string;
   badge?: string;
 }
+
 export function ProductCard({
   id,
   name,
@@ -19,8 +25,17 @@ export function ProductCard({
   rating,
   reviewCount,
   image,
-  badge
+  badge,
 }: ProductCardProps) {
+  const { isWishlisted, toggleWishlist } = useWishlist();
+  const wishlisted = isWishlisted(id);
+
+  const handleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await toggleWishlist(id);
+  };
+
   return (
     <Link to={`/product/${id}`} className="group">
       <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
@@ -29,53 +44,63 @@ export function ProductCard({
           <img
             src={image}
             alt={name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-          
-          {badge &&
-          <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          {badge && (
+            <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
               {badge}
             </span>
-          }
-          <button className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-indigo-50">
-            <HeartIcon className="h-5 w-5 text-gray-600" />
+          )}
+          {/* Wishlist button */}
+          <button
+            onClick={handleWishlist}
+            className={`absolute top-3 right-3 p-2 rounded-full shadow-md transition-all opacity-0 group-hover:opacity-100
+              ${wishlisted ? 'bg-red-50 text-red-500' : 'bg-white text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
+          >
+            <HeartIcon className={`h-4 w-4 ${wishlisted ? 'fill-red-500' : ''}`} />
           </button>
           <button className="absolute bottom-3 right-3 bg-indigo-500 text-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-indigo-600">
-            <ShoppingCartIcon className="h-5 w-5" />
+            <ShoppingCartIcon className="h-4 w-4" />
           </button>
         </div>
 
         {/* Product Info */}
         <div className="p-4">
-          <h3 className="font-medium text-gray-900 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
+          <h3 className="font-medium text-gray-900 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors text-sm">
             {name}
           </h3>
 
           {/* Rating */}
           <div className="flex items-center space-x-1 mb-2">
             <div className="flex">
-              {[...Array(5)].map((_, i) =>
-              <StarIcon
-                key={i}
-                className={`h-4 w-4 ${i < Math.floor(rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
-
-              )}
+              {[...Array(5)].map((_, i) => (
+                <StarIcon
+                  key={i}
+                  className={`h-3.5 w-3.5 ${i < Math.floor(rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
+                />
+              ))}
             </div>
-            <span className="text-sm text-gray-500">({reviewCount})</span>
+            <span className="text-xs text-gray-500">({reviewCount})</span>
           </div>
 
           {/* Price */}
-          <div className="flex items-center space-x-2">
-            <span className="text-xl font-bold text-indigo-600">
-              ${price.toFixed(2)}
+          <div className="flex items-center flex-wrap gap-1.5">
+            <span className="text-base font-bold text-red-600">
+              {formatVND(price)}
             </span>
-            {oldPrice &&
-            <span className="text-sm text-gray-400 line-through">
-                ${oldPrice.toFixed(2)}
-              </span>
-            }
+            {oldPrice && oldPrice > price && (
+              <>
+                <span className="text-xs text-gray-400 line-through">
+                  {formatVND(oldPrice)}
+                </span>
+                <span className="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded">
+                  -{Math.round(((oldPrice - price) / oldPrice) * 100)}%
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
-    </Link>);
-
+    </Link>
+  );
 }
