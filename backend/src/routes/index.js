@@ -8,6 +8,7 @@ import dashboardRoutes from "./dashboardRoutes.js";
 import couponRoutes from "./couponRoutes.js";
 import orderRoutes from "./orderRoutes.js";
 import messageRoutes from "./messageRoutes.js";
+import reviewRoutes from "./reviewRoutes.js";
 import express from "express";
 
 const router = express.Router();
@@ -28,5 +29,6 @@ router.use("/dashboard", dashboardRoutes);
 router.use("/coupons", couponRoutes);
 router.use("/orders", orderRoutes);
 router.use("/messages", messageRoutes);
+router.use("/reviews", reviewRoutes);
 
 export default router;

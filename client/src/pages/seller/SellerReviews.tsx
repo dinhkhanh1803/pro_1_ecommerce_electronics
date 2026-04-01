@@ -45,67 +45,36 @@ const SELLER_SIDEBAR = [
   path: '/seller/messages'
 }];
 
-// Mock Data
-const MOCK_REVIEWS = [
-{
-  id: 'REV-001',
-  productName: 'Wireless Noise-Cancelling Headphones Pro',
-  productImage:
-  'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=150&q=80',
-  customerName: 'Alice Johnson',
-  rating: 5,
-  date: 'Oct 24, 2023',
-  comment:
-  'Absolutely love these headphones! The noise cancellation is top-notch and they are very comfortable to wear for long periods.',
-  reply:
-  'Thank you so much for your kind words, Alice! We are thrilled to hear you are enjoying the headphones.',
-  status: 'replied'
-},
-{
-  id: 'REV-002',
-  productName: 'Smart Watch Series 7',
-  productImage:
-  'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=150&q=80',
-  customerName: 'Bob Brown',
-  rating: 3,
-  date: 'Oct 22, 2023',
-  comment:
-  'The watch is okay, but the battery life could be better. I have to charge it every day.',
-  reply: null,
-  status: 'pending'
-},
-{
-  id: 'REV-003',
-  productName: 'Premium Leather Backpack',
-  productImage:
-  'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=150&q=80',
-  customerName: 'Charlie Davis',
-  rating: 4,
-  date: 'Oct 20, 2023',
-  comment:
-  'Great quality leather and very spacious. The only downside is that it is a bit heavy even when empty.',
-  reply: null,
-  status: 'pending'
-},
-{
-  id: 'REV-004',
-  productName: 'Minimalist Desk Lamp',
-  productImage:
-  'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=150&q=80',
-  customerName: 'Diana Evans',
-  rating: 5,
-  date: 'Oct 18, 2023',
-  comment:
-  'Looks perfect on my desk. The adjustable brightness is a great feature.',
-  reply: 'Hi Diana, we are glad you like the lamp! Thanks for the review.',
-  status: 'replied'
-}];
+// MOCK_REVIEWS removed, fetching from API
 
 export function SellerReviews() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchReviews = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/reviews/seller", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) setReviews(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchReviews();
+  }, []);
+
   const tabs = [
   {
     id: 'all',
@@ -120,15 +89,41 @@ export function SellerReviews() {
     label: 'Replied'
   }];
 
-  const filteredReviews =
-  activeTab === 'all' ?
-  MOCK_REVIEWS :
-  MOCK_REVIEWS.filter((review) => review.status === activeTab);
-  const handleReplySubmit = (id: string) => {
-    console.log(`Submitting reply for review ${id}: ${replyText}`);
+  const filteredReviews = reviews.filter((review) => {
+    const isReplied = !!review.reply;
+    const matchesTab = activeTab === 'all' 
+      ? true 
+      : activeTab === 'replied' 
+        ? isReplied 
+        : !isReplied;
+        
+    const matchesSearch = 
+      (review.product?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (review.customer?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+      
+    return matchesTab && matchesSearch;
+  });
+
+  const handleReplySubmit = async (id: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/api/reviews/${id}/reply`, {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ reply: replyText })
+      });
+      if (res.ok) {
+        const updatedReview = await res.json();
+        setReviews(prev => prev.map(r => r._id === id ? updatedReview : r));
+      }
+    } catch (err) {
+      console.error(err);
+    }
     setReplyingTo(null);
     setReplyText('');
-    // In a real app, this would update the review status and add the reply
   };
   return (
     <DashboardLayout
@@ -176,10 +171,12 @@ export function SellerReviews() {
       {/* Reviews List */}
       <div className="bg-white border-x border-b border-gray-200 rounded-b-xl overflow-hidden shadow-sm">
         <div className="divide-y divide-gray-200">
-          {filteredReviews.length > 0 ?
+          {loading ? (
+            <div className="p-8 text-center text-gray-500 hover:bg-transparent">Đang tải...</div>
+          ) : filteredReviews.length > 0 ?
           filteredReviews.map((review) =>
           <div
-            key={review.id}
+            key={review._id}
             className="p-6 hover:bg-gray-50 transition-colors">
             
                 <div className="flex flex-col md:flex-row gap-6">
@@ -187,16 +184,16 @@ export function SellerReviews() {
                   <div className="w-full md:w-64 shrink-0">
                     <div className="flex items-center space-x-3">
                       <img
-                    src={review.productImage}
-                    alt={review.productName}
+                    src={review.product?.images?.[0] || 'https://via.placeholder.com/150'}
+                    alt={review.product?.name || "Product"}
                     className="w-16 h-16 rounded-lg object-cover border border-gray-200 shrink-0" />
                   
                       <div>
                         <p className="text-sm font-medium text-gray-900 line-clamp-2">
-                          {review.productName}
+                          {review.product?.name || "Sản phẩm đã bị xóa"}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          ID: {review.id}
+                          ID: {review._id.substring(0,8)}...
                         </p>
                       </div>
                     </div>
@@ -207,15 +204,15 @@ export function SellerReviews() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
                         <span className="font-semibold text-gray-900">
-                          {review.customerName}
+                          {review.customer?.name || "Khách hàng"}
                         </span>
                         <span className="text-gray-300">•</span>
                         <span className="text-sm text-gray-500">
-                          {review.date}
+                          {new Date(review.createdAt).toLocaleDateString('vi-VN')}
                         </span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        {review.status === 'pending' &&
+                        {!review.reply &&
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                             Needs Reply
                           </span>
@@ -243,14 +240,14 @@ export function SellerReviews() {
                             Your Reply
                           </span>
                           <span className="text-xs text-gray-500">
-                            {review.date}
+                            {new Date(review.updatedAt).toLocaleDateString('vi-VN')}
                           </span>
                         </div>
                         <p className="text-sm text-gray-700">{review.reply}</p>
                       </div> :
 
                 <div className="mt-4">
-                        {replyingTo === review.id ?
+                        {replyingTo === review._id ?
                   <div className="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100 animate-in fade-in slide-in-from-top-2">
                             <textarea
                       value={replyText}
@@ -267,7 +264,7 @@ export function SellerReviews() {
                                 Cancel
                               </button>
                               <button
-                        onClick={() => handleReplySubmit(review.id)}
+                        onClick={() => handleReplySubmit(review._id)}
                         disabled={!replyText.trim()}
                         className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         
@@ -278,7 +275,7 @@ export function SellerReviews() {
 
                   <button
                     onClick={() => {
-                      setReplyingTo(review.id);
+                      setReplyingTo(review._id);
                       setReplyText('');
                     }}
                     className="flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">

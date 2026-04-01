@@ -72,11 +72,13 @@ export function ProductDetail() {
       })
       .catch(console.error);
 
-    // Mock reviews (thay bằng API khi có bảng Review)
-    setReviews([
-      { id: 1, name: 'Nguyễn Văn An', rating: 5, date: '15/03/2026', comment: 'Sản phẩm tốt lắm, chất lượng cao!', avatar: 'https://i.pravatar.cc/150?img=1' },
-      { id: 2, name: 'Trần Thị Bình', rating: 4, date: '10/03/2026', comment: 'Hài lòng với sản phẩm, giao hàng nhanh.', avatar: 'https://i.pravatar.cc/150?img=5' },
-    ]);
+    // Fetch reviews
+    fetch(`http://localhost:5000/api/reviews/product/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setReviews(data);
+      })
+      .catch(console.error);
   }, [id]);
 
   const handleAddToCart = () => {
@@ -107,24 +109,42 @@ export function ProductDetail() {
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      alert("Vui lòng đăng nhập để đánh giá.");
+      return;
+    }
     if (!reviewComment.trim()) {
       setReviewError('Vui lòng nhập nội dung đánh giá.');
       return;
     }
     setSubmitLoading(true);
     setReviewError('');
-    const newReview = {
-      id: Date.now(),
-      name: user?.name || 'Khách',
-      rating: reviewRating,
-      date: new Date().toLocaleDateString('vi-VN'),
-      comment: reviewComment,
-      avatar: 'https://i.pravatar.cc/150?img=10',
-    };
-    setReviews(prev => [newReview, ...prev]);
-    setReviewComment('');
-    setReviewRating(5);
-    setSubmitLoading(false);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/reviews", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          product: product._id,
+          rating: reviewRating,
+          comment: reviewComment
+        })
+      });
+      if (!res.ok) {
+        throw new Error("Gửi đánh giá thất bại.");
+      }
+      const newReview = await res.json();
+      setReviews(prev => [newReview, ...prev]);
+      setReviewComment('');
+      setReviewRating(5);
+    } catch (err: any) {
+      setReviewError(err.message);
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   // ─── Computed values ────────────────────────────────────────────────────────
@@ -496,16 +516,23 @@ export function ProductDetail() {
               {/* Review list */}
               <div className="space-y-5">
                 {reviews.map(review => (
-                  <div key={review.id} className="border-b border-gray-100 pb-5 last:border-0">
+                  <div key={review._id} className="border-b border-gray-100 pb-5 last:border-0">
                     <div className="flex items-start gap-3">
-                      <img src={review.avatar} alt={review.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                      <img src={'https://i.pravatar.cc/150?u=' + (review.customer?._id || review._id)} alt={review.customer?.name || "User"} className="w-10 h-10 rounded-full object-cover shrink-0" />
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-semibold text-gray-900 text-sm">{review.name}</h4>
-                          <span className="text-xs text-gray-400">{review.date}</span>
+                          <h4 className="font-semibold text-gray-900 text-sm">{review.customer?.name || "Khách"}</h4>
+                          <span className="text-xs text-gray-400">{new Date(review.createdAt).toLocaleDateString('vi-VN')}</span>
                         </div>
                         <StarRating rating={review.rating} />
                         <p className="text-gray-600 text-sm leading-relaxed mt-1">{review.comment}</p>
+                        
+                        {review.reply && (
+                          <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                            <p className="text-xs font-semibold text-gray-500 mb-1">Phản hồi từ người bán:</p>
+                            <p className="text-sm text-gray-800">{review.reply}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

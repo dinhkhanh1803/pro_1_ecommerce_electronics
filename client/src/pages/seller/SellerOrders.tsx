@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
@@ -46,58 +45,36 @@ const SELLER_SIDEBAR = [
   path: '/seller/messages'
 }];
 
-// Mock Data
-const MOCK_ORDERS = [
-{
-  id: 'ORD-2023-1042',
-  customer: 'John Doe',
-  date: 'Oct 24, 2023, 10:30 AM',
-  itemsCount: 2,
-  total: 129.99,
-  status: 'processing',
-  paymentMethod: 'Credit Card'
-},
-{
-  id: 'ORD-2023-1041',
-  customer: 'Jane Smith',
-  date: 'Oct 23, 2023, 2:15 PM',
-  itemsCount: 1,
-  total: 89.5,
-  status: 'pending',
-  paymentMethod: 'PayPal'
-},
-{
-  id: 'ORD-2023-1040',
-  customer: 'Alice Johnson',
-  date: 'Oct 22, 2023, 9:00 AM',
-  itemsCount: 3,
-  total: 245.0,
-  status: 'shipping',
-  paymentMethod: 'COD'
-},
-{
-  id: 'ORD-2023-1039',
-  customer: 'Bob Brown',
-  date: 'Oct 20, 2023, 4:45 PM',
-  itemsCount: 1,
-  total: 45.0,
-  status: 'delivered',
-  paymentMethod: 'Credit Card'
-},
-{
-  id: 'ORD-2023-1038',
-  customer: 'Charlie Davis',
-  date: 'Oct 19, 2023, 11:30 AM',
-  itemsCount: 2,
-  total: 150.0,
-  status: 'cancelled',
-  paymentMethod: 'Credit Card'
-}];
+// Replaced mock data with real data fetch
 
 export function SellerOrders() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/orders/seller", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setOrders(data);
+    } catch (error) {
+      console.error("Error fetching orders", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchOrders();
+  }, []);
+
   const tabs = [
   {
     id: 'all',
@@ -112,7 +89,7 @@ export function SellerOrders() {
     label: 'Processing'
   },
   {
-    id: 'shipping',
+    id: 'shipped',
     label: 'Shipping'
   },
   {
@@ -124,14 +101,33 @@ export function SellerOrders() {
     label: 'Cancelled'
   }];
 
-  const filteredOrders =
-  activeTab === 'all' ?
-  MOCK_ORDERS :
-  MOCK_ORDERS.filter((order) => order.status === activeTab);
-  const handleStatusChange = (orderId: string, newStatus: string) => {
-    console.log(`Update order ${orderId} to ${newStatus}`);
+  const filteredOrders = orders.filter((order) => {
+    const matchesTab = activeTab === 'all' || order.orderStatus === activeTab;
+    const matchesSearch = 
+      order._id.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (order.customer?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesTab && matchesSearch;
+  });
+
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      
+      if (res.ok) {
+        setOrders(orders.map(order => order._id === orderId ? { ...order, orderStatus: newStatus } : order));
+      }
+    } catch (error) {
+      console.error("Error updating status", error);
+    }
     setOpenDropdownId(null);
-    // In a real app, this would trigger an API call to update the order status
   };
   return (
     <DashboardLayout sidebarItems={SELLER_SIDEBAR} title="Orders" role="Seller">
@@ -178,7 +174,7 @@ export function SellerOrders() {
 
       {/* Orders Table */}
       <div className="bg-white border-x border-b border-gray-200 rounded-b-xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto relative z-10 min-h-[300px]">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
@@ -206,37 +202,41 @@ export function SellerOrders() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredOrders.length > 0 ?
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-gray-500">Loading orders...</td>
+                </tr>
+              ) : filteredOrders.length > 0 ?
               filteredOrders.map((order) =>
               <tr
-                key={order.id}
+                key={order._id}
                 className="hover:bg-gray-50 transition-colors">
                 
                     <td className="p-4">
-                      <Link
-                    to={`/seller/orders/${order.id}`}
+                      <button
+                    onClick={() => setSelectedOrder(order)}
                     className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
                     
-                        {order.id}
-                      </Link>
+                        {order._id.substring(0, 10)}...
+                      </button>
                     </td>
-                    <td className="p-4 text-sm text-gray-600">{order.date}</td>
+                    <td className="p-4 text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</td>
                     <td className="p-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {order.customer}
+                        {order.customer?.name || "Unknown Customer"}
                       </div>
                       <div className="text-xs text-gray-500">
                         {order.paymentMethod}
                       </div>
                     </td>
                     <td className="p-4 text-sm text-gray-600">
-                      {order.itemsCount} items
+                      {order.products?.reduce((sum: number, p: any) => sum + p.quantity, 0) || 0} items
                     </td>
                     <td className="p-4 text-sm font-medium text-gray-900">
-                      ${order.total.toFixed(2)}
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount || 0)}
                     </td>
                     <td className="p-4">
-                      <StatusBadge status={order.status as any} />
+                      <StatusBadge status={order.orderStatus as any} />
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
@@ -245,7 +245,7 @@ export function SellerOrders() {
                           <button
                         onClick={() =>
                         setOpenDropdownId(
-                          openDropdownId === order.id ? null : order.id
+                          openDropdownId === order._id ? null : order._id
                         )
                         }
                         className="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
@@ -254,21 +254,21 @@ export function SellerOrders() {
                             <ChevronDownIcon className="h-4 w-4" />
                           </button>
 
-                          {openDropdownId === order.id &&
+                          {openDropdownId === order._id &&
                       <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg py-1 border border-gray-100 z-10">
                               {[
                         'pending',
                         'processing',
-                        'shipping',
+                        'shipped',
                         'delivered',
                         'cancelled'].
                         map((status) =>
                         <button
                           key={status}
                           onClick={() =>
-                          handleStatusChange(order.id, status)
+                          handleStatusChange(order._id, status)
                           }
-                          className={`block w-full text-left px-4 py-2 text-sm capitalize hover:bg-gray-50 ${order.status === status ? 'text-indigo-600 font-medium bg-indigo-50/50' : 'text-gray-700'}`}>
+                          className={`block w-full text-left px-4 py-2 text-sm capitalize hover:bg-gray-50 ${order.orderStatus === status ? 'text-indigo-600 font-medium bg-indigo-50/50' : 'text-gray-700'}`}>
                           
                                   {status}
                                 </button>
@@ -277,13 +277,13 @@ export function SellerOrders() {
                       }
                         </div>
 
-                        <Link
-                      to={`/seller/orders/${order.id}`}
+                        <button
+                      onClick={() => setSelectedOrder(order)}
                       className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
                       title="View Details">
                       
                           <EyeIcon className="h-5 w-5" />
-                        </Link>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -301,7 +301,7 @@ export function SellerOrders() {
 
         {/* Pagination */}
         {filteredOrders.length > 0 &&
-        <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
+        <div className="relative z-0 px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
             <p className="text-sm text-gray-500">
               Showing <span className="font-medium text-gray-900">1</span> to{' '}
               <span className="font-medium text-gray-900">
@@ -330,6 +330,85 @@ export function SellerOrders() {
           </div>
         }
       </div>
+
+      {/* Order Details Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-in zoom-in-95">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center shrink-0">
+              <h2 className="text-xl font-semibold text-gray-900">Order Details</h2>
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl">
+                <div>
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Order Info</h3>
+                  <div className="space-y-1">
+                    <p className="text-sm"><span className="text-gray-500">ID:</span> <span className="font-medium">{selectedOrder._id}</span></p>
+                    <p className="text-sm"><span className="text-gray-500">Date:</span> <span className="font-medium">{new Date(selectedOrder.createdAt).toLocaleString()}</span></p>
+                    <p className="text-sm"><span className="text-gray-500">Status:</span> <span className="font-medium capitalize text-indigo-600">{selectedOrder.orderStatus}</span></p>
+                    <p className="text-sm"><span className="text-gray-500">Payment:</span> <span className="font-medium">{selectedOrder.paymentMethod}</span></p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Customer Info</h3>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">{selectedOrder.customer?.name || 'Unknown'}</p>
+                    <p className="text-sm text-gray-600">{selectedOrder.customer?.email}</p>
+                    <p className="text-sm text-gray-600">{selectedOrder.customer?.phone}</p>
+                    <p className="text-sm text-gray-600 mt-2 line-clamp-2" title={selectedOrder.shippingAddress}>
+                      <span className="text-gray-500">Address:</span> {selectedOrder.shippingAddress}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Order Items</h3>
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-gray-50 border-b border-gray-200 text-gray-500">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">Product</th>
+                        <th className="px-4 py-3 font-medium text-center">Qty</th>
+                        <th className="px-4 py-3 font-medium text-right">Price</th>
+                        <th className="px-4 py-3 font-medium text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {selectedOrder.products?.map((item: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 flex items-center space-x-3">
+                            <img src={item.product?.images?.[0] || 'https://via.placeholder.com/40'} alt="product" className="w-10 h-10 rounded-lg object-cover border border-gray-200" />
+                            <span className="font-medium text-gray-900 line-clamp-1">{item.product?.name || 'Product'}</span>
+                          </td>
+                          <td className="px-4 py-3 text-center text-gray-600">{item.quantity}</td>
+                          <td className="px-4 py-3 text-right text-gray-600">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}</td>
+                          <td className="px-4 py-3 text-right font-medium text-gray-900">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price * item.quantity)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 bg-gray-50 shrink-0 flex justify-between items-center rounded-b-2xl">
+              <span className="font-medium text-gray-500 uppercase tracking-wider text-sm">Total Amount</span>
+              <span className="text-2xl font-bold text-indigo-600">
+                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(selectedOrder.totalAmount || 0)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>);
 
 }

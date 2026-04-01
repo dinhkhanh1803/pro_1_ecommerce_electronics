@@ -101,6 +101,24 @@ export function SellerProducts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [productsList, setProductsList] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  // Filter products based on search
+  const filteredProducts = productsList.filter(product =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (product._id && product._id.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  // Pagination logic
+  const totalItems = filteredProducts.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const fetchProducts = async () => {
     try {
@@ -133,10 +151,10 @@ export function SellerProducts() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedProducts.length === productsList.length) {
+    if (selectedProducts.length === paginatedProducts.length) {
       setSelectedProducts([]);
     } else {
-      setSelectedProducts(productsList.map((p) => p._id));
+      setSelectedProducts(paginatedProducts.map((p) => p._id));
     }
   };
   const toggleSelectProduct = (id: string) => {
@@ -186,9 +204,9 @@ export function SellerProducts() {
             {selectedProducts.length} product(s) selected
           </span>
           <div className="flex space-x-2">
-            <button className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+            {/* <button className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
               Change Status
-            </button>
+            </button> */}
             <button className="px-3 py-1.5 bg-white border border-red-200 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">
               Delete
             </button>
@@ -206,8 +224,8 @@ export function SellerProducts() {
                   <input
                     type="checkbox"
                     checked={
-                    selectedProducts.length === productsList.length &&
-                    productsList.length > 0
+                    selectedProducts.length === paginatedProducts.length &&
+                    paginatedProducts.length > 0
                     }
                     onChange={toggleSelectAll}
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer" />
@@ -226,7 +244,7 @@ export function SellerProducts() {
                   Stock
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Sales
+                  Sale
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Status
@@ -235,7 +253,7 @@ export function SellerProducts() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {productsList.map((product) =>
+              {paginatedProducts.map((product) =>
               <tr
                 key={product._id}
                 className="hover:bg-gray-50 transition-colors group">
@@ -267,7 +285,7 @@ export function SellerProducts() {
                     {product.category?.name || "Unknown"}
                   </td>
                   <td className="p-4 text-sm font-medium text-gray-900">
-                    ${product.price ? product.price.toFixed(2) : "0.00"}
+                    {product.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price) : "0 ₫"}
                   </td>
                   <td className="p-4">
                     <span
@@ -276,7 +294,13 @@ export function SellerProducts() {
                       {product.stock}
                     </span>
                   </td>
-                  <td className="p-4 text-sm text-gray-600">{product.sales}</td>
+                  <td className="p-4 text-sm text-gray-600">
+                    {product.compareAtPrice && product.compareAtPrice > product.price ? (
+                      <span className="text-red-600 font-medium">-{Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}%</span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
                   <td className="p-4">
                     <StatusBadge status={product.status as any} />
                   </td>
@@ -307,15 +331,21 @@ export function SellerProducts() {
         {/* Pagination */}
         <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
           <p className="text-sm text-gray-500">
-            Showing <span className="font-medium text-gray-900">1</span> to{' '}
-            <span className="font-medium text-gray-900">4</span> of{' '}
-            <span className="font-medium text-gray-900">4</span> results
+            Showing <span className="font-medium text-gray-900">{totalItems === 0 ? 0 : startIndex + 1}</span> to{' '}
+            <span className="font-medium text-gray-900">{Math.min(startIndex + ITEMS_PER_PAGE, totalItems)}</span> of{' '}
+            <span className="font-medium text-gray-900">{totalItems}</span> results
           </p>
           <div className="flex space-x-2">
-            <button className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50">
               Previous
             </button>
-            <button className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50">
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50">
               Next
             </button>
           </div>

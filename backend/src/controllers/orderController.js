@@ -40,3 +40,24 @@ export const createOrder = async (req, res, next) => {
     res.status(201).json(order);
   } catch (err) { next(err); }
 };
+
+// PUT /api/orders/:id/status - Cập nhật trạng thái đơn hàng (Dành cho Seller/Admin)
+export const updateOrderStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (order.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Not authorized to update this order" });
+    }
+
+    order.orderStatus = status;
+    await order.save();
+    
+    res.json(order);
+  } catch (err) { next(err); }
+};
