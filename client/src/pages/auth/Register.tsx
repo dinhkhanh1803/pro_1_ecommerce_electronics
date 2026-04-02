@@ -29,7 +29,7 @@ export function Register() {
     setError("");
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+      setError("Mật khẩu không khớp");
       return;
     }
 
@@ -119,12 +119,12 @@ export function Register() {
         {/* Card */}
         <div className="p-8 bg-white shadow-lg rounded-xl">
           <h1 className="mb-2 text-2xl font-bold text-gray-900">
-            {step === 1 ? "Create Account" : "Verify OTP"}
+            {step === 1 ? "Tạo tài khoản" : "Xác thực OTP"}
           </h1>
           <p className="mb-6 text-gray-600">
             {step === 1
-              ? "Join ShopHub and start shopping"
-              : `OTP đã được gửi đến ${formData.email}`}
+              ? "Tham gia và bắt đầu mua sắm"
+              : `Mã OTP đã được gửi đến ${formData.email}`}
           </p>
 
           {step === 1 ? (
@@ -132,7 +132,7 @@ export function Register() {
               {/* Full Name */}
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">
-                  Full Name
+                  Họ và tên
                 </label>
                 <div className="relative">
                   <input
@@ -141,7 +141,7 @@ export function Register() {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    placeholder="John Doe"
+                    placeholder="Nguyễn Văn A"
                     className="w-full px-4 py-3 border border-gray-300 pl-11 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     required
                   />
@@ -152,7 +152,7 @@ export function Register() {
               {/* Email */}
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">
-                  Email Address
+                  Email
                 </label>
                 <div className="relative">
                   <input
@@ -172,7 +172,7 @@ export function Register() {
               {/* Password */}
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">
-                  Password
+                  Mật khẩu
                 </label>
                 <div className="relative">
                   <input
@@ -181,7 +181,7 @@ export function Register() {
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
-                    placeholder="Create a password"
+                    placeholder="Tạo mật khẩu"
                     className="w-full px-4 py-3 border border-gray-300 pl-11 pr-11 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     required
                   />
@@ -203,7 +203,7 @@ export function Register() {
               {/* Confirm Password */}
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">
-                  Confirm Password
+                  Xác nhận mật khẩu
                 </label>
                 <div className="relative">
                   <input
@@ -215,7 +215,7 @@ export function Register() {
                         confirmPassword: e.target.value,
                       })
                     }
-                    placeholder="Confirm your password"
+                    placeholder="Nhập lại mật khẩu"
                     className="w-full px-4 py-3 border border-gray-300 pl-11 pr-11 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     required
                   />
@@ -240,7 +240,7 @@ export function Register() {
                 disabled={loading}
                 className="w-full py-3 font-semibold text-white transition-colors bg-indigo-500 rounded-xl hover:bg-indigo-600"
               >
-                {loading ? "Sending OTP..." : "Create Account"}
+                {loading ? "Đang gửi mã OTP..." : "Tạo tài khoản"}
               </button>
 
               {error && <p className="mt-2 text-red-500">{error}</p>}
@@ -249,7 +249,7 @@ export function Register() {
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">
-                  Enter OTP
+                  Nhập mã OTP
                 </label>
                 <input
                   type="text"
@@ -266,7 +266,7 @@ export function Register() {
                 disabled={loading}
                 className="w-full py-3 font-semibold text-white transition-colors bg-indigo-500 rounded-xl hover:bg-indigo-600"
               >
-                {loading ? "Verifying OTP..." : "Verify OTP"}
+                {loading ? "Đang xác thực..." : "Xác thực OTP"}
               </button>
 
               {error && <p className="mt-2 text-red-500">{error}</p>}
@@ -280,7 +280,7 @@ export function Register() {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-4 text-gray-500 bg-white">
-                Or sign up with
+                Hoặc đăng ký với
               </span>
             </div>
           </div>
@@ -322,12 +322,12 @@ export function Register() {
           {/* Sign in link */}
           {step === 1 && (
             <p className="mt-6 text-sm text-center text-gray-600">
-              Already have an account?{" "}
+              Đã có tài khoản?{" "}
               <Link
                 to="/login"
                 className="font-semibold text-indigo-600 hover:text-indigo-700"
               >
-                Sign in
+                Đăng nhập
               </Link>
             </p>
           )}

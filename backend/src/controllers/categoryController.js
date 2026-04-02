@@ -6,13 +6,13 @@ function generateSlug(name) {
 
 export const createCategory = async (req, res, next) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, image } = req.body;
     const slug = generateSlug(name);
     const existing = await Category.findOne({ slug });
     if (existing) {
       return res.status(400).json({ message: "Category already exists" });
     }
-    const category = await Category.create({ name, slug, description });
+    const category = await Category.create({ name, slug, description, image });
     res.status(201).json(category);
   } catch (error) {
     next(error);
@@ -40,8 +40,8 @@ export const getCategoryById = async (req, res, next) => {
 
 export const updateCategory = async (req, res, next) => {
   try {
-    const { name, description } = req.body;
-    let updateData = { description };
+    const { name, description, image } = req.body;
+    let updateData = { description, image };
     if (name) {
       updateData.name = name;
       updateData.slug = generateSlug(name);

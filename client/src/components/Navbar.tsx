@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { useSiteSettings } from "../context/SiteSettingsContext";
 export function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCategories, setShowCategories] = useState(false);
@@ -16,6 +17,7 @@ export function Navbar() {
 
   const { cartCount } = useCart();
   const { user, logout } = useAuth();
+  const { settings: siteSettings } = useSiteSettings();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,10 +40,14 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="flex items-center justify-center w-8 h-8 bg-indigo-500 rounded-lg">
-              <span className="text-xl font-bold text-white">S</span>
-            </div>
-            <span className="text-xl font-bold text-gray-900">ShopHub</span>
+            {siteSettings.primaryLogo ? (
+              <img src={siteSettings.primaryLogo} alt={siteSettings.siteName} className="h-8 w-8 rounded-lg object-cover" />
+            ) : (
+              <div className="flex items-center justify-center w-8 h-8 bg-indigo-500 rounded-lg">
+                <span className="text-xl font-bold text-white">{siteSettings.siteName?.charAt(0) || 'S'}</span>
+              </div>
+            )}
+            <span className="text-xl font-bold text-gray-900">{siteSettings.siteName}</span>
           </Link>
 
           {/* Search Bar */}
@@ -49,7 +55,7 @@ export function Navbar() {
             <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"
-                placeholder="Search products..."
+                placeholder="Tìm kiếm sản phẩm..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -69,7 +75,7 @@ export function Navbar() {
                 className="flex items-center space-x-1 text-gray-700 transition-colors hover:text-indigo-500"
               >
                 <MenuIcon className="w-5 h-5" />
-                <span className="hidden md:inline">Categories</span>
+                <span className="hidden md:inline">Danh mục</span>
                 <ChevronDownIcon className="w-4 h-4" />
               </button>
               {showCategories && (
@@ -134,7 +140,7 @@ export function Navbar() {
                     to="/register"
                     className="px-4 py-2 font-medium text-white transition-colors bg-indigo-500 rounded-xl hover:bg-indigo-600"
                   >
-                    Register
+                    Đăng ký
                   </Link>
                 </>
               )}

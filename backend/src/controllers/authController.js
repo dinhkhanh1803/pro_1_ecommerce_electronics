@@ -92,6 +92,10 @@ export const loginUser = async (req, res) => {
         .status(400)
         .json({ message: "Email chưa xác thực hoặc không tồn tại" });
 
+    if (user.status === "locked") {
+      return res.status(403).json({ message: "Tài khoản của bạn đã bị khóa" });
+    }
+
     const isMatch = await user.matchPassword(password);
     if (!isMatch)
       return res

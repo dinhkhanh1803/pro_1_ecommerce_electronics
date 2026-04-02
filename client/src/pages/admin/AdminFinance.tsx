@@ -54,11 +54,11 @@ const ADMIN_SIDEBAR = [
   label: 'Orders',
   path: '/admin/orders'
 },
-{
-  icon: DollarSignIcon,
-  label: 'Finance',
-  path: '/admin/finance'
-},
+// {
+//   icon: DollarSignIcon,
+//   label: 'Finance',
+//   path: '/admin/finance'
+// },
 {
   icon: LayoutTemplateIcon,
   label: 'CMS',

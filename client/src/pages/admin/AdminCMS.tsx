@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
+import { useSiteSettings } from '../../context/SiteSettingsContext';
 import {
   UsersIcon,
   PackageIcon,
@@ -15,7 +16,8 @@ import {
   ImagePlusIcon,
   SettingsIcon,
   GlobeIcon,
-  MailIcon } from
+  MailIcon,
+  XIcon } from
 'lucide-react';
 const ADMIN_SIDEBAR = [
 {
@@ -43,11 +45,11 @@ const ADMIN_SIDEBAR = [
   label: 'Orders',
   path: '/admin/orders'
 },
-{
-  icon: DollarSignIcon,
-  label: 'Finance',
-  path: '/admin/finance'
-},
+// {
+//   icon: DollarSignIcon,
+//   label: 'Finance',
+//   path: '/admin/finance'
+// },
 {
   icon: LayoutTemplateIcon,
   label: 'CMS',
@@ -87,13 +89,38 @@ const MOCK_BANNERS = [
 export function AdminCMS() {
   const [activeTab, setActiveTab] = useState('banners');
   const [banners, setBanners] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>({});
+  const [loading, setLoading] = useState(false);
+  const { refreshSettings } = useSiteSettings();
+
+  // Banner Modal State
+  const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
+  const [editingBanner, setEditingBanner] = useState<any>(null);
+  const [bannerForm, setBannerForm] = useState({
+    title: '',
+    subtitle: '',
+    image: '',
+    link: '/',
+    cta: 'Shop Now',
+    type: 'hero',
+    status: 'active',
+    order: 0
+  });
 
   const fetchBanners = async () => {
     try {
       const res = await fetch("http://localhost:5000/api/cms/banners");
       const data = await res.json();
       setBanners(data);
+    } catch (err) {}
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/categories");
+      const data = await res.json();
+      setCategories(data);
     } catch (err) {}
   };
 
@@ -108,6 +135,7 @@ export function AdminCMS() {
   useEffect(() => {
     fetchBanners();
     fetchSettings();
+    fetchCategories();
   }, []);
   const tabs = [
   {
@@ -115,8 +143,8 @@ export function AdminCMS() {
     label: 'Homepage Banners'
   },
   {
-    id: 'pages',
-    label: 'Static Pages'
+    id: 'categories',
+    label: 'Category Display'
   },
   {
     id: 'settings',
@@ -135,16 +163,110 @@ export function AdminCMS() {
     } catch (err) {}
   };
 
-  const handleDeleteBanner = async (id: string) => {
-    if (confirm("Are you sure?")) {
-      try {
-        const token = localStorage.getItem("token");
-        await fetch(`http://localhost:5000/api/cms/banners/${id}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` }
+  const handleOpenBannerModal = (banner: any = null) => {
+    if (banner) {
+      setEditingBanner(banner);
+      setBannerForm({
+        title: banner.title,
+        subtitle: banner.subtitle || '',
+        image: banner.image,
+        link: banner.link,
+        cta: banner.cta || 'Shop Now',
+        type: banner.type || 'hero',
+        status: banner.status,
+        order: banner.order
+      });
+    } else {
+      setEditingBanner(null);
+      setBannerForm({
+        title: '',
+        subtitle: '',
+        image: '',
+        link: '/',
+        cta: 'Shop Now',
+        type: 'hero',
+        status: 'active',
+        order: banners.length + 1
+      });
+    }
+    setIsBannerModalOpen(true);
+  };
+
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>, target: 'banner' | 'category', categoryId?: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/products/upload-image", {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      const data = await res.json();
+      
+      if (target === 'banner') {
+        setBannerForm(prev => ({ ...prev, image: data.url }));
+      } else if (target === 'category' && categoryId) {
+        // Update category image immediately
+        await fetch(`http://localhost:5000/api/categories/${categoryId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ image: data.url })
         });
+        fetchCategories();
+      }
+    } catch (err) {
+      console.error("Upload failed", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem("token");
+      const url = editingBanner 
+        ? `http://localhost:5000/api/cms/banners/${editingBanner._id}`
+        : "http://localhost:5000/api/cms/banners";
+      
+      const res = await fetch(url, {
+        method: editingBanner ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(bannerForm)
+      });
+
+      if (res.ok) {
+        setIsBannerModalOpen(false);
         fetchBanners();
-      } catch (err) {}
+      }
+    } catch (err) {}
+  };
+
+  const handleUploadSettingsImage = async (e: React.ChangeEvent<HTMLInputElement>, field: 'primaryLogo' | 'favicon') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLoading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/products/upload-image", {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      const data = await res.json();
+      setSettings((prev: any) => ({ ...prev, [field]: data.url }));
+    } catch (err) {
+      console.error("Upload failed", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -156,8 +278,8 @@ export function AdminCMS() {
         siteName: (document.getElementById('siteName') as HTMLInputElement)?.value,
         supportEmail: (document.getElementById('supportEmail') as HTMLInputElement)?.value,
         siteDescription: (document.getElementById('siteDescription') as HTMLTextAreaElement)?.value,
-        commissionRate: Number((document.getElementById('commissionRate') as HTMLInputElement)?.value),
-        currency: (document.getElementById('currency') as HTMLSelectElement)?.value,
+        primaryLogo: settings.primaryLogo || '',
+        favicon: settings.favicon || '',
       };
       
       const res = await fetch('http://localhost:5000/api/cms/settings', {
@@ -165,7 +287,10 @@ export function AdminCMS() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload)
       });
-      if (res.ok) alert("Settings saved successfully!");
+      if (res.ok) {
+        refreshSettings();
+        alert("Settings saved successfully!");
+      }
     } catch (err) {}
   };
   return (
@@ -198,7 +323,10 @@ export function AdminCMS() {
             <h3 className="text-lg font-semibold text-gray-900">
               Manage Banners
             </h3>
-            <button className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-medium">
+            <button 
+              onClick={() => handleOpenBannerModal()}
+              className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-medium"
+            >
               <PlusIcon className="h-4 w-4 mr-2" />
               Add Banner
             </button>
@@ -207,10 +335,10 @@ export function AdminCMS() {
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             <div className="p-4 bg-gray-50 border-b border-gray-200 text-sm font-medium text-gray-500 grid grid-cols-12 gap-4">
               <div className="col-span-1">Order</div>
-              <div className="col-span-4">Banner</div>
-              <div className="col-span-3">Link</div>
+              <div className="col-span-4">Banner Info</div>
+              <div className="col-span-2">Type</div>
               <div className="col-span-2">Status</div>
-              <div className="col-span-2 text-right">Actions</div>
+              <div className="col-span-3 text-right">Actions</div>
             </div>
 
             <div className="divide-y divide-gray-200">
@@ -229,24 +357,24 @@ export function AdminCMS() {
                   </div>
 
                   <div className="col-span-4 flex items-center space-x-4">
-                    <div className="w-24 h-12 rounded-lg border border-gray-200 overflow-hidden shrink-0">
+                    <div className="w-24 h-12 rounded-lg border border-gray-200 overflow-hidden shrink-0 bg-gray-100">
                       <img
                     src={banner.image}
                     alt={banner.title}
                     className="w-full h-full object-cover" />
                   
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">
                         {banner.title}
                       </p>
-                      <p className="text-xs text-gray-500">{banner._id}</p>
+                      <p className="text-xs text-gray-500 truncate">{banner.link}</p>
                     </div>
                   </div>
 
-                  <div className="col-span-3 flex items-center">
-                    <span className="text-sm text-gray-600 truncate">
-                      {banner.link}
+                  <div className="col-span-2 flex items-center">
+                    <span className="text-xs font-bold uppercase tracking-wider px-2 py-1 bg-gray-100 rounded-md text-gray-600">
+                      {banner.type}
                     </span>
                   </div>
 
@@ -261,43 +389,82 @@ export function AdminCMS() {
                     </button>
                   </div>
 
-                  <div className="col-span-2 flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="col-span-3 flex items-center justify-end space-x-2">
                     <button
-                  className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
-                  title="Edit">
-                  
+                      onClick={() => handleOpenBannerModal(banner)}
+                      className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
+                      title="Edit"
+                    >
                       <EditIcon className="h-4 w-4" />
                     </button>
                     <button
-                  onClick={() => handleDeleteBanner(banner._id)}
-                  className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                  title="Delete">
-                  
+                      onClick={() => {
+                        if (confirm("Are you sure?")) {
+                          const token = localStorage.getItem("token");
+                          fetch(`http://localhost:5000/api/cms/banners/${banner._id}`, {
+                            method: 'DELETE',
+                            headers: { Authorization: `Bearer ${token}` }
+                          }).then(() => fetchBanners());
+                        }
+                      }}
+                      className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                      title="Delete"
+                    >
                       <Trash2Icon className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
+            )}
+            {banners.length === 0 && (
+              <div className="p-8 text-center text-gray-500 font-medium italic">
+                Chưa có banner nào được tạo.
+              </div>
             )}
             </div>
           </div>
         </div>
       }
 
-      {activeTab === 'pages' &&
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-50 mb-4">
-            <LayoutTemplateIcon className="h-8 w-8 text-indigo-600" />
+      {activeTab === 'categories' &&
+        <div className="space-y-6">
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="p-4 bg-gray-50 border-b border-gray-200 text-sm font-medium text-gray-500 grid grid-cols-12 gap-4">
+              <div className="col-span-5">Category Name / Slug</div>
+              <div className="col-span-4">Display Image</div>
+              <div className="col-span-3 text-right">Actions</div>
+            </div>
+            <div className="divide-y divide-gray-200">
+              {categories.map((cat) => (
+                <div key={cat._id} className="p-4 grid grid-cols-12 gap-4 items-center">
+                   <div className="col-span-5">
+                      <p className="font-bold text-gray-900">{cat.name}</p>
+                      <p className="text-xs text-gray-400 font-mono">/{cat.slug}</p>
+                   </div>
+                   <div className="col-span-4">
+                      {cat.image ? (
+                        <img src={cat.image} className="h-10 w-10 rounded-lg object-cover border border-gray-100" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400">
+                          <PackageIcon className="h-5 w-5" />
+                        </div>
+                      )}
+                   </div>
+                   <div className="col-span-3 text-right">
+                      <label className="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors shadow-sm">
+                        <ImagePlusIcon className="h-3 w-3 mr-2" />
+                        Change Image
+                        <input 
+                          type="file" 
+                          className="hidden" 
+                          onChange={(e) => handleUploadImage(e, 'category', cat._id)}
+                          accept="image/*"
+                        />
+                      </label>
+                   </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Static Pages Editor
-          </h3>
-          <p className="text-gray-500 max-w-sm mx-auto mb-6">
-            Manage content for About Us, Terms of Service, Privacy Policy, and
-            other static pages.
-          </p>
-          <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">
-            Open Page Builder
-          </button>
         </div>
       }
 
@@ -358,48 +525,40 @@ export function AdminCMS() {
                   <p className="text-sm font-medium text-gray-700 mb-2">
                     Primary Logo
                   </p>
-                  <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-gray-500 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer bg-gray-50">
-                    <ImagePlusIcon className="h-6 w-6 mb-2" />
-                    <span className="text-xs font-medium">Upload Logo</span>
-                  </div>
+                  <label className="cursor-pointer">
+                    <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-gray-500 hover:border-indigo-400 hover:bg-indigo-50 transition-colors bg-gray-50 overflow-hidden">
+                      {settings.primaryLogo ? (
+                        <img src={settings.primaryLogo} alt="Logo" className="w-full h-full object-contain p-2" />
+                      ) : (
+                        <>
+                          <ImagePlusIcon className="h-6 w-6 mb-2" />
+                          <span className="text-xs font-medium">Upload Logo</span>
+                        </>
+                      )}
+                    </div>
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUploadSettingsImage(e, 'primaryLogo')} />
+                  </label>
+                  {settings.primaryLogo && (
+                    <button type="button" onClick={() => setSettings((prev: any) => ({...prev, primaryLogo: ''}))} className="text-xs text-red-500 mt-2 hover:underline">Remove</button>
+                  )}
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-2">
                     Favicon
                   </p>
-                  <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-gray-500 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer bg-gray-50">
-                    <ImagePlusIcon className="h-4 w-4" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Platform Fees */}
-            <div className="border-t border-gray-200 pt-8">
-              <h4 className="text-md font-medium text-gray-900 mb-4">
-                Platform Configuration
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Default Commission Rate (%)
+                  <label className="cursor-pointer">
+                    <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-gray-500 hover:border-indigo-400 hover:bg-indigo-50 transition-colors bg-gray-50 overflow-hidden">
+                      {settings.favicon ? (
+                        <img src={settings.favicon} alt="Favicon" className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <ImagePlusIcon className="h-4 w-4" />
+                      )}
+                    </div>
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => handleUploadSettingsImage(e, 'favicon')} />
                   </label>
-                  <input
-                  type="number"
-                  id="commissionRate"
-                  defaultValue={settings.commissionRate || 5}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
-                
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Currency
-                  </label>
-                  <select id="currency" defaultValue={settings.currency || "USD"} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none bg-white">
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
-                  </select>
+                  {settings.favicon && (
+                    <button type="button" onClick={() => setSettings((prev: any) => ({...prev, favicon: ''}))} className="text-xs text-red-500 mt-2 hover:underline">Remove</button>
+                  )}
                 </div>
               </div>
             </div>
@@ -415,6 +574,121 @@ export function AdminCMS() {
           </form>
         </div>
       }
+
+      {/* Banner Modal */}
+      {isBannerModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full flex flex-col animate-in fade-in zoom-in duration-200 relative overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900">{editingBanner ? 'Edit Banner' : 'Add New Banner'}</h3>
+              <button 
+                onClick={() => setIsBannerModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <XIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveBanner} className="p-6 space-y-4">
+               <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Banner Title</label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={bannerForm.title}
+                      onChange={(e) => setBannerForm({...bannerForm, title: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Subtitle</label>
+                    <input 
+                      type="text" 
+                      value={bannerForm.subtitle}
+                      onChange={(e) => setBannerForm({...bannerForm, subtitle: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <select 
+                      value={bannerForm.type}
+                      onChange={(e) => setBannerForm({...bannerForm, type: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                    >
+                      <option value="hero">Hero Slider</option>
+                      <option value="promo_mid">Promo Middle</option>
+                      <option value="promo_bottom">Promo Bottom</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Order Index</label>
+                    <input 
+                      type="number" 
+                      value={bannerForm.order}
+                      onChange={(e) => setBannerForm({...bannerForm, order: Number(e.target.value)})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                     <label className="block text-sm font-medium text-gray-700 mb-1">Banner Image</label>
+                     <div className="flex items-center gap-4">
+                        <div className="w-24 h-14 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
+                          {bannerForm.image ? (
+                            <img src={bannerForm.image} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400">
+                               <ImagePlusIcon className="h-6 w-6" />
+                            </div>
+                          )}
+                        </div>
+                        <label className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 text-center cursor-pointer hover:bg-gray-100 transition-colors">
+                          {loading ? 'Uploading...' : 'Choose File'}
+                          <input type="file" className="hidden" onChange={(e) => handleUploadImage(e, 'banner')} accept="image/*" />
+                        </label>
+                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">CTA Text</label>
+                    <input 
+                      type="text" 
+                      value={bannerForm.cta}
+                      onChange={(e) => setBannerForm({...bannerForm, cta: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Link URL</label>
+                    <input 
+                      type="text" 
+                      value={bannerForm.link}
+                      onChange={(e) => setBannerForm({...bannerForm, link: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+               </div>
+
+               <div className="pt-4 flex justify-end gap-3 border-t border-gray-100">
+                  <button 
+                    type="button" 
+                    onClick={() => setIsBannerModalOpen(false)}
+                    className="px-6 py-2 border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={loading || !bannerForm.image}
+                    className="px-8 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                  >
+                    Save Banner
+                  </button>
+               </div>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>);
 
 }

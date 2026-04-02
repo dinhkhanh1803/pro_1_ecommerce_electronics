@@ -10,13 +10,83 @@ export const getDashboardStats = async (req, res, next) => {
     const activeProducts = await Product.countDocuments({ status: "active" });
     const totalOrders = await Order.countDocuments();
     
+    // Revenue logic: 5% of all delivered orders
+    const deliveredOrders = await Order.find({ orderStatus: "delivered" });
+    const revenue = deliveredOrders.reduce((sum, order) => sum + (order.totalAmount * 0.05), 0);
+
+    // Trend mapping (last 7 days)
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const last7Days = new Date(today);
+    last7Days.setDate(today.getDate() - 6);
+    last7Days.setHours(0, 0, 0, 0);
+
+    const orders7Days = await Order.find({ createdAt: { $gte: last7Days, $lte: today } });
+    
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const revenueDataMap = {};
+    const ordersDataMap = {};
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(last7Days);
+      d.setDate(d.getDate() + i);
+      const label = dayNames[d.getDay()];
+      revenueDataMap[label] = 0;
+      ordersDataMap[label] = 0;
+    }
+
+    orders7Days.forEach(o => {
+      const dayLabel = dayNames[o.createdAt.getDay()];
+      if (ordersDataMap[dayLabel] !== undefined) {
+        ordersDataMap[dayLabel] += 1;
+        if (o.orderStatus === 'delivered') {
+          revenueDataMap[dayLabel] += (o.totalAmount * 0.05);
+        }
+      }
+    });
+
+    const revenueData = Object.keys(revenueDataMap).map(k => ({ name: k, revenue: revenueDataMap[k] }));
+    const ordersData = Object.keys(ordersDataMap).map(k => ({ name: k, orders: ordersDataMap[k] }));
+
+    // Recent Activity
+    const recentUsers = await User.find().sort({ createdAt: -1 }).limit(5);
+    const recentProducts = await Product.find().sort({ createdAt: -1 }).limit(5).populate("seller", "name");
+    const recentOrders = await Order.find().sort({ createdAt: -1 }).limit(5).populate("customer", "name");
+
+    const activities = [
+      ...recentUsers.map(u => ({
+        id: `user-${u._id}`,
+        user: u.name,
+        action: 'vừa đăng ký tài khoản mới',
+        time: u.createdAt,
+        type: 'user'
+      })),
+      ...recentProducts.map(p => ({
+        id: `product-${p._id}`,
+        user: p.seller?.name || 'Seller',
+        action: `vừa đăng sản phẩm mới: ${p.name}`,
+        time: p.createdAt,
+        type: 'product'
+      })),
+      ...recentOrders.map(o => ({
+        id: `order-${o._id}`,
+        user: o.customer?.name || 'Khách hàng',
+        action: `vừa đặt đơn hàng mới #${o._id.toString().slice(-6).toUpperCase()}`,
+        time: o.createdAt,
+        type: 'order'
+      }))
+    ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 8);
+
     res.json({
       totalUsers,
       totalSellers,
       pendingProducts,
       activeProducts,
       totalOrders,
-      revenue: 120500 // Mocked overall revenue
+      revenue,
+      revenueData,
+      ordersData,
+      activities
     });
   } catch(error) { next(error); }
 };

@@ -35,6 +35,23 @@ export const toggleUserLock = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+export const updateUserRole = async (req, res, next) => {
+  try {
+    const { role } = req.body;
+    if (!["customer", "seller", "admin", "shipper"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (user.role === "admin" && role !== "admin") {
+      // Bỏ qua nếu có logic ngăn không thể thay đổi admin duy nhất, tạm thời cứ cho phép
+    }
+    user.role = role;
+    await user.save();
+    res.json(user);
+  } catch (err) { next(err); }
+};
+
 // GET /api/users/wishlist — lấy danh sách wishlist của user đang đăng nhập
 export const getWishlist = async (req, res, next) => {
   try {

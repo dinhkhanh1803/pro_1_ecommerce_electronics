@@ -13,6 +13,18 @@ export const getMyOrders = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// GET /api/orders - Lấy tất cả đơn hàng (Dành cho Admin)
+export const getAllOrders = async (req, res, next) => {
+  try {
+    const orders = await Order.find({})
+      .populate("customer", "name email phone")
+      .populate("seller", "name email")
+      .populate("products.product", "name images")
+      .sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (err) { next(err); }
+};
+
 // GET /api/orders/seller - Lấy đơn hàng của người bán hiện tại (với phân trang và lọc)
 export const getSellerOrders = async (req, res, next) => {
   try {

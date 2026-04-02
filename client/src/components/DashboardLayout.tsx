@@ -13,6 +13,7 @@ import {
   SettingsIcon,
   XIcon } from
 'lucide-react';
+import { useSiteSettings } from '../context/SiteSettingsContext';
 export interface SidebarItem {
   icon: React.ElementType;
   label: string;
@@ -33,7 +34,8 @@ export function DashboardLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, logout } = useAuth();
-const navigate = useNavigate();
+  const { settings: siteSettings } = useSiteSettings();
+  const navigate = useNavigate();
   const location = useLocation();
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -42,17 +44,21 @@ const navigate = useNavigate();
         className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col ${isSidebarOpen ? 'w-64' : 'w-20'} fixed h-full z-20`}>
         
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
-          <Link
-            to="/"
-            className={`flex items-center space-x-2 ${!isSidebarOpen && 'justify-center w-full'}`}>
+            <Link
+              to="/"
+              className={`flex items-center space-x-2 ${!isSidebarOpen && 'justify-center w-full'}`}>
             
-            <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center shrink-0">
-              <span className="text-white font-bold text-xl">S</span>
-            </div>
-            {isSidebarOpen &&
-            <span className="text-xl font-bold text-gray-900">ShopHub</span>
-            }
-          </Link>
+              {siteSettings.primaryLogo ? (
+                <img src={siteSettings.primaryLogo} alt={siteSettings.siteName} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+              ) : (
+                <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center shrink-0">
+                  <span className="text-white font-bold text-xl">{siteSettings.siteName?.charAt(0) || 'S'}</span>
+                </div>
+              )}
+              {isSidebarOpen &&
+              <span className="text-xl font-bold text-gray-900">{siteSettings.siteName}</span>
+              }
+            </Link>
           {isSidebarOpen &&
           <button
             onClick={() => setIsSidebarOpen(false)}
@@ -102,7 +108,7 @@ const navigate = useNavigate();
         >
             
             <LogOutIcon className="h-5 w-5 shrink-0" />
-            {isSidebarOpen && <span className="ml-3 font-medium">Logout</span>}
+            {isSidebarOpen && <span className="ml-3 font-medium">Đăng xuất</span>}
           </button>
         </div>
       </aside>
@@ -134,7 +140,7 @@ const navigate = useNavigate();
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Tìm kiếm..."
                 className="pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-64" />
               
             </div>
@@ -174,7 +180,7 @@ const navigate = useNavigate();
                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                   
                     <SettingsIcon className="h-4 w-4 mr-2 text-gray-400" />
-                    Settings
+                    Cài đặt
                   </Link>
                   <div className="border-t border-gray-100 my-1"></div>
                   <button
@@ -185,7 +191,7 @@ const navigate = useNavigate();
                   className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                 >
                     <LogOutIcon className="h-4 w-4 mr-2 text-red-500" />
-                    Sign out
+                    Đăng xuất
                   </button>
                 </div>
               }

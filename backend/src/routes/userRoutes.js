@@ -2,6 +2,7 @@ import express from "express";
 import {
   getAllUsers,
   toggleUserLock,
+  updateUserRole,
   getWishlist,
   toggleWishlist,
   removeFromWishlist,
@@ -14,6 +15,7 @@ const router = express.Router();
 
 router.get("/", protect, authorize("admin"), getAllUsers);
 router.put("/:id/lock", protect, authorize("admin"), toggleUserLock);
+router.put("/:id/role", protect, authorize("admin"), updateUserRole);
 
 // Wishlist routes (yêu cầu đăng nhập)
 router.get("/wishlist", protect, getWishlist);

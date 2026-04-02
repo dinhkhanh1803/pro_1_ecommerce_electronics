@@ -49,124 +49,38 @@ const ADMIN_SIDEBAR = [
   label: 'Orders',
   path: '/admin/orders'
 },
-{
-  icon: DollarSignIcon,
-  label: 'Finance',
-  path: '/admin/finance'
-},
+// {
+//   icon: DollarSignIcon,
+//   label: 'Finance',
+//   path: '/admin/finance'
+// },
 {
   icon: LayoutTemplateIcon,
   label: 'CMS',
   path: '/admin/cms'
 }];
 
-// Mock Data
-const REVENUE_DATA = [
-{
-  name: 'Mon',
-  revenue: 4000
-},
-{
-  name: 'Tue',
-  revenue: 3000
-},
-{
-  name: 'Wed',
-  revenue: 2000
-},
-{
-  name: 'Thu',
-  revenue: 2780
-},
-{
-  name: 'Fri',
-  revenue: 1890
-},
-{
-  name: 'Sat',
-  revenue: 2390
-},
-{
-  name: 'Sun',
-  revenue: 3490
-}];
+// Mapped directly from API now
 
-const ORDERS_DATA = [
-{
-  name: 'Mon',
-  orders: 40
-},
-{
-  name: 'Tue',
-  orders: 30
-},
-{
-  name: 'Wed',
-  orders: 20
-},
-{
-  name: 'Thu',
-  orders: 27
-},
-{
-  name: 'Fri',
-  orders: 18
-},
-{
-  name: 'Sat',
-  orders: 23
-},
-{
-  name: 'Sun',
-  orders: 34
-}];
+const getTimeAgo = (date: string) => {
+  const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+  if (seconds < 60) return 'Vừa mới đây';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} phút trước`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} giờ trước`;
+  const days = Math.floor(hours / 24);
+  return `${days} ngày trước`;
+};
 
-const RECENT_ACTIVITY = [
-{
-  id: 1,
-  user: 'John Doe',
-  action: 'registered as a new customer',
-  time: '2 mins ago',
-  icon: UsersIcon,
-  color: 'text-blue-500',
-  bg: 'bg-blue-100'
-},
-{
-  id: 2,
-  user: 'TechGadgets',
-  action: 'added a new product',
-  time: '15 mins ago',
-  icon: PackageIcon,
-  color: 'text-indigo-500',
-  bg: 'bg-indigo-100'
-},
-{
-  id: 3,
-  user: 'System',
-  action: 'processed payout for 12 sellers',
-  time: '1 hour ago',
-  icon: DollarSignIcon,
-  color: 'text-green-500',
-  bg: 'bg-green-100'
-},
-{
-  id: 4,
-  user: 'Admin User',
-  action: 'updated homepage banner',
-  time: '3 hours ago',
-  icon: LayoutTemplateIcon,
-  color: 'text-purple-500',
-  bg: 'bg-purple-100'
-},
-{
-  id: 5,
-  user: 'Jane Smith',
-  action: 'reported an issue with order #1042',
-  time: '5 hours ago',
-  icon: ShieldCheckIcon,
-  color: 'text-red-500',
-  bg: 'bg-red-100'
-}];
+const getIconForActivity = (type: string) => {
+  switch (type) {
+    case 'user': return { icon: UsersIcon, color: 'text-blue-500', bg: 'bg-blue-100' };
+    case 'product': return { icon: PackageIcon, color: 'text-indigo-500', bg: 'bg-indigo-100' };
+    case 'order': return { icon: ShoppingBagIcon, color: 'text-green-500', bg: 'bg-green-100' };
+    default: return { icon: ActivityIcon, color: 'text-gray-500', bg: 'bg-gray-100' };
+  }
+};
 
 export function AdminDashboard() {
   const [stats, setStats] = useState<any>({});
@@ -278,7 +192,7 @@ export function AdminDashboard() {
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={REVENUE_DATA}
+                data={stats.revenueData || []}
                 margin={{
                   top: 10,
                   right: 10,
@@ -353,7 +267,7 @@ export function AdminDashboard() {
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={ORDERS_DATA}
+                data={stats.ordersData || []}
                 margin={{
                   top: 10,
                   right: 10,
@@ -419,23 +333,27 @@ export function AdminDashboard() {
             <div className="absolute top-0 bottom-0 left-6 w-px bg-gray-200" />
 
             <div className="space-y-6 relative">
-              {RECENT_ACTIVITY.map((activity) =>
-              <div key={activity.id} className="flex items-start">
-                  <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 z-10 border-4 border-white ${activity.bg} ${activity.color}`}>
-                  
-                    <activity.icon className="h-5 w-5" />
+              {stats.activities?.map((activity: any) => {
+                const style = getIconForActivity(activity.type);
+                return (
+                  <div key={activity.id} className="flex items-start">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 z-10 border-4 border-white ${style.bg} ${style.color}`}>
+                      <style.icon className="h-5 w-5" />
+                    </div>
+                    <div className="ml-4 mt-1">
+                      <p className="text-sm text-gray-900 line-clamp-2">
+                        <span className="font-semibold">{activity.user}</span>{' '}
+                        {activity.action}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {getTimeAgo(activity.time)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="ml-4 mt-1">
-                    <p className="text-sm text-gray-900">
-                      <span className="font-semibold">{activity.user}</span>{' '}
-                      {activity.action}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {activity.time}
-                    </p>
-                  </div>
-                </div>
+                );
+              })}
+              {(!stats.activities || stats.activities.length === 0) && (
+                <p className="text-center text-gray-500 py-4">Chưa có hoạt động nào gần đây.</p>
               )}
             </div>
           </div>
@@ -456,9 +374,11 @@ export function AdminDashboard() {
                   Review Pending Products
                 </span>
               </div>
-              <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded-full">
-                12
-              </span>
+              {stats.pendingProducts > 0 &&
+                <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded-full animate-pulse">
+                  {stats.pendingProducts}
+                </span>
+              }
             </button>
 
             <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50 transition-colors group">

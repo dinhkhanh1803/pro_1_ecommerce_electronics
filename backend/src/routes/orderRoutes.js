@@ -8,6 +8,7 @@ import {
   cancelOrder,
   getShipperOrders,
   remitCodOrders,
+  getAllOrders,
 } from "../controllers/orderController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 
@@ -17,6 +18,9 @@ const router = express.Router();
 
 // GET /api/orders/my-orders - Customer gets their order history
 router.get("/my-orders", protect, getMyOrders);
+
+// GET /api/orders/all - Admin gets all orders
+router.get("/all", protect, authorize("admin"), getAllOrders);
 
 // GET /api/orders/seller - Seller gets received orders
 router.get("/seller", protect, authorize("seller", "admin"), getSellerOrders);

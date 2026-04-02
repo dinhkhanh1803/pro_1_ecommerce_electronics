@@ -17,7 +17,7 @@ const ADMIN_SIDEBAR = [
   { icon: FolderOpenIcon, label: 'Categories', path: '/admin/categories' },
   { icon: PackageIcon, label: 'Products', path: '/admin/products' },
   { icon: ShoppingBagIcon, label: 'Orders', path: '/admin/orders' },
-  { icon: DollarSignIcon, label: 'Finance', path: '/admin/finance' },
+  // { icon: DollarSignIcon, label: 'Finance', path: '/admin/finance' },
   { icon: LayoutTemplateIcon, label: 'CMS', path: '/admin/cms' },
 ];
 

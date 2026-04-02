@@ -70,17 +70,17 @@ export function Login() {
         {/* Login Card */}
         <div className="p-8 bg-white shadow-lg rounded-xl">
           <h1 className="mb-2 text-2xl font-bold text-gray-900">
-            Welcome Back
+            Chào mừng trở lại
           </h1>
           <p className="mb-6 text-gray-600">
-            Sign in to your account to continue
+            Đăng nhập vào tài khoản của bạn để tiếp tục
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
-                Email Address
+                Email
               </label>
               <div className="relative">
                 <input
@@ -98,14 +98,14 @@ export function Login() {
             {/* Password */}
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
-                Password
+                Mật khẩu
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Nhập mật khẩu"
                   className="w-full px-4 py-3 border border-gray-300 pl-11 pr-11 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   required
                 />
@@ -131,13 +131,13 @@ export function Login() {
                   type="checkbox"
                   className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                 />
-                <span className="text-sm text-gray-700">Remember me</span>
+                <span className="text-sm text-gray-700">Ghi nhớ đăng nhập</span>
               </label>
               <Link
                 to="/forgot-password"
                 className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
               >
-                Forgot password?
+                Quên mật khẩu?
               </Link>
             </div>
 
@@ -147,7 +147,7 @@ export function Login() {
               disabled={loading}
               className="w-full py-3 font-semibold text-white transition-colors bg-indigo-500 rounded-xl hover:bg-indigo-600"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             </button>
 
             {error && <p className="mt-2 text-red-500">{error}</p>}
@@ -160,7 +160,7 @@ export function Login() {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-4 text-gray-500 bg-white">
-                Or continue with
+                Hoặc đăng nhập với
               </span>
             </div>
           </div>
@@ -194,7 +194,7 @@ export function Login() {
               </svg>
 
               <span className="text-sm font-medium text-gray-700">
-                Continue with Google
+                Tiếp tục với Google
               </span>
             </button>
 
@@ -210,12 +210,12 @@ export function Login() {
 
           {/* Sign Up Link */}
           <p className="mt-6 text-sm text-center text-gray-600">
-            Don't have an account?{" "}
+            Chưa có tài khoản?{" "}
             <Link
               to="/register"
               className="font-semibold text-indigo-600 hover:text-indigo-700"
             >
-              Sign up
+              Đăng ký ngay
             </Link>
           </p>
         </div>

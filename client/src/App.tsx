@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "./context/CartContext";
+import { SiteSettingsProvider } from "./context/SiteSettingsContext";
 // Public Pages
 import { Home } from "./pages/public/Home";
 import { ProductListing } from "./pages/public/ProductListing";
@@ -45,6 +46,7 @@ import { ResetPassword } from "./pages/auth/ResetPassword";
 
 export function App() {
   return (
+    <SiteSettingsProvider>
     <CartProvider>
       <BrowserRouter>
         <Routes>
@@ -95,7 +97,7 @@ export function App() {
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/products" element={<AdminProducts />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
-              <Route path="/admin/finance" element={<AdminFinance />} />
+              {/* <Route path="/admin/finance" element={<AdminFinance />} /> */}
               <Route path="/admin/cms" element={<AdminCMS />} />
             </Route>
 
@@ -114,5 +116,6 @@ export function App() {
         </Routes>
       </BrowserRouter>
     </CartProvider>
+    </SiteSettingsProvider>
   );
 }

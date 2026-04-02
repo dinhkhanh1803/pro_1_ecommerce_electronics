@@ -29,7 +29,20 @@ export default function OAuthSuccess() {
         token,
       );
 
-      navigate("/");
+      switch (decoded.role) {
+        case "admin":
+          navigate("/admin/dashboard");
+          break;
+        case "seller":
+          navigate("/seller/dashboard");
+          break;
+        case "shipper":
+          navigate("/shipper/deliveries");
+          break;
+        default:
+          navigate("/");
+          break;
+      }
     } else {
       navigate("/login");
     }
