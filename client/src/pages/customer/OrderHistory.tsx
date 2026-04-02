@@ -8,8 +8,12 @@ import {
   CalendarIcon, 
   WalletIcon, 
   SearchIcon,
-  MessageSquareIcon
+  MessageSquareIcon,
+  MapPinIcon,
+  PhoneIcon,
+  XIcon
 } from 'lucide-react';
+
 
 const formatVND = (price: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -19,6 +23,7 @@ export function OrderHistory() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
 
   const token = localStorage.getItem('token');
 
@@ -152,13 +157,14 @@ export function OrderHistory() {
                         <span className="text-xs font-bold hidden sm:inline">Trò chuyện</span>
                       </Link>
                     )}
-                    <Link
-                      to={`/orders/${order._id}`}
+                    <button
+                      onClick={() => setSelectedOrderDetails(order)}
                       className="p-2.5 bg-white text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm border border-gray-100"
                     >
                       <ChevronRightIcon className="h-5 w-5" />
-                    </Link>
+                    </button>
                   </div>
+
                   {['pending', 'processing'].includes(order.orderStatus) && (
                     <div className="w-full sm:w-auto mt-3 sm:mt-0 text-right">
                       <button 
@@ -238,6 +244,117 @@ export function OrderHistory() {
           </div>
         )}
       </div>
+
+      {/* Order Details Modal */}
+      {selectedOrderDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col relative animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Chi tiết đơn hàng</h3>
+                <p className="text-sm text-gray-500 font-mono">#{selectedOrderDetails._id.slice(-8).toUpperCase()}</p>
+              </div>
+              <button
+                onClick={() => setSelectedOrderDetails(null)}
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <XIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-6 space-y-6">
+              
+              {/* Timeline mockup */}
+              <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Trạng thái hiện tại</h4>
+                <div className="flex items-center space-x-4">
+                  <StatusBadge status={selectedOrderDetails.orderStatus as any} />
+                  <span className="text-sm text-gray-500">Cập nhật lúc: {new Date(selectedOrderDetails.updatedAt).toLocaleString('vi-VN')}</span>
+                </div>
+              </div>
+
+              {/* Delivery Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Địa chỉ giao hàng</h4>
+                  <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-2">
+                    <div className="flex items-start text-sm">
+                      <MapPinIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
+                      <span className="text-gray-700">{selectedOrderDetails.shippingAddress}</span>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <PhoneIcon className="h-4 w-4 text-gray-400 mr-2" />
+                      <span className="text-gray-700">{selectedOrderDetails.customer?.phone || 'Chưa cập nhật'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Người bán</h4>
+                  <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center text-sm">
+                      <PackageIcon className="h-4 w-4 text-gray-400 mr-2" />
+                      <span className="font-medium text-gray-900">{selectedOrderDetails.seller?.name || 'ShopHub'}</span>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <MessageSquareIcon className="h-4 w-4 text-gray-400 mr-2" />
+                      <span className="text-gray-700">{selectedOrderDetails.seller?.email || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product List */}
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Sản phẩm</h4>
+                <div className="space-y-3">
+                  {selectedOrderDetails.products.map((p: any, idx: number) => (
+                    <div key={idx} className="flex items-center space-x-4 bg-white border border-gray-100 rounded-xl p-3">
+                        <img 
+                          src={p.product?.images?.[0] || 'https://via.placeholder.com/150'} 
+                          className="w-14 h-14 rounded-lg object-cover border border-gray-100" 
+                        />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-gray-900 truncate">{p.product?.name}</p>
+                        <p className="text-xs text-gray-500">Sl: {p.quantity}</p>
+                      </div>
+                      <p className="text-sm font-bold text-gray-900">{formatVND(p.price * p.quantity)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div className="bg-indigo-50/50 rounded-xl p-5 space-y-3">
+                 <div className="flex justify-between text-sm">
+                   <span className="text-gray-600">Hình thức thanh toán</span>
+                   <span className="font-bold text-gray-900">{selectedOrderDetails.paymentMethod}</span>
+                 </div>
+                 {selectedOrderDetails.coupon && (
+                 <div className="flex justify-between text-sm">
+                   <span className="text-gray-600">Mã giảm giá</span>
+                   <span className="font-bold text-green-600">{selectedOrderDetails.coupon}</span>
+                 </div>
+                 )}
+                 <div className="pt-3 border-t border-indigo-100 border-dashed flex justify-between">
+                   <span className="font-bold text-gray-900">Tổng thanh toán</span>
+                   <span className="text-xl font-black text-red-600">{formatVND(selectedOrderDetails.totalAmount)}</span>
+                 </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-gray-100 flex justify-end">
+                <button
+                  onClick={() => setSelectedOrderDetails(null)}
+                  className="px-6 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Đóng
+                </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </CustomerLayout>
   );
 }

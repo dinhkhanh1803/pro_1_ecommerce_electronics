@@ -38,7 +38,7 @@ export function Login() {
           navigate("/admin/dashboard");
           break;
         case "seller":
-          navigate("/seller/products");
+          navigate("/seller/dashboard");
           break;
         case "shipper":
           navigate("/shipper/deliveries");

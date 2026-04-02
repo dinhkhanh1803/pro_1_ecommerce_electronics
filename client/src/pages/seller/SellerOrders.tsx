@@ -250,40 +250,42 @@ export function SellerOrders() {
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
                         {/* Status Update Dropdown */}
-                        <div className="relative">
-                          <button
-                        onClick={() =>
-                        setOpenDropdownId(
-                          openDropdownId === order._id ? null : order._id
-                        )
-                        }
-                        className="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                        
-                            <span>Update</span>
-                            <ChevronDownIcon className="h-4 w-4" />
-                          </button>
-
-                          {openDropdownId === order._id &&
-                      <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg py-1 border border-gray-100 z-10">
-                              {[
-                        'pending',
-                        'processing',
-                        'shipped',
-                        'cancelled'].
-                        map((status) =>
-                        <button
-                          key={status}
+                        {!(order.orderStatus === 'delivered' || order.orderStatus === 'cancelled' || order.orderStatus === 'returned') && (
+                          <div className="relative">
+                            <button
                           onClick={() =>
-                          handleStatusChange(order._id, status)
+                          setOpenDropdownId(
+                            openDropdownId === order._id ? null : order._id
+                          )
                           }
-                          className={`block w-full text-left px-4 py-2 text-sm capitalize hover:bg-gray-50 ${order.orderStatus === status ? 'text-indigo-600 font-medium bg-indigo-50/50' : 'text-gray-700'}`}>
+                          className="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                           
-                                  {status}
-                                </button>
+                              <span>Update</span>
+                              <ChevronDownIcon className="h-4 w-4" />
+                            </button>
+
+                            {openDropdownId === order._id &&
+                        <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg py-1 border border-gray-100 z-10">
+                                {[
+                          'pending',
+                          'processing',
+                          'shipped',
+                          'cancelled'].
+                          map((status) =>
+                          <button
+                            key={status}
+                            onClick={() =>
+                            handleStatusChange(order._id, status)
+                            }
+                            className={`block w-full text-left px-4 py-2 text-sm capitalize hover:bg-gray-50 ${order.orderStatus === status ? 'text-indigo-600 font-medium bg-indigo-50/50' : 'text-gray-700'}`}>
+                            
+                                    {status}
+                                  </button>
+                          )}
+                              </div>
+                        }
+                          </div>
                         )}
-                            </div>
-                      }
-                        </div>
 
                         <button
                       onClick={() => setSelectedOrder(order)}
