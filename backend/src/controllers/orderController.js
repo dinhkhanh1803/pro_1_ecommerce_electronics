@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import Order from "../models/Order.js";
+import Coupon from "../models/Coupon.js";
 
 // GET /api/orders/my-orders - Lấy đơn hàng của người mua hiện tại
 export const getMyOrders = async (req, res, next) => {
@@ -11,14 +13,49 @@ export const getMyOrders = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-// GET /api/orders/seller - Lấy đơn hàng của người bán hiện tại
+// GET /api/orders/seller - Lấy đơn hàng của người bán hiện tại (với phân trang và lọc)
 export const getSellerOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find({ seller: req.user._id })
+    const { page = 1, limit = 5, status, search } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    let query = { seller: req.user._id };
+
+    // Lọc theo trạng thái
+    if (status && status !== 'all') {
+      query.orderStatus = status;
+    }
+
+    // Tìm kiếm theo ID đơn hàng hoặc tên khách hàng
+    if (search) {
+      if (mongoose.Types.ObjectId.isValid(search)) {
+        query._id = search;
+      } else {
+        // Tìm khách hàng có tên khớp với search
+        const customers = await mongoose.model("User").find({
+          name: { $regex: search, $options: "i" }
+        }).select("_id");
+        
+        const customerIds = customers.map(c => c._id);
+        query.customer = { $in: customerIds };
+      }
+    }
+
+    const totalOrders = await Order.countDocuments(query);
+    const orders = await Order.find(query)
       .populate("customer", "name email phone")
       .populate("products.product", "name images")
-      .sort({ createdAt: -1 });
-    res.json(orders);
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    res.json({
+      orders,
+      totalOrders,
+      totalPages: Math.ceil(totalOrders / limit),
+      currentPage: parseInt(page),
+      limit: parseInt(limit)
+    });
   } catch (err) { next(err); }
 };
 
@@ -46,17 +83,29 @@ export const getOrderById = async (req, res, next) => {
 // POST /api/orders - Tạo đơn hàng mới (từ Checkout)
 export const createOrder = async (req, res, next) => {
   try {
-    const { products, totalAmount, shippingAddress, paymentMethod, seller } = req.body;
+    const { products, totalAmount, shippingAddress, paymentMethod, seller, couponCode } = req.body;
     
     // In a real app, products should be validated with DB prices
-    const order = await Order.create({
+    const orderData = {
       customer: req.user._id,
       seller,
       products,
       totalAmount,
       shippingAddress,
       paymentMethod: paymentMethod || "COD",
-    });
+    };
+
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), status: "active" });
+      if (coupon) {
+        // Tăng lượt sử dụng khi đặt hàng thành công
+        coupon.usageCount += 1;
+        await coupon.save();
+        orderData.coupon = couponCode.toUpperCase();
+      }
+    }
+
+    const order = await Order.create(orderData);
     
     res.status(201).json(order);
   } catch (err) { next(err); }
@@ -77,8 +126,9 @@ export const updateOrderStatus = async (req, res, next) => {
        if (order.seller.toString() !== req.user._id.toString()) {
          return res.status(403).json({ message: "Not authorized to update this order" });
        }
-       if (order.orderStatus === 'shipped' && ['delivered', 'returned'].includes(status)) {
-         return res.status(403).json({ message: "Only shipper can deliver or return orders once shipped." });
+       // Trạng thái đã giao và trả hàng phải do Shipper cập nhật
+       if (['delivered', 'returned'].includes(status)) {
+         return res.status(403).json({ message: "Quyền này thuộc về Shipper. Người bán không thể cập nhật trạng thái đã giao hoặc trả hàng." });
        }
     } else if (req.user.role === 'shipper') {
        if (!['shipped', 'delivered', 'returned'].includes(status)) {

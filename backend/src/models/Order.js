@@ -17,6 +17,7 @@ const orderSchema = new mongoose.Schema(
     paymentStatus: { type: String, enum: ["pending", "completed", "failed", "refunded"], default: "pending" },
     orderStatus: { type: String, enum: ["pending", "processing", "shipped", "delivered", "cancelled", "returned"], default: "pending" },
     codRemitted: { type: Boolean, default: false },
+    coupon: { type: String },
   },
   { timestamps: true }
 );

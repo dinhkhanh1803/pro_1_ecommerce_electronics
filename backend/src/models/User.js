@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema(
 
     verified: { type: Boolean, default: false },
     address: { type: String },
+    dob: { type: Date },
 
     otp: { type: String },
     otpExpire: { type: Date },

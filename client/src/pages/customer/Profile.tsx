@@ -40,7 +40,7 @@ export function Profile() {
         email: data.email || "",
         phone: data.phone || "",
         dob: data.dob ? data.dob.split('T')[0] : "",
-        address: data.addresses?.[0] || ""
+        address: data.address || ""
       });
     } catch (err) { console.error(err); }
     setLoading(false);

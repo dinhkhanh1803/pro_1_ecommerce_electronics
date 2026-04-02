@@ -22,14 +22,36 @@ export function Chat() {
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const prevMsgCountRef = useRef(0);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior
+      });
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    // Nếu số lượng tin nhắn tăng lên
+    if (messages.length > prevMsgCountRef.current) {
+      const lastMsg = messages[messages.length - 1];
+      const isMe = lastMsg?.sender === user?.id || lastMsg?.sender === (user as any)?._id;
+      
+      const container = chatContainerRef.current;
+      const isNearBottom = container 
+        ? container.scrollHeight - container.scrollTop - container.clientHeight < 150 
+        : true;
+
+      // Tự động cuộn nếu mình là người gửi HOẶC đang ở gần đáy hộp chat
+      if (isMe || isNearBottom) {
+        scrollToBottom(prevMsgCountRef.current === 0 ? "auto" : "smooth");
+      }
+    }
+    prevMsgCountRef.current = messages.length;
+  }, [messages, user]);
 
   const fetchContacts = async () => {
     setLoading(true);
@@ -197,7 +219,10 @@ export function Chat() {
               </div>
 
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-10 space-y-6 custom-scrollbar">
+              <div 
+                ref={chatContainerRef}
+                className="flex-1 overflow-y-auto p-10 space-y-6 custom-scrollbar"
+              >
                 {messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center opacity-20 pointer-events-none">
                     <UserIcon className="h-16 w-16 mb-4" />

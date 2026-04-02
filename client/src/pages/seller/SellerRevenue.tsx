@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import {
   PackageIcon,
@@ -12,8 +12,12 @@ import {
   CreditCardIcon,
   UsersIcon,
   CalendarIcon,
-  DownloadIcon } from
-'lucide-react';
+  DownloadIcon 
+} from 'lucide-react';
+
+const formatVND = (price: number) =>
+  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+
 import {
   LineChart,
   Line,
@@ -57,76 +61,40 @@ const SELLER_SIDEBAR = [
   path: '/seller/messages'
 }];
 
-// Mock Data
-const REVENUE_DATA = [
-{
-  date: 'Oct 1',
-  revenue: 1200,
-  orders: 15
-},
-{
-  date: 'Oct 5',
-  revenue: 1800,
-  orders: 22
-},
-{
-  date: 'Oct 10',
-  revenue: 1500,
-  orders: 18
-},
-{
-  date: 'Oct 15',
-  revenue: 2400,
-  orders: 30
-},
-{
-  date: 'Oct 20',
-  revenue: 2100,
-  orders: 25
-},
-{
-  date: 'Oct 25',
-  revenue: 3200,
-  orders: 40
-},
-{
-  date: 'Oct 30',
-  revenue: 2800,
-  orders: 35
-}];
-
-const RECENT_TRANSACTIONS = [
-{
-  id: 'TRX-1042',
-  date: 'Oct 24, 2023',
-  amount: 129.99,
-  status: 'completed',
-  method: 'Credit Card'
-},
-{
-  id: 'TRX-1041',
-  date: 'Oct 23, 2023',
-  amount: 89.5,
-  status: 'completed',
-  method: 'PayPal'
-},
-{
-  id: 'TRX-1040',
-  date: 'Oct 22, 2023',
-  amount: 245.0,
-  status: 'pending',
-  method: 'Bank Transfer'
-},
-{
-  id: 'TRX-1039',
-  date: 'Oct 20, 2023',
-  amount: 45.0,
-  status: 'completed',
-  method: 'Credit Card'
-}];
 
 export function SellerRevenue() {
   const [dateRange, setDateRange] = useState('last30');
+  const [stats, setStats] = useState<any>({
+    totalRevenue: 0,
+    totalOrders: 0,
+    avgOrderValue: 0,
+    uniqueCustomers: 0,
+    revenueData: [],
+    recentTransactions: []
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`http://localhost:5000/api/dashboard/seller?dateRange=${dateRange}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStats(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, [dateRange]);
+
   return (
     <DashboardLayout
       sidebarItems={SELLER_SIDEBAR}
@@ -174,7 +142,7 @@ export function SellerRevenue() {
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Total Revenue
           </h3>
-          <p className="text-2xl font-bold text-gray-900">$15,000.00</p>
+          <p className="text-2xl font-bold text-gray-900">{formatVND(stats.totalRevenue)}</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -184,13 +152,13 @@ export function SellerRevenue() {
             </div>
             <span className="flex items-center text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded-lg">
               <TrendingUpIcon className="h-4 w-4 mr-1" />
-              +8.2%
+              --
             </span>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Total Orders
           </h3>
-          <p className="text-2xl font-bold text-gray-900">185</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -198,15 +166,15 @@ export function SellerRevenue() {
             <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
               <CreditCardIcon className="h-6 w-6 text-green-600" />
             </div>
-            <span className="flex items-center text-sm font-medium text-red-600 bg-red-50 px-2 py-1 rounded-lg">
-              <TrendingUpIcon className="h-4 w-4 mr-1 rotate-180" />
-              -2.4%
+            <span className="flex items-center text-sm font-medium text-gray-600 bg-gray-50 px-2 py-1 rounded-lg">
+              <TrendingUpIcon className="h-4 w-4 mr-1" />
+              --
             </span>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Avg. Order Value
           </h3>
-          <p className="text-2xl font-bold text-gray-900">$81.08</p>
+          <p className="text-2xl font-bold text-gray-900">{formatVND(stats.avgOrderValue)}</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -214,15 +182,15 @@ export function SellerRevenue() {
             <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
               <UsersIcon className="h-6 w-6 text-purple-600" />
             </div>
-            <span className="flex items-center text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded-lg">
+            <span className="flex items-center text-sm font-medium text-gray-600 bg-gray-50 px-2 py-1 rounded-lg">
               <TrendingUpIcon className="h-4 w-4 mr-1" />
-              +15.3%
+              --
             </span>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Unique Customers
           </h3>
-          <p className="text-2xl font-bold text-gray-900">142</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.uniqueCustomers}</p>
         </div>
       </div>
 
@@ -244,7 +212,7 @@ export function SellerRevenue() {
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={REVENUE_DATA}
+                data={stats.revenueData}
                 margin={{
                   top: 10,
                   right: 10,
@@ -280,7 +248,7 @@ export function SellerRevenue() {
                     fill: '#6b7280',
                     fontSize: 12
                   }}
-                  tickFormatter={(value) => `$${value}`} />
+                  tickFormatter={(value) => formatVND(value)} />
                 
                 <Tooltip
                   contentStyle={{
@@ -288,7 +256,7 @@ export function SellerRevenue() {
                     border: 'none',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                   }}
-                  formatter={(value: number) => [`$${value}`, 'Revenue']} />
+                  formatter={(value: number) => [formatVND(value), 'Revenue']} />
                 
                 <Area
                   type="monotone"
@@ -315,7 +283,10 @@ export function SellerRevenue() {
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2 space-y-4">
-            {RECENT_TRANSACTIONS.map((trx) =>
+            {stats.recentTransactions.length === 0 && (
+               <p className="text-sm text-gray-500text-center py-4">No recent transactions to display.</p>
+            )}
+            {stats.recentTransactions.map((trx: any) =>
             <div
               key={trx.id}
               className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-indigo-100 transition-colors">
@@ -335,7 +306,7 @@ export function SellerRevenue() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-gray-900">
-                    +${trx.amount.toFixed(2)}
+                    {formatVND(trx.amount || 0)}
                   </p>
                   <p
                   className={`text-xs font-medium capitalize ${trx.status === 'completed' ? 'text-green-600' : 'text-yellow-600'}`}>

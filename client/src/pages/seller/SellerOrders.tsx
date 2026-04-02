@@ -55,15 +55,22 @@ export function SellerOrders() {
   const [loading, setLoading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
+
   const fetchOrders = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/orders/seller", {
+      const url = `http://localhost:5000/api/orders/seller?page=${page}&limit=5&status=${activeTab}&search=${searchQuery}`;
+      const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
-      setOrders(data);
+      setOrders(data.orders || []);
+      setTotalPages(data.totalPages || 1);
+      setTotalOrders(data.totalOrders || 0);
     } catch (error) {
       console.error("Error fetching orders", error);
     } finally {
@@ -72,8 +79,16 @@ export function SellerOrders() {
   };
 
   React.useEffect(() => {
-    fetchOrders();
-  }, []);
+    // Luôn reset về trang 1 khi thay đổi bộ lọc hoặc từ khóa tìm kiếm
+    setPage(1);
+  }, [activeTab, searchQuery]);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchOrders();
+    }, 300); // Debounce search request
+    return () => clearTimeout(timer);
+  }, [page, activeTab, searchQuery]);
 
   const tabs = [
   {
@@ -101,13 +116,7 @@ export function SellerOrders() {
     label: 'Cancelled'
   }];
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesTab = activeTab === 'all' || order.orderStatus === activeTab;
-    const matchesSearch = 
-      order._id.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      (order.customer?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTab && matchesSearch;
-  });
+  // Local filtering is removed in favor of backend filtering
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
@@ -206,8 +215,8 @@ export function SellerOrders() {
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-gray-500">Loading orders...</td>
                 </tr>
-              ) : filteredOrders.length > 0 ?
-              filteredOrders.map((order) =>
+              ) : orders.length > 0 ?
+              orders.map((order) =>
               <tr
                 key={order._id}
                 className="hover:bg-gray-50 transition-colors">
@@ -260,7 +269,6 @@ export function SellerOrders() {
                         'pending',
                         'processing',
                         'shipped',
-                        'delivered',
                         'cancelled'].
                         map((status) =>
                         <button
@@ -300,30 +308,35 @@ export function SellerOrders() {
         </div>
 
         {/* Pagination */}
-        {filteredOrders.length > 0 &&
+        {!loading && orders.length > 0 &&
         <div className="relative z-0 px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
             <p className="text-sm text-gray-500">
-              Showing <span className="font-medium text-gray-900">1</span> to{' '}
+              Showing <span className="font-medium text-gray-900">{(page - 1) * 5 + 1}</span> to{' '}
               <span className="font-medium text-gray-900">
-                {filteredOrders.length}
+                {Math.min(page * 5, totalOrders)}
               </span>{' '}
               of{' '}
               <span className="font-medium text-gray-900">
-                {filteredOrders.length}
+                {totalOrders}
               </span>{' '}
               results
             </p>
-            <div className="flex space-x-2">
+            <div className="flex items-center space-x-2">
               <button
-              className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
-              disabled>
-              
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors shadow-sm">
                 Previous
               </button>
-              <button
-              className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
-              disabled>
               
+              <div className="flex items-center px-4 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 shadow-inner">
+                {page} / {totalPages}
+              </div>
+
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-4 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors shadow-sm">
                 Next
               </button>
             </div>

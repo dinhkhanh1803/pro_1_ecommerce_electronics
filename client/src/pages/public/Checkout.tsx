@@ -143,7 +143,8 @@ export function Checkout() {
             products,
             totalAmount: orderTotal,
             shippingAddress: fullAddress,
-            paymentMethod: paymentMethod === 'cod' ? 'COD' : 'VNPay'
+            paymentMethod: paymentMethod === 'cod' ? 'COD' : 'VNPay',
+            couponCode: index === 0 ? couponCode : null
           })
         });
       });
