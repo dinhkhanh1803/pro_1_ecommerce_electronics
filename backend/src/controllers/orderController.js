@@ -22,6 +22,27 @@ export const getSellerOrders = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// GET /api/orders/:id - Lấy chi tiết đơn hàng
+export const getOrderById = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate("customer", "name email phone")
+      .populate("seller", "name email phone")
+      .populate("products.product", "name images");
+      
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    // Ensure customer, seller, admin or shipper
+    if (order.customer._id.toString() !== req.user._id.toString() &&
+        order.seller._id.toString() !== req.user._id.toString() &&
+        req.user.role !== 'admin' && req.user.role !== 'shipper') {
+      return res.status(403).json({ message: "Not authorized to view this order" });
+    }
+    
+    res.json(order);
+  } catch (err) { next(err); }
+};
+
 // POST /api/orders - Tạo đơn hàng mới (từ Checkout)
 export const createOrder = async (req, res, next) => {
   try {
@@ -51,13 +72,79 @@ export const updateOrderStatus = async (req, res, next) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    if (order.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({ message: "Not authorized to update this order" });
+    // Role-based status transition logic
+    if (req.user.role === 'seller') {
+       if (order.seller.toString() !== req.user._id.toString()) {
+         return res.status(403).json({ message: "Not authorized to update this order" });
+       }
+       if (order.orderStatus === 'shipped' && ['delivered', 'returned'].includes(status)) {
+         return res.status(403).json({ message: "Only shipper can deliver or return orders once shipped." });
+       }
+    } else if (req.user.role === 'shipper') {
+       if (!['shipped', 'delivered', 'returned'].includes(status)) {
+         return res.status(403).json({ message: "Shipper can only update to delivered or returned." });
+       }
+       if (order.orderStatus !== 'shipped' && order.orderStatus !== 'delivered' && order.orderStatus !== 'returned') {
+         return res.status(403).json({ message: "Order is not ready for shipping." });
+       }
+    } else if (req.user.role !== 'admin') {
+       return res.status(403).json({ message: "Not authorized" });
     }
 
     order.orderStatus = status;
+
+    if (status === 'delivered' && order.paymentMethod === 'COD') {
+       order.paymentStatus = 'completed';
+    }
+
     await order.save();
     
     res.json(order);
   } catch (err) { next(err); }
+};
+
+// GET /api/orders/shipper
+export const getShipperOrders = async (req, res, next) => {
+  try {
+    const orders = await Order.find({ orderStatus: { $in: ['shipped', 'delivered', 'returned'] } })
+      .populate("customer", "name email phone")
+      .populate("seller", "name email phone")
+      .populate("products.product", "name images")
+      .sort({ updatedAt: -1 });
+    res.json(orders);
+  } catch (err) { next(err); }
+};
+
+// PUT /api/orders/:id/cancel
+export const cancelOrder = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    if (order.customer.toString() !== req.user._id.toString()) {
+       return res.status(403).json({ message: "Not authorized to cancel this order" });
+    }
+    if (!['pending', 'processing'].includes(order.orderStatus)) {
+       return res.status(400).json({ message: "Cannot cancel order at this stage" });
+    }
+
+    order.orderStatus = 'cancelled';
+    await order.save();
+    res.json(order);
+  } catch (err) { next(err); }
+};
+
+// PUT /api/orders/cod-remit
+export const remitCodOrders = async (req, res, next) => {
+  try {
+    const { orderIds } = req.body;
+    if (!orderIds || !Array.isArray(orderIds)) {
+       return res.status(400).json({ message: "Invalid orderIds array" });
+    }
+    await Order.updateMany(
+      { _id: { $in: orderIds }, paymentMethod: 'COD', orderStatus: 'delivered' },
+      { $set: { codRemitted: true } }
+    );
+    res.json({ message: "COD orders remitted successfully" });
+  } catch(err) { next(err); }
 };

@@ -9,8 +9,7 @@ import {
   MapPinIcon,
   PhoneIcon,
   CheckCircleIcon,
-  XCircleIcon,
-  NavigationIcon } from
+  XCircleIcon } from
 'lucide-react';
 const SHIPPER_SIDEBAR = [
 {
@@ -29,90 +28,61 @@ const SHIPPER_SIDEBAR = [
   path: '/shipper/profile'
 }];
 
-// Mock Data
-const MOCK_DELIVERIES = [
-{
-  id: 'DEL-1042',
-  orderId: 'ORD-2023-1042',
-  customerName: 'John Doe',
-  phone: '+1 (555) 123-4567',
-  address: '123 Main St, Apt 4B, San Francisco, CA 94105',
-  status: 'assigned',
-  codAmount: 0,
-  distance: '2.4 km',
-  estimatedTime: '15 mins'
-},
-{
-  id: 'DEL-1041',
-  orderId: 'ORD-2023-1041',
-  customerName: 'Jane Smith',
-  phone: '+1 (555) 987-6543',
-  address: '456 Market St, Suite 200, San Francisco, CA 94104',
-  status: 'delivering',
-  codAmount: 89.5,
-  distance: '1.2 km',
-  estimatedTime: '8 mins'
-},
-{
-  id: 'DEL-1040',
-  orderId: 'ORD-2023-1040',
-  customerName: 'Alice Johnson',
-  phone: '+1 (555) 456-7890',
-  address: '789 Mission St, San Francisco, CA 94103',
-  status: 'completed',
-  codAmount: 245.0,
-  distance: '3.1 km',
-  estimatedTime: 'Delivered at 10:30 AM'
-},
-{
-  id: 'DEL-1039',
-  orderId: 'ORD-2023-1039',
-  customerName: 'Bob Brown',
-  phone: '+1 (555) 234-5678',
-  address: '321 Howard St, San Francisco, CA 94105',
-  status: 'failed',
-  codAmount: 45.0,
-  distance: '1.8 km',
-  estimatedTime: 'Failed at 9:15 AM',
-  notes: 'Customer not available at address.'
-}];
+// Mock Data Removed
 
 export function ShipperDeliveries() {
-  const [activeTab, setActiveTab] = useState('assigned');
-  const [deliveries, setDeliveries] = useState(MOCK_DELIVERIES);
+  const [activeTab, setActiveTab] = useState('shipped');
+  const [deliveries, setDeliveries] = useState<any[]>([]);
+  const token = localStorage.getItem('token');
+
+  const fetchShipperOrders = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/orders/shipper", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDeliveries(data);
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  React.useEffect(() => {
+    fetchShipperOrders();
+  }, [token]);
+
   const tabs = [
   {
-    id: 'assigned',
-    label: 'New Tasks'
-  },
-  {
-    id: 'delivering',
+    id: 'shipped',
     label: 'In Progress'
   },
   {
-    id: 'completed',
+    id: 'delivered',
     label: 'Completed'
   },
   {
-    id: 'failed',
+    id: 'returned',
     label: 'Failed'
   }];
 
-  const filteredDeliveries = deliveries.filter((d) => d.status === activeTab);
-  const handleAccept = (id: string) => {
-    setDeliveries(
-      deliveries.map((d) =>
-      d.id === id ?
-      {
-        ...d,
-        status: 'delivering'
-      } :
-      d
-      )
-    );
-  };
-  const handleReject = (id: string) => {
-    setDeliveries(deliveries.filter((d) => d.id !== id));
+  const filteredDeliveries = deliveries.filter((d) => d.orderStatus === activeTab);
+  
+  const updateStatus = async (id: string, newStatus: string) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/orders/${id}/status`, {
+        method: "PUT",
+        headers: {
+           "Content-Type": "application/json",
+           Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) fetchShipperOrders();
+      else {
+        const err = await res.json();
+        alert(err.message);
+      }
+    } catch(err) { console.error(err); }
   };
   return (
     <DashboardLayout
@@ -123,32 +93,34 @@ export function ShipperDeliveries() {
       {/* Overview Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <p className="text-sm font-medium text-gray-500 mb-1">New Tasks</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {deliveries.filter((d) => d.status === 'assigned').length}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <p className="text-sm font-medium text-gray-500 mb-1">In Progress</p>
           <p className="text-2xl font-bold text-indigo-600">
-            {deliveries.filter((d) => d.status === 'delivering').length}
+            {deliveries.filter((d) => d.orderStatus === 'shipped').length}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <p className="text-sm font-medium text-gray-500 mb-1">
-            Completed Today
+            Completed
           </p>
           <p className="text-2xl font-bold text-green-600">
-            {deliveries.filter((d) => d.status === 'completed').length}
+            {deliveries.filter((d) => d.orderStatus === 'delivered').length}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <p className="text-sm font-medium text-gray-500 mb-1">COD to Remit</p>
+          <p className="text-sm font-medium text-gray-500 mb-1">
+            Failed
+          </p>
+          <p className="text-2xl font-bold text-red-600">
+            {deliveries.filter((d) => d.orderStatus === 'returned').length}
+          </p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+          <p className="text-sm font-medium text-gray-500 mb-1">COD Pending</p>
           <p className="text-2xl font-bold text-gray-900">
             $
             {deliveries.
-            filter((d) => d.status === 'completed' && d.codAmount > 0).
-            reduce((sum, d) => sum + d.codAmount, 0).
+            filter((d) => d.orderStatus === 'delivered' && d.paymentMethod === 'COD' && !d.codRemitted).
+            reduce((sum, d) => sum + d.totalAmount, 0).
             toFixed(2)}
           </p>
         </div>
@@ -177,34 +149,26 @@ export function ShipperDeliveries() {
         {filteredDeliveries.length > 0 ?
         filteredDeliveries.map((delivery) =>
         <div
-          key={delivery.id}
+          key={delivery._id}
           className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
           
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center space-x-2 mb-1">
                     <h3 className="text-lg font-bold text-gray-900">
-                      {delivery.orderId}
+                      {delivery._id.slice(-8).toUpperCase()}
                     </h3>
-                    {delivery.codAmount > 0 &&
+                    {delivery.paymentMethod === 'COD' &&
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
-                        COD: ${delivery.codAmount.toFixed(2)}
+                        COD: ${delivery.totalAmount?.toFixed(2)}
                       </span>
                 }
                   </div>
                   <p className="text-sm text-gray-500">
-                    Task ID: {delivery.id}
+                    Order ID: {delivery._id}
                   </p>
                 </div>
-                <StatusBadge
-              status={
-              delivery.status === 'assigned' ?
-              'pending' :
-              delivery.status === 'delivering' ?
-              'processing' :
-              delivery.status as any
-              } />
-            
+                <StatusBadge status={delivery.orderStatus as any} />
               </div>
 
               <div className="space-y-3 mb-6">
@@ -212,80 +176,53 @@ export function ShipperDeliveries() {
                   <UserIcon className="h-5 w-5 text-gray-400 mr-3 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      {delivery.customerName}
+                      {delivery.customer?.name}
                     </p>
                     <a
-                  href={`tel:${delivery.phone}`}
+                  href={`tel:${delivery.customer?.phone}`}
                   className="text-sm text-indigo-600 hover:underline flex items-center mt-0.5">
                   
                       <PhoneIcon className="h-3 w-3 mr-1" />
-                      {delivery.phone}
+                      {delivery.customer?.phone || 'No phone'}
                     </a>
                   </div>
                 </div>
                 <div className="flex items-start">
                   <MapPinIcon className="h-5 w-5 text-gray-400 mr-3 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm text-gray-700">{delivery.address}</p>
+                    <p className="text-sm text-gray-700">{delivery.shippingAddress}</p>
                     <div className="flex items-center space-x-2 mt-1">
                       <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {delivery.distance}
-                      </span>
-                      <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {delivery.estimatedTime}
+                        {new Date(delivery.createdAt).toLocaleDateString('vi-VN')}
                       </span>
                     </div>
                   </div>
                 </div>
-                {delivery.notes &&
-            <div className="bg-red-50 border border-red-100 rounded-lg p-3 mt-2">
-                    <p className="text-sm text-red-800">
-                      <span className="font-semibold">Note:</span>{' '}
-                      {delivery.notes}
-                    </p>
-                  </div>
-            }
               </div>
 
               {/* Actions based on status */}
-              <div className="flex items-center space-x-3 pt-4 border-t border-gray-100">
-                {activeTab === 'assigned' &&
+              <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-100">
+
+                {activeTab === 'shipped' &&
             <>
-                    <button
-                onClick={() => handleReject(delivery.id)}
-                className="flex-1 px-4 py-2 border border-red-200 text-red-600 rounded-xl font-medium hover:bg-red-50 transition-colors flex items-center justify-center">
-                
-                      <XCircleIcon className="h-5 w-5 mr-2" />
-                      Reject
+                    <button 
+                       onClick={() => updateStatus(delivery._id, 'returned')}
+                       className="w-full sm:flex-1 px-4 py-2 border border-ref-200 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-medium transition-colors flex items-center justify-center">
+                       <XCircleIcon className="h-5 w-5 mr-2" />
+                       Giao thất bại
                     </button>
                     <button
-                onClick={() => handleAccept(delivery.id)}
-                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center">
-                
-                      <CheckCircleIcon className="h-5 w-5 mr-2" />
-                      Accept Task
+                       onClick={() => updateStatus(delivery._id, 'delivered')}
+                       className="w-full sm:flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center">
+                       <CheckCircleIcon className="h-5 w-5 mr-2" />
+                       Giao thành công
                     </button>
                   </>
             }
 
-                {activeTab === 'delivering' &&
-            <>
-                    <button className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors flex items-center justify-center">
-                      <NavigationIcon className="h-5 w-5 mr-2" />
-                      Navigate
-                    </button>
-                    <Link
-                to={`/shipper/deliveries/${delivery.id}`}
-                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center text-center">
-                
-                      Update Status
-                    </Link>
-                  </>
-            }
-
-                {(activeTab === 'completed' || activeTab === 'failed') &&
+                {(activeTab === 'delivered' || activeTab === 'returned') &&
             <Link
-              to={`/shipper/deliveries/${delivery.id}`}
+              to={`/orders/${delivery._id}`}
               className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors flex items-center justify-center text-center">
               
                     View Details

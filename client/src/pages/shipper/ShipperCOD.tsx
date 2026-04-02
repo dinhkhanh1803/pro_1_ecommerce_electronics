@@ -28,47 +28,33 @@ const SHIPPER_SIDEBAR = [
   path: '/shipper/profile'
 }];
 
-// Mock Data
-const MOCK_COD_ORDERS = [
-{
-  id: 'COD-1042',
-  orderId: 'ORD-2023-1042',
-  customerName: 'John Doe',
-  amount: 129.99,
-  dateCollected: 'Oct 24, 2023, 11:30 AM',
-  status: 'pending_remittance' // pending_remittance, remitted
-},
-{
-  id: 'COD-1041',
-  orderId: 'ORD-2023-1041',
-  customerName: 'Jane Smith',
-  amount: 89.5,
-  dateCollected: 'Oct 23, 2023, 2:15 PM',
-  status: 'remitted'
-},
-{
-  id: 'COD-1040',
-  orderId: 'ORD-2023-1040',
-  customerName: 'Alice Johnson',
-  amount: 245.0,
-  dateCollected: 'Oct 22, 2023, 9:00 AM',
-  status: 'remitted'
-},
-{
-  id: 'COD-1039',
-  orderId: 'ORD-2023-1039',
-  customerName: 'Bob Brown',
-  amount: 45.0,
-  dateCollected: 'Oct 20, 2023, 4:45 PM',
-  status: 'remitted'
-}];
+// Mock Data Removed
 
 export function ShipperCOD() {
   const [activeTab, setActiveTab] = useState('pending_remittance');
   const [searchQuery, setSearchQuery] = useState('');
-  const [codOrders, setCodOrders] = useState(MOCK_COD_ORDERS);
+  const [codOrders, setCodOrders] = useState<any[]>([]);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const token = localStorage.getItem('token');
+
+  const fetchShipperOrders = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/orders/shipper", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Only get delivered COD orders
+        const codItems = data.filter((d: any) => d.orderStatus === 'delivered' && d.paymentMethod === 'COD');
+        setCodOrders(codItems);
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  React.useEffect(() => {
+    fetchShipperOrders();
+  }, [token]);
   const tabs = [
   {
     id: 'pending_remittance',
@@ -80,18 +66,18 @@ export function ShipperCOD() {
   }];
 
   const filteredOrders = codOrders.filter((order) => {
-    const matchesTab = order.status === activeTab;
+    const isRemitted = activeTab === 'remitted' ? order.codRemitted : !order.codRemitted;
     const matchesSearch =
-    order.orderId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.customerName.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTab && matchesSearch;
+    order._id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    order.customer?.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return isRemitted && matchesSearch;
   });
   const totalPending = codOrders.
-  filter((o) => o.status === 'pending_remittance').
-  reduce((sum, o) => sum + o.amount, 0);
+  filter((o) => !o.codRemitted).
+  reduce((sum, o) => sum + o.totalAmount, 0);
   const totalRemitted = codOrders.
-  filter((o) => o.status === 'remitted').
-  reduce((sum, o) => sum + o.amount, 0);
+  filter((o) => o.codRemitted).
+  reduce((sum, o) => sum + o.totalAmount, 0);
   const toggleSelectAll = () => {
     if (selectedOrderIds.length === filteredOrders.length) {
       setSelectedOrderIds([]);
@@ -106,19 +92,26 @@ export function ShipperCOD() {
       setSelectedOrderIds([...selectedOrderIds, id]);
     }
   };
-  const handleRemit = () => {
-    setCodOrders(
-      codOrders.map((o) =>
-      selectedOrderIds.includes(o.id) ?
-      {
-        ...o,
-        status: 'remitted'
-      } :
-      o
-      )
-    );
-    setSelectedOrderIds([]);
-    setIsConfirmModalOpen(false);
+  const handleRemit = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/orders/cod-remit", {
+         method: "PUT",
+         headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+         },
+         body: JSON.stringify({ orderIds: selectedOrderIds })
+      });
+      if (res.ok) {
+         fetchShipperOrders();
+         setSelectedOrderIds([]);
+         setIsConfirmModalOpen(false);
+         alert("Đã nhận tiền nộp thành công.");
+      } else {
+         const err = await res.json();
+         alert(err.message);
+      }
+    } catch(err) { console.error(err); }
   };
   return (
     <DashboardLayout
@@ -253,39 +246,39 @@ export function ShipperCOD() {
               {filteredOrders.length > 0 ?
               filteredOrders.map((order) =>
               <tr
-                key={order.id}
+                key={order._id}
                 className="hover:bg-gray-50 transition-colors">
                 
                     {activeTab === 'pending_remittance' &&
                 <td className="p-4">
                         <input
                     type="checkbox"
-                    checked={selectedOrderIds.includes(order.id)}
-                    onChange={() => toggleSelectOrder(order.id)}
+                    checked={selectedOrderIds.includes(order._id)}
+                    onChange={() => toggleSelectOrder(order._id)}
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer" />
                   
                       </td>
                 }
                     <td className="p-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {order.orderId}
+                        {order._id.slice(-8).toUpperCase()}
                       </div>
-                      <div className="text-xs text-gray-500">{order.id}</div>
+                      <div className="text-xs text-gray-500">{order._id}</div>
                     </td>
                     <td className="p-4 text-sm text-gray-900">
-                      {order.customerName}
+                      {order.customer?.name}
                     </td>
                     <td className="p-4 text-sm font-bold text-gray-900">
-                      ${order.amount.toFixed(2)}
+                      ${order.totalAmount?.toFixed(2)}
                     </td>
                     <td className="p-4 text-sm text-gray-600">
-                      {order.dateCollected}
+                      {new Date(order.updatedAt).toLocaleString('vi-VN')}
                     </td>
                     <td className="p-4">
                       <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${order.status === 'remitted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${order.codRemitted ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                     
-                        {order.status.replace('_', ' ')}
+                        {order.codRemitted ? 'Remitted' : 'Pending'}
                       </span>
                     </td>
                   </tr>
@@ -336,8 +329,8 @@ export function ShipperCOD() {
                 <span className="text-xl font-bold text-indigo-600">
                   $
                   {codOrders.
-                filter((o) => selectedOrderIds.includes(o.id)).
-                reduce((sum, o) => sum + o.amount, 0).
+                filter((o) => selectedOrderIds.includes(o._id)).
+                reduce((sum, o) => sum + o.totalAmount, 0).
                 toFixed(2)}
                 </span>
               </div>

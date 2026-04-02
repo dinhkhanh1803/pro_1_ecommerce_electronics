@@ -106,6 +106,7 @@ export function App() {
                 element={<ShipperDeliveryDetail />}
               />
               <Route path="/shipper/cod" element={<ShipperCOD />} />
+              <Route path="/shipper/profile" element={<Profile />} />
             </Route>
 
           </Route>

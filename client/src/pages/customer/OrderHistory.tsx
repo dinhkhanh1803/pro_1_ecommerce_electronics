@@ -38,6 +38,26 @@ export function OrderHistory() {
     fetchOrders();
   }, []);
 
+  const handleCancelOrder = async (orderId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/orders/${orderId}/cancel`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        alert("Hủy đơn hàng thành công");
+        fetchOrders();
+      } else {
+        const errorData = await res.json();
+        alert(`Lỗi: ${errorData.message}`);
+      }
+    } catch(err) {
+      console.error(err);
+      alert("Lỗi khi hủy đơn hàng");
+    }
+  };
+
   const filteredOrders = orders.filter(order => {
     const matchesFilter = activeFilter === 'all' || order.orderStatus === activeFilter;
     const matchesSearch = order._id.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -139,6 +159,16 @@ export function OrderHistory() {
                       <ChevronRightIcon className="h-5 w-5" />
                     </Link>
                   </div>
+                  {['pending', 'processing'].includes(order.orderStatus) && (
+                    <div className="w-full sm:w-auto mt-3 sm:mt-0 text-right">
+                      <button 
+                         onClick={() => handleCancelOrder(order._id)}
+                         className="px-4 py-2 bg-red-50 text-red-600 text-xs font-bold rounded-xl hover:bg-red-100 transition-colors border border-red-100"
+                      >
+                         Hủy đơn hàng
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -171,6 +201,14 @@ export function OrderHistory() {
                   <div className="flex items-center text-sm font-semibold text-gray-500 mb-2 sm:mb-0">
                     <WalletIcon className="w-4 h-4 mr-2 text-indigo-400" />
                     <span>Thanh toán: <span className="text-gray-900 font-bold uppercase">{order.paymentMethod}</span></span>
+                    {order.paymentMethod === 'VNPay' && (
+                       <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                         order.paymentStatus === 'completed' ? 'bg-green-100 text-green-700' :
+                         order.paymentStatus === 'failed' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+                       }`}>
+                         {order.paymentStatus === 'completed' ? 'Đã Thanh Toán' : order.paymentStatus === 'failed' ? 'Thất Bại' : 'Chưa Thanh Toán'}
+                       </span>
+                    )}
                     <span className="mx-3 text-indigo-200">|</span>
                     <span>Cửa hàng: <span className="text-indigo-600 font-bold italic">{order.seller?.name || 'ShopHub'}</span></span>
                   </div>
