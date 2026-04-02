@@ -63,7 +63,7 @@ export function AdminProducts() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/products");
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products`);
       const data = await res.json();
       setProductsList(data);
     } catch (error) {
@@ -108,7 +108,7 @@ export function AdminProducts() {
     try {
       const status = action === 'approve' ? 'active' : 'rejected';
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:5000/api/products/${id}/status`, {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ export function AdminProducts() {
     if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này khỏi hệ thống? Phép toán này không thể hoàn tác.")) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/products/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`

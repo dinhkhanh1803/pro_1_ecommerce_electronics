@@ -123,7 +123,7 @@ export function SellerProducts() {
   const fetchProducts = async () => {
     try {
       if (!user?.id) return;
-      const res = await fetch(`http://localhost:5000/api/products?seller=${user.id}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products?seller=${user.id}`);
       const data = await res.json();
       setProductsList(data);
     } catch (error) {
@@ -139,7 +139,7 @@ export function SellerProducts() {
     if (confirm("Are you sure you want to delete this product?")) {
       try {
         const token = localStorage.getItem("token");
-        await fetch(`http://localhost:5000/api/products/${id}`, {
+        await fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` }
         });

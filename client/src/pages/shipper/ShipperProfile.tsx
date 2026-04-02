@@ -53,7 +53,7 @@ export function ShipperProfile() {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/users/profile", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -73,7 +73,7 @@ export function ShipperProfile() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/users/profile", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/profile`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",

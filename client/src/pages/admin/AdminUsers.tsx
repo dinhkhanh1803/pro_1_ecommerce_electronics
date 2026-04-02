@@ -127,7 +127,7 @@ export function AdminUsers() {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/users?role=${roleFilter}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users?role=${roleFilter}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -159,7 +159,7 @@ export function AdminUsers() {
   const handleToggleLock = async (userId: string, currentStatus: string) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:5000/api/users/${userId}/lock`, {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/users/${userId}/lock`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -173,7 +173,7 @@ export function AdminUsers() {
     if (!window.confirm("Bạn có chắc muốn đổi quyền của người dùng này?")) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/users/${userId}/role`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${userId}/role`, {
         method: 'PUT',
         headers: { 
           "Content-Type": "application/json",

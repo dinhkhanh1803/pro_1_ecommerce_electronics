@@ -182,7 +182,7 @@ export function AdminFinance() {
     const token = localStorage.getItem("token");
     const headers = { Authorization: `Bearer ${token}` };
     
-    fetch(`http://localhost:5000/api/finance/overview`, { headers })
+    fetch(`${import.meta.env.VITE_API_URL}/api/finance/overview`, { headers })
       .then(res => res.json())
       .then(data => setOverview(data))
       .catch(console.error);
@@ -192,7 +192,7 @@ export function AdminFinance() {
     const token = localStorage.getItem("token");
     const headers = { Authorization: `Bearer ${token}` };
     
-    fetch(`http://localhost:5000/api/finance/transactions?type=${typeFilter}`, { headers })
+    fetch(`${import.meta.env.VITE_API_URL}/api/finance/transactions?type=${typeFilter}`, { headers })
       .then(res => res.json())
       .then(data => setTransactions(data))
       .catch(console.error);

@@ -48,7 +48,7 @@ export function ProductDetail() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`http://localhost:5000/api/products/${id}`)
+    fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`)
       .then(res => res.json())
       .then(data => {
         setProduct(data);
@@ -58,7 +58,7 @@ export function ProductDetail() {
         }
         // Fetch sản phẩm liên quan
         if (data.category?._id) {
-          fetch(`http://localhost:5000/api/products?category=${data.category._id}&status=active`)
+          fetch(`${import.meta.env.VITE_API_URL}/api/products?category=${data.category._id}&status=active`)
             .then(r => r.json())
             .then(related =>
               setRelatedProducts(
@@ -73,7 +73,7 @@ export function ProductDetail() {
       .catch(console.error);
 
     // Fetch reviews
-    fetch(`http://localhost:5000/api/reviews/product/${id}`)
+    fetch(`${import.meta.env.VITE_API_URL}/api/reviews/product/${id}`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setReviews(data);
@@ -121,7 +121,7 @@ export function ProductDetail() {
     setReviewError('');
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/reviews", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/reviews`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

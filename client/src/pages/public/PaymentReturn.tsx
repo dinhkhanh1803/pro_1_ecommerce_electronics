@@ -3,34 +3,35 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
 import { CheckCircleIcon, XCircleIcon } from 'lucide-react';
+import { useCart } from '../../context/CartContext';
 
 export function PaymentReturn() {
   const [status, setStatus] = useState<'loading' | 'success' | 'failed'>('loading');
   const [message, setMessage] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
+  const { clearCart } = useCart();
 
   useEffect(() => {
-    // Ping backend to verify IPN and get status if needed, 
-    // or we just call the vnpay_return endpoint which handles it
-    
-    fetch(`http://localhost:5000/api/payment/vnpay_return${location.search}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setStatus('success');
-          setMessage(data.message || 'Thanh toán thành công. Đơn hàng của bạn đã được ghi nhận.');
-        } else {
-          setStatus('failed');
-          setMessage(data.message || 'Thanh toán không thành công. Vui lòng thử lại.');
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        setStatus('failed');
-        setMessage('Đã xảy ra lỗi kết nối khi xác thực thanh toán.');
-      });
-  }, [location]);
+    // Backend đã xác thực VNPay rồi redirect về đây với kết quả trong query params
+    const params = new URLSearchParams(location.search);
+    const success = params.get('success') === 'true';
+    const msg = params.get('message') || '';
+
+    if (success) {
+      clearCart(); // Chỉ xóa giỏ hàng khi thanh toán thực sự thành công
+      setStatus('success');
+      setMessage(msg || 'Thanh toán thành công. Đơn hàng của bạn đã được ghi nhận.');
+    } else if (params.has('success')) {
+      // Có param success nhưng là false → thất bại/hủy
+      setStatus('failed');
+      setMessage(msg || 'Thanh toán không thành công. Vui lòng thử lại.');
+    } else {
+      // Không có params → truy cập trực tiếp trang này, redirect về home
+      navigate('/', { replace: true });
+    }
+  }, [location, navigate, clearCart]);
+
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">

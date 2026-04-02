@@ -18,6 +18,7 @@ const orderSchema = new mongoose.Schema(
     orderStatus: { type: String, enum: ["pending", "processing", "shipped", "delivered", "cancelled", "returned"], default: "pending" },
     codRemitted: { type: Boolean, default: false },
     coupon: { type: String },
+    vnpTxnRef: { type: String, index: true }, // Mã giao dịch VNPay để tra cứu khi callback
   },
   { timestamps: true }
 );

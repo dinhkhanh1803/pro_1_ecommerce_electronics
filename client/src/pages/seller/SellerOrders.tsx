@@ -63,7 +63,7 @@ export function SellerOrders() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const url = `http://localhost:5000/api/orders/seller?page=${page}&limit=5&status=${activeTab}&search=${searchQuery}`;
+      const url = `${import.meta.env.VITE_API_URL}/api/orders/seller?page=${page}&limit=5&status=${activeTab}&search=${searchQuery}`;
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -121,7 +121,7 @@ export function SellerOrders() {
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/status`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",

@@ -110,7 +110,7 @@ export function AdminCMS() {
 
   const fetchBanners = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/cms/banners");
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/cms/banners`);
       const data = await res.json();
       setBanners(data);
     } catch (err) {}
@@ -118,7 +118,7 @@ export function AdminCMS() {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/categories");
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/categories`);
       const data = await res.json();
       setCategories(data);
     } catch (err) {}
@@ -126,7 +126,7 @@ export function AdminCMS() {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/cms/settings");
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/cms/settings`);
       const data = await res.json();
       setSettings(data);
     } catch (err) {}
@@ -154,7 +154,7 @@ export function AdminCMS() {
   const handleToggleStatus = async (id: string, currentStatus: string) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:5000/api/cms/banners/${id}`, {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/cms/banners/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: currentStatus === 'active' ? 'draft' : 'active' })
@@ -202,7 +202,7 @@ export function AdminCMS() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/products/upload-image", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products/upload-image`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -213,7 +213,7 @@ export function AdminCMS() {
         setBannerForm(prev => ({ ...prev, image: data.url }));
       } else if (target === 'category' && categoryId) {
         // Update category image immediately
-        await fetch(`http://localhost:5000/api/categories/${categoryId}`, {
+        await fetch(`${import.meta.env.VITE_API_URL}/api/categories/${categoryId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ image: data.url })
@@ -232,8 +232,8 @@ export function AdminCMS() {
     try {
       const token = localStorage.getItem("token");
       const url = editingBanner 
-        ? `http://localhost:5000/api/cms/banners/${editingBanner._id}`
-        : "http://localhost:5000/api/cms/banners";
+        ? `${import.meta.env.VITE_API_URL}/api/cms/banners/${editingBanner._id}`
+        : `${import.meta.env.VITE_API_URL}/api/cms/banners`;
       
       const res = await fetch(url, {
         method: editingBanner ? 'PUT' : 'POST',
@@ -256,7 +256,7 @@ export function AdminCMS() {
     formData.append('image', file);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/products/upload-image", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products/upload-image`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -282,7 +282,7 @@ export function AdminCMS() {
         favicon: settings.favicon || '',
       };
       
-      const res = await fetch('http://localhost:5000/api/cms/settings', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/cms/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload)
@@ -401,7 +401,7 @@ export function AdminCMS() {
                       onClick={() => {
                         if (confirm("Are you sure?")) {
                           const token = localStorage.getItem("token");
-                          fetch(`http://localhost:5000/api/cms/banners/${banner._id}`, {
+                          fetch(`${import.meta.env.VITE_API_URL}/api/cms/banners/${banner._id}`, {
                             method: 'DELETE',
                             headers: { Authorization: `Bearer ${token}` }
                           }).then(() => fetchBanners());

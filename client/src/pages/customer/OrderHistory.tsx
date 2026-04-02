@@ -30,7 +30,7 @@ export function OrderHistory() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/orders/my-orders", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/my-orders`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -46,7 +46,7 @@ export function OrderHistory() {
   const handleCancelOrder = async (orderId: string) => {
     if (!window.confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/orders/${orderId}/cancel`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/cancel`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` }
       });

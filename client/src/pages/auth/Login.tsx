@@ -19,7 +19,7 @@ export function Login() {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -170,7 +170,7 @@ export function Login() {
             <button
               type="button"
               onClick={() =>
-                (window.location.href = "http://localhost:5000/api/auth/google")
+                (window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`)
               }
               className="flex items-center justify-center px-4 py-3 space-x-2 transition-colors border border-gray-300 rounded-xl hover:bg-gray-50"
             >

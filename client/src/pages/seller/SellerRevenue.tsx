@@ -79,7 +79,7 @@ export function SellerRevenue() {
       setLoading(true);
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`http://localhost:5000/api/dashboard/seller?dateRange=${dateRange}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/seller?dateRange=${dateRange}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {

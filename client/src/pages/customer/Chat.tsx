@@ -56,7 +56,7 @@ export function Chat() {
   const fetchContacts = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/messages", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/messages`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -70,7 +70,7 @@ export function Chat() {
           setSelectedContact(existing);
         } else {
           // Fetch thông tin contact mới nãy chưa có trong hội thoại
-          const resContact = await fetch(`http://localhost:5000/api/messages/contact/${contactIdFromUrl}`, {
+          const resContact = await fetch(`${import.meta.env.VITE_API_URL}/api/messages/contact/${contactIdFromUrl}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (resContact.ok) {
@@ -86,7 +86,7 @@ export function Chat() {
 
   const fetchMessages = async (otherId: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/messages/${otherId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/messages/${otherId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -111,13 +111,13 @@ export function Chat() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedContact || !token) return;
     try {
-      const res = await fetch("http://localhost:5000/api/messages", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/messages`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}` 
         },
-        body: JSON.stringify({ receiverId: selectedContact._id, content: newMessage })
+        body: JSON.stringify({ recipientId: selectedContact._id, text: newMessage })
       });
       if (res.ok) {
         setNewMessage("");

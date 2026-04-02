@@ -31,7 +31,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/cms/settings');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/cms/settings`);
       const data = await res.json();
       setSettings({
         siteName: data.siteName || defaultSettings.siteName,

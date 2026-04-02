@@ -77,14 +77,14 @@ export function SellerProductForm() {
   const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/categories')
+    fetch(`${import.meta.env.VITE_API_URL}/api/categories`)
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(console.error);
 
     if (id) {
       setLoading(true);
-      fetch(`http://localhost:5000/api/products/${id}`)
+      fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`)
         .then(res => res.json())
         .then(data => {
           setProductData({
@@ -150,7 +150,7 @@ export function SellerProductForm() {
       const formData = new FormData();
       formData.append('image', file);
 
-      const res = await fetch('http://localhost:5000/api/products/upload-image', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products/upload-image`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -220,8 +220,8 @@ export function SellerProductForm() {
       };
       const token = localStorage.getItem("token");
       const url = id 
-        ? `http://localhost:5000/api/products/${id}` 
-        : 'http://localhost:5000/api/products';
+        ? `${import.meta.env.VITE_API_URL}/api/products/${id}` 
+        : `${import.meta.env.VITE_API_URL}/api/products`;
       const method = id ? 'PUT' : 'POST';
 
       const res = await fetch(url, {

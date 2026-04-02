@@ -44,7 +44,7 @@ export function ShipperDeliveries() {
 
   const fetchShipperOrders = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/orders/shipper", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/shipper`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -76,7 +76,7 @@ export function ShipperDeliveries() {
   
   const updateStatus = async (id: string, newStatus: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/orders/${id}/status`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${id}/status`, {
         method: "PUT",
         headers: {
            "Content-Type": "application/json",

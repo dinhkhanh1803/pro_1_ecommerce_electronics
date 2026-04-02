@@ -87,7 +87,7 @@ export function AdminDashboard() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    fetch("http://localhost:5000/api/dashboard/stats", {
+    fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/stats`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json())

@@ -18,7 +18,7 @@ export function SearchResults() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/categories')
+    fetch(`${import.meta.env.VITE_API_URL}/api/categories`)
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(console.error);
@@ -26,7 +26,7 @@ export function SearchResults() {
 
   useEffect(() => {
     setLoading(true);
-    let url = `http://localhost:5000/api/products?status=active&search=${encodeURIComponent(query)}`;
+    let url = `${import.meta.env.VITE_API_URL}/api/products?status=active&search=${encodeURIComponent(query)}`;
     
     fetch(url)
       .then(res => res.json())

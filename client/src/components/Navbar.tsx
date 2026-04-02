@@ -21,7 +21,7 @@ export function Navbar() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/categories')
+    fetch(`${import.meta.env.VITE_API_URL}/api/categories`)
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(console.error);

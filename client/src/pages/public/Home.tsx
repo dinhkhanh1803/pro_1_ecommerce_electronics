@@ -24,12 +24,12 @@ export function Home() {
   const [promoBottom, setPromoBottom] = useState<any>(null);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/products?status=active')
+    fetch(`${import.meta.env.VITE_API_URL}/api/products?status=active`)
       .then(res => res.json())
       .then(data => setFeaturedProducts(data.slice(0, 8)))
       .catch(console.error);
 
-    fetch('http://localhost:5000/api/cms/banners')
+    fetch(`${import.meta.env.VITE_API_URL}/api/cms/banners`)
       .then(res => res.json())
       .then(data => {
         const activeBanners = data.filter((b: any) => b.status === 'active');
@@ -39,7 +39,7 @@ export function Home() {
       })
       .catch(console.error);
 
-    fetch('http://localhost:5000/api/categories')
+    fetch(`${import.meta.env.VITE_API_URL}/api/categories`)
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(console.error);

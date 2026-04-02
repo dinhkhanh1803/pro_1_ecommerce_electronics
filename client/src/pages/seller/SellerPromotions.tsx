@@ -17,7 +17,7 @@ import {
   RefreshCwIcon,
 } from 'lucide-react';
 
-const API = 'http://localhost:5000/api';
+const API = `${import.meta.env.VITE_API_URL}/api`;
 
 const SELLER_SIDEBAR = [
   { icon: BarChart2Icon, label: 'Dashboard', path: '/seller/dashboard' },

@@ -7,7 +7,7 @@ import { useCart } from '../../context/CartContext';
 const formatVND = (price: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
-const API = 'http://localhost:5000/api';
+const API = `${import.meta.env.VITE_API_URL}/api`;
 
 export function Wishlist() {
   const { addToCart } = useCart();

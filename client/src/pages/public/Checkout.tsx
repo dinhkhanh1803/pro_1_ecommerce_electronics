@@ -51,7 +51,7 @@ export function Checkout() {
       return;
     }
     // Fetch profile
-    fetch('http://localhost:5000/api/users/profile', {
+    fetch(`${import.meta.env.VITE_API_URL}/api/users/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json())
@@ -102,7 +102,7 @@ export function Checkout() {
       if (!userProfile?.address || userProfile.address !== fullAddress) updateData.address = fullAddress;
 
       if (Object.keys(updateData).length > 0) {
-        await fetch('http://localhost:5000/api/users/profile', {
+        await fetch(`${import.meta.env.VITE_API_URL}/api/users/profile`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -132,7 +132,7 @@ export function Checkout() {
         // Put shipping/discount on the first order, others just subtotal
         const orderTotal = index === 0 ? orderSubtotal + shipping - discountAmount : orderSubtotal;
 
-        return fetch('http://localhost:5000/api/orders', {
+        return fetch(`${import.meta.env.VITE_API_URL}/api/orders`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -158,7 +158,7 @@ export function Checkout() {
 
         if (paymentMethod === 'vnpay') {
            // Redirect to VNPay
-           const vnpRes = await fetch('http://localhost:5000/api/payment/create_payment_url', {
+           const vnpRes = await fetch(`${import.meta.env.VITE_API_URL}/api/payment/create_payment_url`, {
              method: 'POST',
              headers: {
                 'Content-Type': 'application/json',
@@ -168,7 +168,8 @@ export function Checkout() {
            });
            const vnpData = await vnpRes.json();
            if (vnpData.paymentUrl) {
-              clearCart();
+              // KHÔNG xóa giỏ hàng ở đây - chỉ xóa sau khi VNPay xác nhận thành công
+              // Giỏ hàng sẽ được xóa ở trang PaymentReturn nếu thanh toán thành công
               window.location.href = vnpData.paymentUrl;
               return;
            } else {

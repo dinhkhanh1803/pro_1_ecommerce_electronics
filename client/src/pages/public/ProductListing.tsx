@@ -33,7 +33,7 @@ export function ProductListing() {
 
   // Fetch categories
   useEffect(() => {
-    fetch("http://localhost:5000/api/categories")
+    fetch(`${import.meta.env.VITE_API_URL}/api/categories`)
       .then((res) => res.json())
       .then((data) => setCategories(data))
       .catch(console.error);
@@ -42,7 +42,7 @@ export function ProductListing() {
   // Fetch products khi filter thay đổi
   useEffect(() => {
     setLoading(true);
-    let url = "http://localhost:5000/api/products?status=active";
+    let url = `${import.meta.env.VITE_API_URL}/api/products?status=active`;
     if (selectedCategory) {
       url += `&category=${selectedCategory}`;
     }

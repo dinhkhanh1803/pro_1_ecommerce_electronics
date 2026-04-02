@@ -44,7 +44,7 @@ export function ShipperCOD() {
 
   const fetchShipperOrders = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/orders/shipper", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/shipper/cod-balance`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -98,7 +98,7 @@ export function ShipperCOD() {
   };
   const handleRemit = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/orders/cod-remit", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/cod-remit`, {
          method: "PUT",
          headers: {
             "Content-Type": "application/json",

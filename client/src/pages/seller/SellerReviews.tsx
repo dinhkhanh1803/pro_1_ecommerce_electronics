@@ -59,7 +59,7 @@ export function SellerReviews() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/reviews/seller", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/reviews/seller`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -107,7 +107,7 @@ export function SellerReviews() {
   const handleReplySubmit = async (id: string) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/reviews/${id}/reply`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/reviews/${id}/reply`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
