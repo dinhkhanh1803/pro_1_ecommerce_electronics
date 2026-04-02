@@ -60,9 +60,15 @@ export const createPaymentUrl = async (req, res, next) => {
     vnp_Params['vnp_OrderInfo'] = orderInfo || `Thanh toan don hang`;
     vnp_Params['vnp_OrderType'] = 'other';
     vnp_Params['vnp_Amount'] = amount * 100;
-    // ReturnUrl phải khớp chính xác URL đã đăng ký trên VNPay merchant portal (KHÔNG thêm tham số)
     vnp_Params['vnp_ReturnUrl'] = returnUrl;
-    vnp_Params['vnp_IpAddr'] = typeof ipAddr === 'string' ? ipAddr.split(',')[0] : '127.0.0.1';
+    
+    // Normalize IP Address: Use IPv4 127.0.0.1 if local loopback (::1) detected
+    let finalIp = typeof ipAddr === 'string' ? ipAddr.split(',')[0].trim() : '127.0.0.1';
+    if (finalIp === '::1' || finalIp === '::ffff:127.0.0.1') {
+      finalIp = '127.0.0.1';
+    }
+    vnp_Params['vnp_IpAddr'] = finalIp;
+    
     vnp_Params['vnp_CreateDate'] = createDate;
     vnp_Params['vnp_ExpireDate'] = expireDate;
 
@@ -70,7 +76,7 @@ export const createPaymentUrl = async (req, res, next) => {
 
     let signData = qs.stringify(vnp_Params, { encode: false });
     let hmac = crypto.createHmac("sha512", secretKey);
-    let signed = hmac.update(new Buffer.from(signData, 'utf-8')).digest("hex"); 
+    let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex"); 
     vnp_Params['vnp_SecureHash'] = signed;
 
     vnpUrl += '?' + qs.stringify(vnp_Params, { encode: false });
