@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
@@ -9,22 +9,28 @@ import {
   MapPinIcon,
   PhoneIcon,
   CheckCircleIcon,
-  XCircleIcon } from
-'lucide-react';
+  XCircleIcon,
+  PackageIcon
+} from 'lucide-react';
+
+
+const formatVND = (price: number) =>
+  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+
 const SHIPPER_SIDEBAR = [
 {
   icon: TruckIcon,
-  label: 'Deliveries',
+  label: 'Giao hàng',
   path: '/shipper/deliveries'
 },
 {
   icon: DollarSignIcon,
-  label: 'COD Collection',
+  label: 'Thu/Nộp COD',
   path: '/shipper/cod'
 },
 {
   icon: UserIcon,
-  label: 'Profile',
+  label: 'Hồ sơ',
   path: '/shipper/profile'
 }];
 
@@ -33,6 +39,7 @@ const SHIPPER_SIDEBAR = [
 export function ShipperDeliveries() {
   const [activeTab, setActiveTab] = useState('shipped');
   const [deliveries, setDeliveries] = useState<any[]>([]);
+  const [selectedDelivery, setSelectedDelivery] = useState<any>(null);
   const token = localStorage.getItem('token');
 
   const fetchShipperOrders = async () => {
@@ -54,15 +61,15 @@ export function ShipperDeliveries() {
   const tabs = [
   {
     id: 'shipped',
-    label: 'In Progress'
+    label: 'Đang giao'
   },
   {
     id: 'delivered',
-    label: 'Completed'
+    label: 'Giao thành công'
   },
   {
     id: 'returned',
-    label: 'Failed'
+    label: 'Giao thất bại'
   }];
 
   const filteredDeliveries = deliveries.filter((d) => d.orderStatus === activeTab);
@@ -87,41 +94,40 @@ export function ShipperDeliveries() {
   return (
     <DashboardLayout
       sidebarItems={SHIPPER_SIDEBAR}
-      title="My Deliveries"
+      title="Đơn giao hàng của tôi"
       role="Shipper">
       
       {/* Overview Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <p className="text-sm font-medium text-gray-500 mb-1">In Progress</p>
+          <p className="text-sm font-medium text-gray-500 mb-1">Đang giao</p>
           <p className="text-2xl font-bold text-indigo-600">
             {deliveries.filter((d) => d.orderStatus === 'shipped').length}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <p className="text-sm font-medium text-gray-500 mb-1">
-            Completed
+            Giao thành công
           </p>
+
           <p className="text-2xl font-bold text-green-600">
             {deliveries.filter((d) => d.orderStatus === 'delivered').length}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <p className="text-sm font-medium text-gray-500 mb-1">
-            Failed
+            Giao thất bại
           </p>
           <p className="text-2xl font-bold text-red-600">
             {deliveries.filter((d) => d.orderStatus === 'returned').length}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <p className="text-sm font-medium text-gray-500 mb-1">COD Pending</p>
+          <p className="text-sm font-medium text-gray-500 mb-1">Tiền COD chưa nộp</p>
           <p className="text-2xl font-bold text-gray-900">
-            $
-            {deliveries.
+            {formatVND(deliveries.
             filter((d) => d.orderStatus === 'delivered' && d.paymentMethod === 'COD' && !d.codRemitted).
-            reduce((sum, d) => sum + d.totalAmount, 0).
-            toFixed(2)}
+            reduce((sum, d) => sum + d.totalAmount, 0))}
           </p>
         </div>
       </div>
@@ -160,12 +166,12 @@ export function ShipperDeliveries() {
                     </h3>
                     {delivery.paymentMethod === 'COD' &&
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
-                        COD: ${delivery.totalAmount?.toFixed(2)}
+                        COD: {formatVND(delivery.totalAmount || 0)}
                       </span>
                 }
                   </div>
                   <p className="text-sm text-gray-500">
-                    Order ID: {delivery._id}
+                    Mã đơn: {delivery._id}
                   </p>
                 </div>
                 <StatusBadge status={delivery.orderStatus as any} />
@@ -183,7 +189,7 @@ export function ShipperDeliveries() {
                   className="text-sm text-indigo-600 hover:underline flex items-center mt-0.5">
                   
                       <PhoneIcon className="h-3 w-3 mr-1" />
-                      {delivery.customer?.phone || 'No phone'}
+                      {delivery.customer?.phone || 'Không có sđt'}
                     </a>
                   </div>
                 </div>
@@ -220,13 +226,13 @@ export function ShipperDeliveries() {
                   </>
             }
 
-                {(activeTab === 'delivered' || activeTab === 'returned') &&
-            <Link
-              to={`/orders/${delivery._id}`}
+                {(activeTab === 'delivered' || activeTab === 'returned' || activeTab === 'shipped') &&
+            <button
+              onClick={() => setSelectedDelivery(delivery)}
               className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors flex items-center justify-center text-center">
               
-                    View Details
-                  </Link>
+                    Chi tiết đơn
+                  </button>
             }
               </div>
             </div>
@@ -237,14 +243,110 @@ export function ShipperDeliveries() {
               <TruckIcon className="h-8 w-8 text-gray-400" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-1">
-              No deliveries found
+              Không có đơn hàng nào
             </h3>
             <p className="text-gray-500">
-              You don't have any deliveries in this status.
+              Bạn không có đơn giao hàng nào ở trạng thái này.
             </p>
           </div>
         }
       </div>
+
+      {/* Modal View Details */}
+      {selectedDelivery && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] flex flex-col relative animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Chi tiết đơn hàng</h3>
+                <p className="text-sm text-gray-500">Mã đơn: {selectedDelivery._id}</p>
+              </div>
+              <button
+                onClick={() => setSelectedDelivery(null)}
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <XCircleIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-6 space-y-6">
+              {/* Customer Info */}
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Thông tin khách hàng</h4>
+                <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center text-sm">
+                    <UserIcon className="h-4 w-4 text-gray-400 mr-2" />
+                    <span className="font-medium text-gray-900">{selectedDelivery.customer?.name}</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <PhoneIcon className="h-4 w-4 text-gray-400 mr-2" />
+                    <span className="text-gray-700">{selectedDelivery.customer?.phone || 'Chưa cập nhật'}</span>
+                  </div>
+                  <div className="flex items-start text-sm">
+                    <MapPinIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
+                    <span className="text-gray-700">{selectedDelivery.shippingAddress}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Products */}
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Sản phẩm</h4>
+                <div className="space-y-3">
+                  {selectedDelivery.products?.map((item: any, idx: number) => (
+                    <div key={idx} className="flex items-start space-x-3 bg-white border border-gray-100 rounded-xl p-3">
+                      <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {item.product?.images?.[0] ? (
+                          <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <PackageIcon className="h-6 w-6 text-gray-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{item.product?.name || 'Sản phẩm không rõ'}</p>
+                        <p className="text-xs text-gray-500">
+                          {formatVND(item.price)} x {item.quantity}
+                        </p>
+                      </div>
+                      <p className="text-sm font-bold text-gray-900 pl-2">
+                        {formatVND(item.price * item.quantity)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment Summary */}
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Thanh toán</h4>
+                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 space-y-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 inline-flex items-center">
+                      <DollarSignIcon className="h-4 w-4 mr-1 text-indigo-400" /> Hình thức
+                    </span>
+                    <span className="font-semibold text-gray-900">
+                      {selectedDelivery.paymentMethod}
+                    </span>
+                  </div>
+                  <div className="border-t border-indigo-100 pt-3 flex justify-between items-center">
+                    <span className="font-medium text-gray-900">Tổng thu</span>
+                    <span className="text-xl font-bold text-indigo-700">{formatVND(selectedDelivery.totalAmount)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-end">
+                <button
+                  onClick={() => setSelectedDelivery(null)}
+                  className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  Đóng
+                </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>);
 
 }

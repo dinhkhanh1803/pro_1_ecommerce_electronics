@@ -37,6 +37,7 @@ import { AdminCMS } from "./pages/admin/AdminCMS";
 import { ShipperDeliveries } from "./pages/shipper/ShipperDeliveries";
 import { ShipperDeliveryDetail } from "./pages/shipper/ShipperDeliveryDetail";
 import { ShipperCOD } from "./pages/shipper/ShipperCOD";
+import { ShipperProfile } from "./pages/shipper/ShipperProfile";
 import { ProtectedRoute } from "./pages/auth/ProtectedRoute";
 import OAuthSuccess from "./pages/auth/OAuthSuccess";
 import { ForgotPassword } from "./pages/auth/ForgotPassword";
@@ -106,7 +107,7 @@ export function App() {
                 element={<ShipperDeliveryDetail />}
               />
               <Route path="/shipper/cod" element={<ShipperCOD />} />
-              <Route path="/shipper/profile" element={<Profile />} />
+              <Route path="/shipper/profile" element={<ShipperProfile />} />
             </Route>
 
           </Route>

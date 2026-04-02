@@ -9,22 +9,26 @@ import {
   FilterIcon,
   CheckCircleIcon,
   AlertCircleIcon,
-  DownloadIcon } from
-'lucide-react';
+  DownloadIcon 
+} from 'lucide-react';
+
+const formatVND = (price: number) =>
+  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+
 const SHIPPER_SIDEBAR = [
 {
   icon: TruckIcon,
-  label: 'Deliveries',
+  label: 'Giao hàng',
   path: '/shipper/deliveries'
 },
 {
   icon: DollarSignIcon,
-  label: 'COD Collection',
+  label: 'Thu/Nộp COD',
   path: '/shipper/cod'
 },
 {
   icon: UserIcon,
-  label: 'Profile',
+  label: 'Hồ sơ',
   path: '/shipper/profile'
 }];
 
@@ -58,11 +62,11 @@ export function ShipperCOD() {
   const tabs = [
   {
     id: 'pending_remittance',
-    label: 'To Remit'
+    label: 'Cần nộp tiền'
   },
   {
     id: 'remitted',
-    label: 'Remitted History'
+    label: 'Lịch sử đã nộp'
   }];
 
   const filteredOrders = codOrders.filter((order) => {
@@ -82,7 +86,7 @@ export function ShipperCOD() {
     if (selectedOrderIds.length === filteredOrders.length) {
       setSelectedOrderIds([]);
     } else {
-      setSelectedOrderIds(filteredOrders.map((o) => o.id));
+      setSelectedOrderIds(filteredOrders.map((o) => o._id));
     }
   };
   const toggleSelectOrder = (id: string) => {
@@ -114,9 +118,9 @@ export function ShipperCOD() {
     } catch(err) { console.error(err); }
   };
   return (
-    <DashboardLayout
+      <DashboardLayout
       sidebarItems={SHIPPER_SIDEBAR}
-      title="COD Collection"
+      title="Quản lý tiền thu hộ (COD)"
       role="Shipper">
       
       {/* Overview Cards */}
@@ -124,13 +128,13 @@ export function ShipperCOD() {
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-yellow-800 mb-1">
-              Pending Remittance
+              Tiền COD chưa nộp
             </p>
             <p className="text-3xl font-bold text-yellow-900">
-              ${totalPending.toFixed(2)}
+              {formatVND(totalPending)}
             </p>
             <p className="text-xs text-yellow-700 mt-2">
-              Cash collected, needs to be transferred to platform.
+              Tiền mặt đã thu, cần nộp lại cho hệ thống.
             </p>
           </div>
           <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
@@ -141,13 +145,13 @@ export function ShipperCOD() {
         <div className="bg-green-50 border border-green-200 rounded-xl p-6 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-green-800 mb-1">
-              Total Remitted
+              Tổng tiền đã nộp
             </p>
             <p className="text-3xl font-bold text-green-900">
-              ${totalRemitted.toFixed(2)}
+              {formatVND(totalRemitted)}
             </p>
             <p className="text-xs text-green-700 mt-2">
-              Successfully transferred to platform.
+              Đã nộp thành công cho hệ thống.
             </p>
           </div>
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
@@ -163,7 +167,7 @@ export function ShipperCOD() {
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search COD orders..."
+              placeholder="Tìm mã đơn nhỏ hoặc Tên khách..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
@@ -180,7 +184,7 @@ export function ShipperCOD() {
           className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-medium w-full sm:w-auto justify-center">
           
             <DollarSignIcon className="h-4 w-4 mr-2" />
-            Remit Selected ({selectedOrderIds.length})
+            Nộp tiền các đơn chọn ({selectedOrderIds.length})
           </button>
         }
       </div>
@@ -226,19 +230,19 @@ export function ShipperCOD() {
                   </th>
                 }
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Order ID
+                  Mã đơn hàng
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Customer
+                  Khách hàng
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Amount Collected
+                  Số tiền thu
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Date Collected
+                  Ngày thu
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
+                  Trạng thái
                 </th>
               </tr>
             </thead>
@@ -269,7 +273,7 @@ export function ShipperCOD() {
                       {order.customer?.name}
                     </td>
                     <td className="p-4 text-sm font-bold text-gray-900">
-                      ${order.totalAmount?.toFixed(2)}
+                      {formatVND(order.totalAmount || 0)}
                     </td>
                     <td className="p-4 text-sm text-gray-600">
                       {new Date(order.updatedAt).toLocaleString('vi-VN')}
@@ -278,7 +282,7 @@ export function ShipperCOD() {
                       <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${order.codRemitted ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                     
-                        {order.codRemitted ? 'Remitted' : 'Pending'}
+                        {order.codRemitted ? 'Đã nộp' : 'Chưa nộp'}
                       </span>
                     </td>
                   </tr>
@@ -289,7 +293,7 @@ export function ShipperCOD() {
                   colSpan={activeTab === 'pending_remittance' ? 6 : 5}
                   className="p-8 text-center text-gray-500">
                   
-                    No COD records found matching the selected criteria.
+                    Không tìm thấy đơn nộp tiền nào tương ứng.
                   </td>
                 </tr>
               }
@@ -304,40 +308,36 @@ export function ShipperCOD() {
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 relative animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-900">
-                Confirm Remittance
+                Xác nhận nộp tiền
               </h3>
               <button
               onClick={() => setIsConfirmModalOpen(false)}
               className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors">
               
                 <AlertCircleIcon className="h-5 w-5" />{' '}
-                {/* Placeholder for XIcon */}
               </button>
             </div>
 
             <div className="space-y-6">
               <p className="text-gray-600 text-sm">
-                You are about to mark {selectedOrderIds.length} COD order(s) as
-                remitted. This action confirms that you have transferred the
-                collected cash to the platform.
+                Bạn đang chuẩn bị đổi trạng thái của {selectedOrderIds.length} đơn hàng 
+                thành "Đã nộp". Hành động này xác nhận bạn đã nộp lại tiền mặt cho hệ thống.
               </p>
 
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">
-                  Total Amount to Remit:
+                  Tổng tiền cần nộp:
                 </span>
                 <span className="text-xl font-bold text-indigo-600">
-                  $
-                  {codOrders.
+                  {formatVND(codOrders.
                 filter((o) => selectedOrderIds.includes(o._id)).
-                reduce((sum, o) => sum + o.totalAmount, 0).
-                toFixed(2)}
+                reduce((sum, o) => sum + o.totalAmount, 0))}
                 </span>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Transfer Reference Number (Optional)
+                  Mã giao dịch (Không bắt buộc)
                 </label>
                 <input
                 type="text"
@@ -351,13 +351,13 @@ export function ShipperCOD() {
                 onClick={() => setIsConfirmModalOpen(false)}
                 className="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">
                 
-                  Cancel
+                  Hủy
                 </button>
                 <button
                 onClick={handleRemit}
                 className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors">
                 
-                  Confirm Remittance
+                  Xác nhận
                 </button>
               </div>
             </div>

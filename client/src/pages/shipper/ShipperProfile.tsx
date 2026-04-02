@@ -1,9 +1,32 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { CustomerLayout } from "../../components/CustomerLayout";
-import { CameraIcon } from "lucide-react";
+import { DashboardLayout } from "../../components/DashboardLayout";
+import { 
+  CameraIcon,
+  TruckIcon,
+  DollarSignIcon,
+  UserIcon
+} from "lucide-react";
 
-export function Profile() {
+const SHIPPER_SIDEBAR = [
+  {
+    icon: TruckIcon,
+    label: 'Giao hàng',
+    path: '/shipper/deliveries'
+  },
+  {
+    icon: DollarSignIcon,
+    label: 'Thu/Nộp COD',
+    path: '/shipper/cod'
+  },
+  {
+    icon: UserIcon,
+    label: 'Hồ sơ',
+    path: '/shipper/profile'
+  }
+];
+
+export function ShipperProfile() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -74,8 +97,12 @@ export function Profile() {
   };
 
   return (
-    <CustomerLayout title="Thông tin cá nhân">
-      <div className="max-w-4xl">
+    <DashboardLayout
+      sidebarItems={SHIPPER_SIDEBAR}
+      title="Hồ sơ cá nhân"
+      role="Shipper"
+    >
+      <div className="max-w-4xl bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6">
           <div className="flex items-center space-x-6">
             <div className="relative group">
@@ -92,36 +119,12 @@ export function Profile() {
               <p className="text-gray-500 font-medium">{user?.email}</p>
               <div className="mt-2 flex items-center space-x-2">
                 <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full uppercase tracking-wider">
-                  Member Since {user?.createdAt ? new Date(user.createdAt).getFullYear() : '2024'}
+                  Shipper Since {user?.createdAt ? new Date(user.createdAt).getFullYear() : '2024'}
                 </span>
               </div>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 w-full sm:w-auto mt-6 sm:mt-0">
-            {user?.role === 'admin' && (
-              <button
-                onClick={() => navigate('/admin/dashboard')}
-                className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100"
-              >
-                Quản trị viên
-              </button>
-            )}
-            {user?.role === 'seller' && (
-              <button
-                onClick={() => navigate('/seller/dashboard')}
-                className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
-              >
-                Kênh người bán
-              </button>
-            )}
-            {user?.role === 'shipper' && (
-              <button
-                onClick={() => navigate('/shipper/deliveries')}
-                className="w-full sm:w-auto px-6 py-3 bg-yellow-600 text-white rounded-xl text-sm font-bold hover:bg-yellow-700 transition-all shadow-lg shadow-yellow-100"
-              >
-                Kênh vận chuyển
-              </button>
-            )}
             {!isEditing && (
               <button 
                 onClick={() => setIsEditing(true)}
@@ -176,13 +179,13 @@ export function Profile() {
               />
             </div>
             <div className="md:col-span-2 space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Địa chỉ giao hàng</label>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Địa chỉ thường trú</label>
               <textarea
                 value={formData.address}
                 onChange={e => setFormData({ ...formData, address: e.target.value })}
                 disabled={!isEditing}
                 rows={3}
-                placeholder="Nhập địa chỉ của bạn để thanh toán nhanh hơn"
+                placeholder="Nhập địa chỉ của bạn"
                 className="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:border-transparent transition-all disabled:opacity-60 font-medium resize-none"
               />
             </div>
@@ -208,6 +211,6 @@ export function Profile() {
           )}
         </form>
       </div>
-    </CustomerLayout>
+    </DashboardLayout>
   );
 }
