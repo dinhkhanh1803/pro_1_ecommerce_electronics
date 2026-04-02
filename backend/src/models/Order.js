@@ -13,9 +13,10 @@ const orderSchema = new mongoose.Schema(
     ],
     totalAmount: { type: Number, required: true },
     shippingAddress: { type: String, required: true },
-    paymentMethod: { type: String, enum: ["Credit Card", "PayPal", "COD", "Bank Transfer"], default: "COD" },
+    paymentMethod: { type: String, enum: ["Credit Card", "PayPal", "COD", "Bank Transfer", "VNPay"], default: "COD" },
     paymentStatus: { type: String, enum: ["pending", "completed", "failed", "refunded"], default: "pending" },
-    orderStatus: { type: String, enum: ["pending", "processing", "shipped", "delivered", "cancelled"], default: "pending" },
+    orderStatus: { type: String, enum: ["pending", "processing", "shipped", "delivered", "cancelled", "returned"], default: "pending" },
+    codRemitted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

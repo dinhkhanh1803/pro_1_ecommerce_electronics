@@ -26,7 +26,7 @@ export function Checkout() {
 
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [deliveryMethod, setDeliveryMethod] = useState('standard');
-  const [selectedAddress, setSelectedAddress] = useState('new');
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
   
   // User Profile State
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -57,12 +57,27 @@ export function Checkout() {
       .then(res => res.json())
       .then(data => {
         setUserProfile(data);
-        setFormData(prev => ({
-          ...prev,
-          fullName: data.name || '',
-          phone: data.phone || ''
-        }));
-        // If user has addresses, we could potentially pick one or let them choose 'new'
+        setUserProfile(data);
+        if (data.address) {
+          setIsEditingAddress(false);
+          // Pre-fill form in case they click edit
+          const addrs = data.address.split(',').map((s: string) => s.trim());
+          setFormData({
+            fullName: data.name || '',
+            phone: data.phone || '',
+            street: addrs[0] || '',
+            city: addrs[1] || '',
+            state: addrs[2] || '',
+            zip: addrs[3] || ''
+          });
+        } else {
+          setIsEditingAddress(true);
+          setFormData(prev => ({
+            ...prev,
+            fullName: data.name || '',
+            phone: data.phone || ''
+          }));
+        }
       })
       .catch(console.error);
   }, [token, navigate]);
@@ -84,7 +99,7 @@ export function Checkout() {
       
       const updateData: any = {};
       if (!userProfile?.phone || userProfile.phone !== formData.phone) updateData.phone = formData.phone;
-      if (!userProfile?.addresses?.includes(fullAddress)) updateData.address = fullAddress;
+      if (!userProfile?.address || userProfile.address !== fullAddress) updateData.address = fullAddress;
 
       if (Object.keys(updateData).length > 0) {
         await fetch('http://localhost:5000/api/users/profile', {
@@ -137,6 +152,29 @@ export function Checkout() {
       const allSuccess = responses.every(res => res.ok);
 
       if (allSuccess) {
+        const resultOrders = await Promise.all(responses.map(res => res.json()));
+        const orderIds = resultOrders.map(o => o._id);
+
+        if (paymentMethod === 'vnpay') {
+           // Redirect to VNPay
+           const vnpRes = await fetch('http://localhost:5000/api/payment/create_payment_url', {
+             method: 'POST',
+             headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+             },
+             body: JSON.stringify({ amount: total, orderIds })
+           });
+           const vnpData = await vnpRes.json();
+           if (vnpData.paymentUrl) {
+              clearCart();
+              window.location.href = vnpData.paymentUrl;
+              return;
+           } else {
+              alert('Không thể tạo liên kết thanh toán VNPay.');
+           }
+        }
+
         alert('Đặt hàng thành công! Cảm ơn bạn.');
         clearCart();
         navigate('/orders');
@@ -149,17 +187,7 @@ export function Checkout() {
     }
   };
 
-  const handleSelectSavedAddress = (addrStr: string, idx: number) => {
-    setSelectedAddress(idx.toString());
-    // Parse address if possible or just put it in street
-    setFormData({
-      ...formData,
-      street: addrStr,
-      city: '',
-      state: '',
-      zip: ''
-    });
-  };
+  // Address selection removed in favor of single address edit mode
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -180,56 +208,28 @@ export function Checkout() {
                 </h2>
               </div>
 
-              {/* Saved Addresses */}
-              {userProfile?.addresses?.length > 0 && (
+              {/* Saved Address Display */}
+              {userProfile?.address && !isEditingAddress && (
                 <div className="space-y-3 mb-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Địa chỉ đã lưu</h3>
-                  {userProfile.addresses.map((address: string, index: number) => (
-                    <label
-                      key={index}
-                      className={`block p-4 border-2 rounded-xl cursor-pointer transition-colors ${selectedAddress === index.toString() ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Địa chỉ đang chọn</h3>
+                  <div className="flex justify-between items-center p-4 border-2 border-indigo-500 bg-indigo-50 rounded-xl">
+                    <div>
+                      <p className="font-semibold text-gray-900">{formData.fullName}</p>
+                      <p className="text-sm text-gray-600 mb-1">{formData.phone}</p>
+                      <p className="text-sm text-gray-900 line-clamp-2">{userProfile.address}</p>
+                    </div>
+                    <button 
+                      onClick={() => setIsEditingAddress(true)}
+                      className="text-indigo-600 font-semibold px-3 py-1 hover:bg-indigo-100 rounded-lg transition-colors text-sm"
                     >
-                      <input
-                        type="radio"
-                        name="address"
-                        value={index}
-                        checked={selectedAddress === index.toString()}
-                        onChange={() => handleSelectSavedAddress(address, index)}
-                        className="sr-only"
-                      />
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="text-sm text-gray-900">{address}</p>
-                        </div>
-                        {selectedAddress === index.toString() && (
-                          <span className="bg-indigo-500 text-white text-xs font-semibold px-2 py-1 rounded">
-                            Đã chọn
-                          </span>
-                        )}
-                      </div>
-                    </label>
-                  ))}
-
-                  <label
-                    className={`block p-4 border-2 rounded-xl cursor-pointer transition-colors ${selectedAddress === 'new' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}
-                  >
-                    <input
-                      type="radio"
-                      name="address"
-                      value="new"
-                      checked={selectedAddress === 'new'}
-                      onChange={() => setSelectedAddress('new')}
-                      className="sr-only"
-                    />
-                    <p className="font-semibold text-gray-900">
-                      + Thêm địa chỉ mới
-                    </p>
-                  </label>
+                      Cập nhật
+                    </button>
+                  </div>
                 </div>
               )}
 
               {/* Address Form */}
-              {(selectedAddress === 'new' || !userProfile?.addresses?.length) && (
+              {isEditingAddress && (
                 <div className="space-y-4 pt-4 border-t border-gray-200">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -297,6 +297,16 @@ export function Checkout() {
                       />
                     </div>
                   </div>
+                  {userProfile?.address && (
+                    <div className="pt-2">
+                       <button
+                         onClick={() => setIsEditingAddress(false)}
+                         className="text-gray-500 hover:text-gray-700 text-sm underline"
+                       >
+                         Hủy cập nhật
+                       </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

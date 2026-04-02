@@ -92,13 +92,9 @@ export const updateProfile = async (req, res, next) => {
 
     if (name) user.name = name;
     if (phone) user.phone = phone;
-    if (address) {
-      if (!user.addresses.includes(address)) {
-        user.addresses.push(address);
-      }
-    }
+    if (address) user.address = address;
 
     await user.save();
-    res.json({ message: "Profile updated successfully", user: { id: user._id, name: user.name, phone: user.phone, addresses: user.addresses } });
+    res.json({ message: "Profile updated successfully", user: { id: user._id, name: user.name, phone: user.phone, address: user.address } });
   } catch (err) { next(err); }
 };

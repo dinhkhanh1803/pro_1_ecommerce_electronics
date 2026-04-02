@@ -7,6 +7,7 @@ import { ProductListing } from "./pages/public/ProductListing";
 import { ProductDetail } from "./pages/public/ProductDetail";
 import { Cart } from "./pages/public/Cart";
 import { Checkout } from "./pages/public/Checkout";
+import { PaymentReturn } from "./pages/public/PaymentReturn";
 import { SearchResults } from "./pages/public/SearchResults";
 // Auth Pages
 import { Login } from "./pages/auth/Login";
@@ -61,6 +62,7 @@ export function App() {
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/payment-return" element={<PaymentReturn />} />
             <Route path="/search" element={<SearchResults />} />
 
             {/* Customer Pages */}

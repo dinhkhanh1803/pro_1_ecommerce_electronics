@@ -9,6 +9,7 @@ import couponRoutes from "./couponRoutes.js";
 import orderRoutes from "./orderRoutes.js";
 import messageRoutes from "./messageRoutes.js";
 import reviewRoutes from "./reviewRoutes.js";
+import paymentRoutes from "./paymentRoutes.js";
 import express from "express";
 
 const router = express.Router();
@@ -30,5 +31,6 @@ router.use("/coupons", couponRoutes);
 router.use("/orders", orderRoutes);
 router.use("/messages", messageRoutes);
 router.use("/reviews", reviewRoutes);
+router.use("/payment", paymentRoutes);
 
 export default router;
