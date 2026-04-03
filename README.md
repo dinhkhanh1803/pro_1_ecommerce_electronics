@@ -51,12 +51,12 @@ Hệ thống được chia thành hai phần chính với các chức năng tư�
 * Tài khoản Google Cloud Console (để lấy API đăng nhập Google).
 
 ### Bước 1: Clone dự án
-```bash
+Bash
 git clone <đường-dẫn-repo-của-bạn>
 cd pro_1_ecommerce_electronics-main
+
 Bước 2: Cài đặt và cấu hình Backend (Server)
 Mở terminal và di chuyển vào thư mục backend:
-
 Bash
 cd backend
 npm install
@@ -145,3 +145,6 @@ Xử lý: Vào Google Cloud Console, phần "Authorized redirect URIs" thêm ch�
 [ ] Frontend chạy npm run dev báo thành công và truy cập được http://localhost:5173/.
 
 [ ] Đăng ký thử 1 tài khoản mới trên giao diện web để test kết nối DB.
+
+
+
