@@ -24,11 +24,8 @@ export const registerUser = async (req, res, next) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpire = Date.now() + parseInt(process.env.OTP_EXPIRE || "300000"); // 5 phút
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     // Lưu tạm vào memory
-    otpStore[email] = { name, email, hashedPassword, role, otp, otpExpire };
+    otpStore[email] = { name, email, password, role, otp, otpExpire };
 
     // Gửi OTP qua email
     await sendEmail(email, "ShopHub OTP Verification", `Your OTP is: ${otp}`);
@@ -57,7 +54,7 @@ export const verifyOtp = async (req, res, next) => {
     const user = await User.create({
       name: data.name,
       email: data.email,
-      password: data.hashedPassword,
+      password: data.password,
       role: data.role,
       verified: true,
     });
