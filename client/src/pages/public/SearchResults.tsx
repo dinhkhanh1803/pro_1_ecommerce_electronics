@@ -9,7 +9,7 @@ export function SearchResults() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const query = searchParams.get('q') || 'headphones';
-  const [priceRange, setPriceRange] = useState([0, 1000]);
+  const [priceRange, setPriceRange] = useState([0, 100000000]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState('popular');
@@ -127,7 +127,7 @@ export function SearchResults() {
                 <input
                   type="range"
                   min="0"
-                  max="1000"
+                  max="100000000"
                   value={priceRange[1]}
                   onChange={(e) =>
                   setPriceRange([priceRange[0], parseInt(e.target.value)])
@@ -137,7 +137,7 @@ export function SearchResults() {
                 <div className="flex items-center justify-between space-x-4">
                   <div className="relative flex-1">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                      $
+                      ₫
                     </span>
                     <input
                       type="number"
@@ -151,7 +151,7 @@ export function SearchResults() {
                   <span className="text-gray-500">-</span>
                   <div className="relative flex-1">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                      $
+                      ₫
                     </span>
                     <input
                       type="number"
