@@ -57,16 +57,17 @@ export function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
 
+          {/* Public Ecommerce Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<ProductListing />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/search" element={<SearchResults />} />
+
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
-            {/* Public Pages (now protected) */}
-            <Route path="/" element={<Home />} />
-            <Route path="/products" element={<ProductListing />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/payment-return" element={<PaymentReturn />} />
-            <Route path="/search" element={<SearchResults />} />
 
             {/* Customer Pages */}
             <Route path="/profile" element={<Profile />} />
