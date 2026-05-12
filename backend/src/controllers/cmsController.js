@@ -3,21 +3,27 @@ import Setting from "../models/Setting.js";
 
 export const getBanners = async (req, res, next) => {
   try {
-    const banners = await Banner.find().sort({ order: 1 });
+    const banners = await Banner.find({
+      $or: [{ type: "hero" }, { type: { $exists: false } }],
+    }).sort({ order: 1 });
     res.json(banners);
   } catch(err) { next(err); }
 };
 
 export const addBanner = async (req, res, next) => {
   try {
-    const banner = await Banner.create(req.body);
+    const banner = await Banner.create({ ...req.body, type: "hero" });
     res.status(201).json(banner);
   } catch(err) { next(err); }
 };
 
 export const updateBanner = async (req, res, next) => {
   try {
-    const banner = await Banner.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const banner = await Banner.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, type: "hero" },
+      { new: true }
+    );
     if (!banner) return res.status(404).json({ message: "Banner not found" });
     res.json(banner);
   } catch(err) { next(err); }

@@ -8,7 +8,7 @@ const bannerSchema = new mongoose.Schema(
     link: { type: String, default: "/" },
     cta: { type: String, default: "Shop Now" }, // NEW
     status: { type: String, enum: ["active", "draft"], default: "active" },
-    type: { type: String, enum: ["hero", "promo_mid", "promo_bottom"], default: "hero" }, // NEW
+    type: { type: String, enum: ["hero"], default: "hero" },
     order: { type: Number, default: 0 },
   },
   { timestamps: true }

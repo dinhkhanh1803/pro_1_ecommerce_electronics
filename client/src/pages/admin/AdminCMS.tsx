@@ -103,7 +103,6 @@ export function AdminCMS() {
     image: '',
     link: '/',
     cta: 'Shop Now',
-    type: 'hero',
     status: 'active',
     order: 0
   });
@@ -172,7 +171,6 @@ export function AdminCMS() {
         image: banner.image,
         link: banner.link,
         cta: banner.cta || 'Shop Now',
-        type: banner.type || 'hero',
         status: banner.status,
         order: banner.order
       });
@@ -184,7 +182,6 @@ export function AdminCMS() {
         image: '',
         link: '/',
         cta: 'Shop Now',
-        type: 'hero',
         status: 'active',
         order: banners.length + 1
       });
@@ -238,7 +235,7 @@ export function AdminCMS() {
       const res = await fetch(url, {
         method: editingBanner ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(bannerForm)
+        body: JSON.stringify({ ...bannerForm, type: 'hero' })
       });
 
       if (res.ok) {
@@ -335,8 +332,7 @@ export function AdminCMS() {
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             <div className="p-4 bg-gray-50 border-b border-gray-200 text-sm font-medium text-gray-500 grid grid-cols-12 gap-4">
               <div className="col-span-1">Order</div>
-              <div className="col-span-4">Banner Info</div>
-              <div className="col-span-2">Type</div>
+              <div className="col-span-6">Banner Info</div>
               <div className="col-span-2">Status</div>
               <div className="col-span-3 text-right">Actions</div>
             </div>
@@ -356,7 +352,7 @@ export function AdminCMS() {
                     </span>
                   </div>
 
-                  <div className="col-span-4 flex items-center space-x-4">
+                  <div className="col-span-6 flex items-center space-x-4">
                     <div className="w-24 h-12 rounded-lg border border-gray-200 overflow-hidden shrink-0 bg-gray-100">
                       <img
                     src={banner.image}
@@ -370,12 +366,6 @@ export function AdminCMS() {
                       </p>
                       <p className="text-xs text-gray-500 truncate">{banner.link}</p>
                     </div>
-                  </div>
-
-                  <div className="col-span-2 flex items-center">
-                    <span className="text-xs font-bold uppercase tracking-wider px-2 py-1 bg-gray-100 rounded-md text-gray-600">
-                      {banner.type}
-                    </span>
                   </div>
 
                   <div className="col-span-2 flex items-center">
@@ -609,18 +599,6 @@ export function AdminCMS() {
                       onChange={(e) => setBannerForm({...bannerForm, subtitle: e.target.value})}
                       className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                    <select 
-                      value={bannerForm.type}
-                      onChange={(e) => setBannerForm({...bannerForm, type: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
-                    >
-                      <option value="hero">Hero Slider</option>
-                      <option value="promo_mid">Promo Middle</option>
-                      <option value="promo_bottom">Promo Bottom</option>
-                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Order Index</label>

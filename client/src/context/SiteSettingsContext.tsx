@@ -28,6 +28,37 @@ const SiteSettingsContext = createContext<SiteSettingsContextType>({
 
 export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
+  const [faviconVersion, setFaviconVersion] = useState<number>(Date.now());
+
+  const resolveFaviconUrl = (rawFavicon: string) => {
+    const fallback = '/favicon.svg';
+    const value = String(rawFavicon || '').trim();
+    if (!value) return fallback;
+
+    if (/^(https?:)?\/\//i.test(value) || value.startsWith('data:')) return value;
+
+    try {
+      const apiOrigin = new URL(import.meta.env.VITE_API_URL).origin;
+      if (value.startsWith('/')) return `${apiOrigin}${value}`;
+      return `${apiOrigin}/${value}`;
+    } catch {
+      if (value.startsWith('/')) return value;
+      return `/${value}`;
+    }
+  };
+
+  const applyFavicon = (favicon: string) => {
+    const hrefBase = resolveFaviconUrl(favicon);
+    const href = `${hrefBase}${hrefBase.includes('?') ? '&' : '?'}v=${faviconVersion}`;
+
+    let link = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.setAttribute('rel', 'icon');
+      document.head.appendChild(link);
+    }
+    link.setAttribute('href', href);
+  };
 
   const fetchSettings = async () => {
     try {
@@ -40,6 +71,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
         primaryLogo: data.primaryLogo || '',
         favicon: data.favicon || '',
       });
+      setFaviconVersion(Date.now());
     } catch (err) {
       console.error('Failed to load site settings', err);
     }
@@ -48,6 +80,11 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetchSettings();
   }, []);
+
+  useEffect(() => {
+    applyFavicon(settings.favicon);
+    document.title = settings.siteName || defaultSettings.siteName;
+  }, [settings.favicon, settings.siteName, faviconVersion]);
 
   return (
     <SiteSettingsContext.Provider value={{ settings, refreshSettings: fetchSettings }}>

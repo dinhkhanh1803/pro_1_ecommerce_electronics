@@ -33,9 +33,7 @@ export function Home() {
       .then(res => res.json())
       .then(data => {
         const activeBanners = data.filter((b: any) => b.status === 'active');
-        setHeroSlides(activeBanners.filter((b: any) => b.type === 'hero'));
-        setPromoMid(activeBanners.find((b: any) => b.type === 'promo_mid'));
-        setPromoBottom(activeBanners.find((b: any) => b.type === 'promo_bottom'));
+        setHeroSlides(activeBanners.filter((b: any) => !b.type || b.type === 'hero'));
       })
       .catch(console.error);
 
