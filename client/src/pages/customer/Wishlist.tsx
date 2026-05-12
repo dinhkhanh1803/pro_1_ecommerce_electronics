@@ -49,14 +49,20 @@ export function Wishlist() {
   };
 
   const handleAddToCart = (item: any) => {
+    const variants = Array.isArray(item.variants) ? item.variants : [];
+    const firstAvailableVariant = variants.find((v: any) => Number(v?.stock || 0) > 0) || variants[0];
+    const variantName = firstAvailableVariant?.name || 'Default';
+    const priceAdd = Number(firstAvailableVariant?.priceAdd || 0);
+
     addToCart({
       id: item._id,
       name: item.name,
-      price: item.price,
+      price: item.price + priceAdd,
       quantity: 1,
       image: item.images?.[0] || 'https://via.placeholder.com/500',
-      color: 'Mặc định',
-      size: 'Mặc định',
+      variantName,
+      color: variantName,
+      size: variantName,
     });
     alert(`Đã thêm "${item.name}" vào giỏ hàng!`);
   };
@@ -70,6 +76,14 @@ export function Wishlist() {
       ) : wishlistItems.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {wishlistItems.map(item => (
+            (() => {
+              const totalStock = Number(
+                item.totalVariantStock ??
+                (Array.isArray(item.variants)
+                  ? item.variants.reduce((sum: number, v: any) => sum + (Number(v?.stock) || 0), 0)
+                  : item.stock ?? 0)
+              );
+              return (
             <div key={item._id} className="relative group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col">
               {/* Image */}
               <Link
@@ -114,11 +128,11 @@ export function Wishlist() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleAddToCart(item)}
-                    disabled={item.stock === 0}
+                    disabled={totalStock === 0}
                     className="flex-1 bg-indigo-600 text-white py-2 px-3 rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <ShoppingCartIcon className="h-4 w-4" />
-                    {item.stock > 0 ? 'Thêm vào giỏ' : 'Hết hàng'}
+                    {totalStock > 0 ? 'Thêm vào giỏ' : 'Hết hàng'}
                   </button>
                   <button
                     onClick={() => handleRemove(item._id)}
@@ -130,6 +144,8 @@ export function Wishlist() {
                 </div>
               </div>
             </div>
+              );
+            })()
           ))}
         </div>
       ) : (

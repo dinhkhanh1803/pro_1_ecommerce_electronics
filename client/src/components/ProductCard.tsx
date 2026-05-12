@@ -15,6 +15,7 @@ interface ProductCardProps {
   reviewCount: number;
   image: string;
   badge?: string;
+  inStock?: boolean;
 }
 
 export function ProductCard({
@@ -26,6 +27,7 @@ export function ProductCard({
   reviewCount,
   image,
   badge,
+  inStock = true,
 }: ProductCardProps) {
   const { isWishlisted, toggleWishlist } = useWishlist();
   const wishlisted = isWishlisted(id);
@@ -51,6 +53,11 @@ export function ProductCard({
               {badge}
             </span>
           )}
+          {!inStock && (
+            <span className="absolute top-3 left-3 bg-gray-900/85 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              Hết hàng
+            </span>
+          )}
           {/* Wishlist button */}
           <button
             onClick={handleWishlist}
@@ -59,7 +66,10 @@ export function ProductCard({
           >
             <HeartIcon className={`h-4 w-4 ${wishlisted ? 'fill-red-500' : ''}`} />
           </button>
-          <button className="absolute bottom-3 right-3 bg-indigo-500 text-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-indigo-600">
+          <button
+            disabled={!inStock}
+            className="absolute bottom-3 right-3 bg-indigo-500 text-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             <ShoppingCartIcon className="h-4 w-4" />
           </button>
         </div>

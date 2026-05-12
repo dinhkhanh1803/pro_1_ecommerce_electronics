@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Coupon from "../models/Coupon.js";
+import Product from "../models/Product.js";
 
 // GET /api/orders/my-orders - Lấy đơn hàng của người mua hiện tại
 export const getMyOrders = async (req, res, next) => {
@@ -96,6 +97,36 @@ export const getOrderById = async (req, res, next) => {
 export const createOrder = async (req, res, next) => {
   try {
     const { products, totalAmount, shippingAddress, paymentMethod, seller, couponCode } = req.body;
+    if (!Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ message: "Order must include at least one product" });
+    }
+
+    // Validate stock at variant level and decrement inventory.
+    for (const item of products) {
+      const dbProduct = await Product.findById(item.product);
+      if (!dbProduct) return res.status(404).json({ message: "Product not found" });
+
+      const variantName = String(item.variantName || "Default");
+      const variantIndex = Array.isArray(dbProduct.variants)
+        ? dbProduct.variants.findIndex((v) => String(v.name) === variantName)
+        : -1;
+
+      if (variantIndex < 0) {
+        return res.status(400).json({ message: `Variant '${variantName}' not found for product ${dbProduct.name}` });
+      }
+
+      const available = Math.max(0, Number(dbProduct.variants[variantIndex].stock) || 0);
+      const requested = Math.max(1, Number(item.quantity) || 1);
+
+      if (requested > available) {
+        return res.status(400).json({
+          message: `Insufficient stock for ${dbProduct.name} - ${variantName}. Available: ${available}`,
+        });
+      }
+
+      dbProduct.variants[variantIndex].stock = available - requested;
+      await dbProduct.save();
+    }
     
     // In a real app, products should be validated with DB prices
     const orderData = {

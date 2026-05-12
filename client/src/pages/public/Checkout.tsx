@@ -121,6 +121,7 @@ export function Checkout() {
         if (!sellerGroups[sellerId]) sellerGroups[sellerId] = [];
         sellerGroups[sellerId].push({
           product: item.id,
+          variantName: item.variantName || item.color || 'Default',
           quantity: item.quantity,
           price: item.price
         });

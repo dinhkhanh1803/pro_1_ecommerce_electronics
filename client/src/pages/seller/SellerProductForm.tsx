@@ -61,8 +61,7 @@ export function SellerProductForm() {
     brand: '',
     price: 0,
     compareAtPrice: 0,
-    sku: '',
-    stock: 0
+    sku: ''
   });
 
   const [variants, setVariants] = useState<any[]>([
@@ -94,8 +93,7 @@ export function SellerProductForm() {
             brand: data.brand || '',
             price: data.price || 0,
             compareAtPrice: data.compareAtPrice || 0,
-            sku: data.sku || '',
-            stock: data.stock || 0
+            sku: data.sku || ''
           });
           setImages(data.images || []);
           if (data.variants && data.variants.length > 0) {
@@ -119,7 +117,7 @@ export function SellerProductForm() {
     const { id, value } = e.target;
     setProductData(prev => ({
       ...prev,
-      [id]: id === 'price' || id === 'compareAtPrice' || id === 'stock' ? Number(value) : value
+      [id]: id === 'price' || id === 'compareAtPrice' ? Number(value) : value
     }));
   };
 
@@ -494,23 +492,8 @@ export function SellerProductForm() {
                 placeholder="e.g. WH-1000XM4" />
               
             </div>
-            <div>
-              <label
-                htmlFor="stock"
-                className="block text-sm font-medium text-gray-700 mb-1">
-                
-                Initial Stock <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                id="stock"
-                min="0"
-                value={productData.stock}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="0"
-                required />
-              
+            <div className="text-sm text-gray-500 md:col-span-2">
+              Tồn kho sản phẩm được tính tự động bằng tổng tồn kho của tất cả variants.
             </div>
           </div>
 

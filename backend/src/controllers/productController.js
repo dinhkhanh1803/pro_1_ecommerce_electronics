@@ -1,10 +1,23 @@
 import Product from "../models/Product.js";
 
+const normalizeVariants = (variants = []) => {
+  if (!Array.isArray(variants)) return [];
+  return variants
+    .map((variant) => ({
+      name: String(variant?.name || "").trim(),
+      priceAdd: Number(variant?.priceAdd) || 0,
+      stock: Math.max(0, Number(variant?.stock) || 0),
+    }))
+    .filter((variant) => variant.name.length > 0);
+};
+
 export const createProduct = async (req, res, next) => {
   try {
     // Assuming req.user is populated by authMiddleware
     const seller = req.user._id; 
     const productData = { ...req.body, seller };
+    productData.variants = normalizeVariants(req.body?.variants);
+    delete productData.stock;
     
     // Status can be default 'pending' initially when a seller creates it.
     if (req.user.role !== 'admin') {
@@ -62,7 +75,13 @@ export const updateProduct = async (req, res, next) => {
       return res.status(403).json({ message: "Not authorized to update this product" });
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updatePayload = { ...req.body };
+    delete updatePayload.stock;
+    if (Object.prototype.hasOwnProperty.call(updatePayload, "variants")) {
+      updatePayload.variants = normalizeVariants(updatePayload.variants);
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updatePayload, { new: true });
     res.json(updatedProduct);
   } catch (error) {
     next(error);

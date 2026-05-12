@@ -235,6 +235,7 @@ export function ProductListing() {
                       reviewCount={p.sales || 0}
                       image={p.images?.[0] || "https://via.placeholder.com/500"}
                       badge={p.compareAtPrice > p.price ? "Sale" : undefined}
+                      inStock={Number(p.totalVariantStock ?? p.stock ?? 0) > 0}
                     />
                   ))
                 ) : (

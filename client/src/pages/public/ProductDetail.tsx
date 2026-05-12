@@ -83,8 +83,18 @@ export function ProductDetail() {
 
   const handleAddToCart = () => {
     if (!product) return;
-    // Tính giá dựa vào variant được chọn
     const variantObj = product.variants?.find((v: any) => v.name === selectedVariant);
+    const selectedName = variantObj?.name || selectedVariantObj?.name || 'Default';
+    const variantStock = Math.max(0, Number(variantObj?.stock ?? selectedVariantObj?.stock ?? 0));
+    if (variantStock <= 0) {
+      alert('Phiên bản đã chọn đã hết hàng.');
+      return;
+    }
+    if (quantity > variantStock) {
+      alert(`Số lượng vượt quá tồn kho của phiên bản (${variantStock}).`);
+      return;
+    }
+
     const finalPrice = product.price + (variantObj?.priceAdd || 0);
 
     addToCart({
@@ -93,8 +103,9 @@ export function ProductDetail() {
       price: finalPrice,
       quantity,
       image: product.images?.[0] || 'https://via.placeholder.com/500',
-      color: selectedVariant || 'Mặc định',
-      size: selectedVariant || 'Mặc định',
+      variantName: selectedName,
+      color: selectedName,
+      size: selectedName,
       seller: typeof product.seller === 'string' ? product.seller : product.seller?._id,
     });
     alert('Đã thêm vào giỏ hàng!');
@@ -154,7 +165,7 @@ export function ProductDetail() {
   const variants: any[] =
     product?.variants?.length
       ? product.variants
-      : [{ name: 'Mặc định', priceAdd: 0, stock: product?.stock ?? 0 }];
+      : [{ name: 'Mặc định', priceAdd: 0, stock: 0 }];
 
   const selectedVariantObj = variants.find(v => v.name === selectedVariant) ?? variants[0];
 
@@ -167,8 +178,16 @@ export function ProductDetail() {
     ? Math.round(((comparePrice - currentPrice) / comparePrice) * 100)
     : 0;
 
-  // Tồn kho: nếu variant có trường stock thì dùng, nếu không dùng stock gốc
-  const availableStock: number = selectedVariantObj?.stock ?? product?.stock ?? 0;
+  const availableStock: number = Math.max(0, Number(selectedVariantObj?.stock) || 0);
+  const totalVariantStock: number = Math.max(
+    0,
+    Number(
+      product?.totalVariantStock ??
+      (Array.isArray(product?.variants)
+        ? product.variants.reduce((sum: number, v: any) => sum + (Number(v?.stock) || 0), 0)
+        : 0)
+    ) || 0
+  );
 
   // Rating trung bình
   const avgRating =
@@ -316,7 +335,7 @@ export function ProductDetail() {
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                   availableStock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                 }`}>
-                  {availableStock > 0 ? `Còn hàng (${availableStock} sản phẩm)` : 'Hết hàng'}
+                  {totalVariantStock > 0 ? `Còn hàng (${totalVariantStock} sản phẩm)` : 'Hết hàng'}
                 </span>
               </div>
 
@@ -435,7 +454,7 @@ export function ProductDetail() {
                 ['Danh mục', product.category?.name || '—'],
                 ['Giá niêm yết', comparePrice > 0 ? formatVND(comparePrice) : '—'],
                 ['Giá bán', formatVND(currentPrice)],
-                ['Tồn kho', `${product.stock} sản phẩm`],
+                ['Tồn kho', `${totalVariantStock} sản phẩm`],
                 ['Trạng thái', product.status],
                 ['Đã bán', `${product.sales ?? 0} sản phẩm`],
               ].map(([label, value]) => (
@@ -558,6 +577,7 @@ export function ProductDetail() {
                   reviewCount={p.sales ?? 0}
                   image={p.images?.[0] || 'https://via.placeholder.com/500'}
                   badge={p.compareAtPrice > p.price ? 'Sale' : undefined}
+                  inStock={Number(p.totalVariantStock ?? p.stock ?? 0) > 0}
                 />
               ))}
             </div>

@@ -136,17 +136,18 @@ export function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {featuredProducts.length > 0 ? (
             featuredProducts.map((p) => (
-              <ProductCard
-                key={p._id}
-                id={p._id}
+                <ProductCard
+                  key={p._id}
+                  id={p._id}
                 name={p.name}
                 price={p.price}
                 oldPrice={p.compareAtPrice}
                 rating={4.8}
                 reviewCount={p.sales || 0}
-                image={p.images?.[0] || 'https://via.placeholder.com/500'}
-                badge={p.compareAtPrice > p.price ? 'Sale' : undefined}
-              />
+                  image={p.images?.[0] || 'https://via.placeholder.com/500'}
+                  badge={p.compareAtPrice > p.price ? 'Sale' : undefined}
+                  inStock={Number(p.totalVariantStock ?? p.stock ?? 0) > 0}
+                />
             ))
           ) : (
             <p className="text-gray-500">Đang tải sản phẩm...</p>

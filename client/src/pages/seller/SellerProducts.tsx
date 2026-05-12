@@ -253,11 +253,12 @@ export function SellerProducts() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {paginatedProducts.map((product) =>
-              <tr
-                key={product._id}
-                className="hover:bg-gray-50 transition-colors group">
-                
+              {paginatedProducts.map((product) => {
+                const totalStock = Number(product.totalVariantStock ?? product.stock ?? 0);
+                return (
+                <tr
+                  key={product._id}
+                  className="hover:bg-gray-50 transition-colors group">
                   <td className="p-4">
                     <input
                     type="checkbox"
@@ -289,9 +290,9 @@ export function SellerProducts() {
                   </td>
                   <td className="p-4">
                     <span
-                    className={`text-sm font-medium ${product.stock === 0 ? 'text-red-600' : product.stock < 10 ? 'text-yellow-600' : 'text-gray-900'}`}>
+                    className={`text-sm font-medium ${totalStock === 0 ? 'text-red-600' : totalStock < 10 ? 'text-yellow-600' : 'text-gray-900'}`}>
                     
-                      {product.stock}
+                      {totalStock}
                     </span>
                   </td>
                   <td className="p-4 text-sm text-gray-600">
@@ -323,7 +324,8 @@ export function SellerProducts() {
                     </div>
                   </td>
                 </tr>
-              )}
+                );
+              })}
             </tbody>
           </table>
         </div>

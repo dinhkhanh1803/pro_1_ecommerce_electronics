@@ -366,7 +366,7 @@ export function AdminProducts() {
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Kho</h4>
-                      <p className="text-sm font-medium text-gray-900">{selectedProduct.stock} sản phẩm</p>
+                      <p className="text-sm font-medium text-gray-900">{Number(selectedProduct.totalVariantStock ?? selectedProduct.stock ?? 0)} sản phẩm</p>
                     </div>
                   </div>
                 </div>
