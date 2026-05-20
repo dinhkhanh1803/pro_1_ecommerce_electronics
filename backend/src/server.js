@@ -1,5 +1,11 @@
 import dns from "node:dns";
-dns.setServers(["1.1.1.1", "8.8.8.8"]);
+try {
+  if (process.env.NODE_ENV !== "production") {
+    dns.setServers(["1.1.1.1", "8.8.8.8"]);
+  }
+} catch (err) {
+  console.warn("⚠️ Cannot override custom DNS:", err.message);
+}
 
 import app from "./app.js";
 import connectDB from "./config/db.js";

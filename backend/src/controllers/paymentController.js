@@ -2,6 +2,43 @@ import crypto from "crypto";
 import qs from "qs";
 import Order from "../models/Order.js";
 
+const isProduction = process.env.NODE_ENV === "production";
+
+const requireEnv = (name) => {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+};
+
+const getFrontendUrl = () => {
+  const frontendUrl = process.env.FRONTEND_URL;
+  if (!frontendUrl) {
+    if (isProduction) {
+      throw new Error("Missing required environment variable: FRONTEND_URL");
+    }
+    return "http://localhost:5173";
+  }
+  return frontendUrl;
+};
+
+const getPaymentConfig = () => {
+  const tmnCode = requireEnv("VNPAY_TMN_CODE");
+  const secretKey = requireEnv("VNPAY_HASH_SECRET");
+  const vnpUrl =
+    process.env.VNPAY_URL || "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+  const returnUrl = requireEnv("VNPAY_RETURN_URL");
+
+  if (isProduction && returnUrl.includes("localhost")) {
+    throw new Error(
+      "Invalid VNPAY_RETURN_URL in production: localhost is not allowed.",
+    );
+  }
+
+  return { tmnCode, secretKey, vnpUrl, returnUrl };
+};
+
 function sortObject(obj) {
   let sorted = {};
   let str = [];
@@ -30,11 +67,7 @@ function getVNPayDate(date) {
 export const createPaymentUrl = async (req, res, next) => {
   try {
     const { amount, orderInfo, orderIds } = req.body;
-    
-    let tmnCode = process.env.VNPAY_TMN_CODE || "DUMMY_TMN";
-    let secretKey = process.env.VNPAY_HASH_SECRET || "DUMMY_SECRET";
-    let vnpUrl = process.env.VNPAY_URL || "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-    let returnUrl = process.env.VNPAY_RETURN_URL || "http://localhost:5173/payment-return";
+    const { tmnCode, secretKey, vnpUrl, returnUrl } = getPaymentConfig();
 
     let date = new Date();
     let createDate = getVNPayDate(date);
@@ -79,14 +112,14 @@ export const createPaymentUrl = async (req, res, next) => {
     let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex"); 
     vnp_Params['vnp_SecureHash'] = signed;
 
-    vnpUrl += '?' + qs.stringify(vnp_Params, { encode: false });
+    const paymentUrl = `${vnpUrl}?${qs.stringify(vnp_Params, { encode: false })}`;
 
     // Lưu txnRef vào từng order để tra cứu khi callback
     for (const id of orderIds) {
       await Order.findByIdAndUpdate(id, { paymentMethod: "VNPay", vnpTxnRef: txnRef });
     }
 
-    res.json({ paymentUrl: vnpUrl });
+    res.json({ paymentUrl });
   } catch (err) {
     next(err);
   }
@@ -94,7 +127,8 @@ export const createPaymentUrl = async (req, res, next) => {
 
 export const vnpayReturn = async (req, res, next) => {
   try {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = getFrontendUrl();
+    const secretKey = requireEnv("VNPAY_HASH_SECRET");
 
     // Sao chép query params vào object mới để tránh mutation trên req.query
     let vnp_Params = { ...req.query };
@@ -107,8 +141,6 @@ export const vnpayReturn = async (req, res, next) => {
     delete vnp_Params['vnp_SecureHashType'];
 
     vnp_Params = sortObject(vnp_Params);
-
-    let secretKey = process.env.VNPAY_HASH_SECRET || "DUMMY_SECRET";
 
     let signData = qs.stringify(vnp_Params, { encode: false });
     let hmac = crypto.createHmac("sha512", secretKey);
