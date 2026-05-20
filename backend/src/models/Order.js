@@ -24,4 +24,36 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+orderSchema.pre("save", async function (next) {
+  if (this.isModified("orderStatus") && this.orderStatus === "cancelled") {
+    // 1. Hoàn kho cho sản phẩm/biến thể
+    for (const item of this.products) {
+      if (item.product) {
+        const product = await mongoose.model("Product").findById(item.product);
+        if (product) {
+          const variantName = String(item.variantName || "Default");
+          const variantIndex = Array.isArray(product.variants)
+            ? product.variants.findIndex((v) => String(v.name) === variantName)
+            : -1;
+
+          if (variantIndex >= 0) {
+            product.variants[variantIndex].stock = (product.variants[variantIndex].stock || 0) + item.quantity;
+            await product.save();
+          }
+        }
+      }
+    }
+
+    // 2. Hoàn lượt sử dụng coupon
+    if (this.coupon) {
+      const coupon = await mongoose.model("Coupon").findOne({ code: this.coupon.toUpperCase() });
+      if (coupon) {
+        coupon.usageCount = Math.max(0, coupon.usageCount - 1);
+        await coupon.save();
+      }
+    }
+  }
+  next();
+});
+
 export default mongoose.model("Order", orderSchema);

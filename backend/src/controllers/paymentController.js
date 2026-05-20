@@ -174,10 +174,12 @@ export const vnpayReturn = async (req, res, next) => {
     } else {
       // Chữ ký không hợp lệ - có thể bị giả mạo
       if (txnRef) {
-        await Order.updateMany(
-          { vnpTxnRef: txnRef, paymentStatus: 'pending' },
-          { $set: { paymentStatus: 'failed', orderStatus: 'cancelled' } }
-        );
+        const pendingOrders = await Order.find({ vnpTxnRef: txnRef, paymentStatus: 'pending' });
+        for (const order of pendingOrders) {
+          order.paymentStatus = 'failed';
+          order.orderStatus = 'cancelled';
+          await order.save();
+        }
       }
       return res.redirect(
         `${frontendUrl}/payment-return?success=false&message=${encodeURIComponent('Chữ ký VNPay không hợp lệ')}`
