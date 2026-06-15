@@ -1,18 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
-  UsersIcon,
-  PackageIcon,
-  ShoppingBagIcon,
   DollarSignIcon,
-  LayoutTemplateIcon,
-  ActivityIcon,
   SearchIcon,
   FilterIcon,
   DownloadIcon,
   TrendingUpIcon,
-  CreditCardIcon,
   ArrowUpRightIcon,
   ArrowDownRightIcon } from
 'lucide-react';
@@ -28,148 +22,7 @@ import {
   Pie,
   Cell } from
 'recharts';
-const ADMIN_SIDEBAR = [
-{
-  icon: ActivityIcon,
-  label: 'Dashboard',
-  path: '/admin/dashboard'
-},
-{
-  icon: UsersIcon,
-  label: 'Users',
-  path: '/admin/users'
-},
-{
-  icon: PackageIcon,
-  label: 'Categories',
-  path: '/admin/categories'
-},
-{
-  icon: PackageIcon,
-  label: 'Products',
-  path: '/admin/products'
-},
-{
-  icon: ShoppingBagIcon,
-  label: 'Orders',
-  path: '/admin/orders'
-},
-// {
-//   icon: DollarSignIcon,
-//   label: 'Finance',
-//   path: '/admin/finance'
-// },
-{
-  icon: LayoutTemplateIcon,
-  label: 'CMS',
-  path: '/admin/cms'
-}];
-
-// Mock Data
-const REVENUE_DATA = [
-{
-  name: 'Jan',
-  revenue: 40000,
-  commission: 2000
-},
-{
-  name: 'Feb',
-  revenue: 30000,
-  commission: 1500
-},
-{
-  name: 'Mar',
-  revenue: 20000,
-  commission: 1000
-},
-{
-  name: 'Apr',
-  revenue: 27800,
-  commission: 1390
-},
-{
-  name: 'May',
-  revenue: 18900,
-  commission: 945
-},
-{
-  name: 'Jun',
-  revenue: 23900,
-  commission: 1195
-},
-{
-  name: 'Jul',
-  revenue: 34900,
-  commission: 1745
-}];
-
-const PAYMENT_METHODS = [
-{
-  name: 'Credit Card',
-  value: 45,
-  color: '#6366f1'
-},
-{
-  name: 'PayPal',
-  value: 25,
-  color: '#10b981'
-},
-{
-  name: 'COD',
-  value: 20,
-  color: '#f59e0b'
-},
-{
-  name: 'Bank Transfer',
-  value: 10,
-  color: '#8b5cf6'
-}];
-
-const MOCK_TRANSACTIONS = [
-{
-  id: 'TRX-1042',
-  date: 'Oct 24, 2023, 10:30 AM',
-  type: 'payment',
-  amount: 129.99,
-  fee: 3.9,
-  net: 126.09,
-  from: 'John Doe',
-  to: 'TechGadgets Official',
-  status: 'completed'
-},
-{
-  id: 'TRX-1041',
-  date: 'Oct 23, 2023, 2:15 PM',
-  type: 'payout',
-  amount: 1500.0,
-  fee: 0,
-  net: 1500.0,
-  from: 'System',
-  to: 'Fashion Boutique',
-  status: 'processing'
-},
-{
-  id: 'TRX-1040',
-  date: 'Oct 22, 2023, 9:00 AM',
-  type: 'refund',
-  amount: 45.0,
-  fee: -1.35,
-  net: -43.65,
-  from: 'Home Essentials',
-  to: 'Alice Johnson',
-  status: 'completed'
-},
-{
-  id: 'TRX-1039',
-  date: 'Oct 20, 2023, 4:45 PM',
-  type: 'payment',
-  amount: 245.0,
-  fee: 7.35,
-  net: 237.65,
-  from: 'Bob Brown',
-  to: 'TechGadgets Official',
-  status: 'completed'
-}];
+import { ADMIN_SIDEBAR } from '../../constants/sidebar';
 
 export function AdminFinance() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -213,7 +66,7 @@ export function AdminFinance() {
   return (
     <DashboardLayout
       sidebarItems={ADMIN_SIDEBAR}
-      title="Financial Management"
+      title="Quản lý tài chính"
       role="Admin">
       
       {/* Metric Cards */}

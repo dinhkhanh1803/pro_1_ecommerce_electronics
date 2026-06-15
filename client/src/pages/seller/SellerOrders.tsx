@@ -2,48 +2,12 @@ import React, { useState } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
-  PackageIcon,
-  ShoppingBagIcon,
-  BarChart2Icon,
-  TagIcon,
-  StarIcon,
-  MessageSquareIcon,
   SearchIcon,
   FilterIcon,
   EyeIcon,
   ChevronDownIcon } from
 'lucide-react';
-const SELLER_SIDEBAR = [
-{
-  icon: BarChart2Icon,
-  label: 'Dashboard',
-  path: '/seller/dashboard'
-},
-{
-  icon: PackageIcon,
-  label: 'Products',
-  path: '/seller/products'
-},
-{
-  icon: ShoppingBagIcon,
-  label: 'Orders',
-  path: '/seller/orders'
-},
-{
-  icon: TagIcon,
-  label: 'Promotions',
-  path: '/seller/promotions'
-},
-{
-  icon: StarIcon,
-  label: 'Reviews',
-  path: '/seller/reviews'
-},
-{
-  icon: MessageSquareIcon,
-  label: 'Messages',
-  path: '/seller/messages'
-}];
+import { SELLER_SIDEBAR } from '../../constants/sidebar';
 
 // Replaced mock data with real data fetch
 
@@ -93,27 +57,27 @@ export function SellerOrders() {
   const tabs = [
   {
     id: 'all',
-    label: 'All Orders'
+    label: 'Tất cả đơn hàng'
   },
   {
     id: 'pending',
-    label: 'Pending'
+    label: 'Chờ thanh toán'
   },
   {
     id: 'processing',
-    label: 'Processing'
+    label: 'Đang xử lý'
   },
   {
     id: 'shipped',
-    label: 'Shipping'
+    label: 'Đang giao hàng'
   },
   {
     id: 'delivered',
-    label: 'Delivered'
+    label: 'Đã giao'
   },
   {
     id: 'cancelled',
-    label: 'Cancelled'
+    label: 'Đã hủy'
   }];
 
   // Local filtering is removed in favor of backend filtering
@@ -139,7 +103,7 @@ export function SellerOrders() {
     setOpenDropdownId(null);
   };
   return (
-    <DashboardLayout sidebarItems={SELLER_SIDEBAR} title="Orders" role="Seller">
+    <DashboardLayout sidebarItems={SELLER_SIDEBAR} title="Đơn hàng" role="Seller">
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="flex items-center space-x-2 w-full sm:w-auto">

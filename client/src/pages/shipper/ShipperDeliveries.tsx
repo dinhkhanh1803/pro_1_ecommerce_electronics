@@ -14,25 +14,9 @@ import {
 } from 'lucide-react';
 
 
-const formatVND = (price: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+import { formatVND } from '../../utils/format';
 
-const SHIPPER_SIDEBAR = [
-{
-  icon: TruckIcon,
-  label: 'Giao hàng',
-  path: '/shipper/deliveries'
-},
-{
-  icon: DollarSignIcon,
-  label: 'Thu/Nộp COD',
-  path: '/shipper/cod'
-},
-{
-  icon: UserIcon,
-  label: 'Hồ sơ',
-  path: '/shipper/profile'
-}];
+import { SHIPPER_SIDEBAR } from '../../constants/sidebar';
 
 // Mock Data Removed
 

@@ -2,29 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "../../components/DashboardLayout";
 import { 
-  CameraIcon,
-  TruckIcon,
-  DollarSignIcon,
-  UserIcon
+  CameraIcon
 } from "lucide-react";
 
-const SHIPPER_SIDEBAR = [
-  {
-    icon: TruckIcon,
-    label: 'Giao hàng',
-    path: '/shipper/deliveries'
-  },
-  {
-    icon: DollarSignIcon,
-    label: 'Thu/Nộp COD',
-    path: '/shipper/cod'
-  },
-  {
-    icon: UserIcon,
-    label: 'Hồ sơ',
-    path: '/shipper/profile'
-  }
-];
+import { SHIPPER_SIDEBAR } from "../../constants/sidebar";
 
 export function ShipperProfile() {
   const navigate = useNavigate();

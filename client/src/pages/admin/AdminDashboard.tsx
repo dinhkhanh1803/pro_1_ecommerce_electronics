@@ -1,18 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import {
   UsersIcon,
   PackageIcon,
   ShoppingBagIcon,
   DollarSignIcon,
-  LayoutTemplateIcon,
   TrendingUpIcon,
   ActivityIcon,
   ShieldCheckIcon } from
 'lucide-react';
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   XAxis,
@@ -23,42 +20,8 @@ import {
   AreaChart,
   Area } from
 'recharts';
-const ADMIN_SIDEBAR = [
-{
-  icon: ActivityIcon,
-  label: 'Dashboard',
-  path: '/admin/dashboard'
-},
-{
-  icon: UsersIcon,
-  label: 'Users',
-  path: '/admin/users'
-},
-{
-  icon: PackageIcon,
-  label: 'Categories',
-  path: '/admin/categories'
-},
-{
-  icon: PackageIcon,
-  label: 'Products',
-  path: '/admin/products'
-},
-{
-  icon: ShoppingBagIcon,
-  label: 'Orders',
-  path: '/admin/orders'
-},
-// {
-//   icon: DollarSignIcon,
-//   label: 'Finance',
-//   path: '/admin/finance'
-// },
-{
-  icon: LayoutTemplateIcon,
-  label: 'CMS',
-  path: '/admin/cms'
-}];
+import { ADMIN_SIDEBAR } from '../../constants/sidebar';
+import { formatVND } from '../../utils/format';
 
 // Mapped directly from API now
 
@@ -97,7 +60,7 @@ export function AdminDashboard() {
   return (
     <DashboardLayout
       sidebarItems={ADMIN_SIDEBAR}
-      title="Admin Overview"
+      title="Tổng quan Quản trị"
       role="Admin">
       
       {/* Metric Cards */}
@@ -113,11 +76,11 @@ export function AdminDashboard() {
             </span>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
-            Total Users
+            Tổng người dùng
           </h3>
           <p className="text-2xl font-bold text-gray-900">{stats.totalUsers || 0}</p>
           <p className="text-xs text-gray-500 mt-2">
-            {stats.totalSellers || 0} Sellers • {(stats.totalUsers || 0) - (stats.totalSellers || 0)} Customers
+            {stats.totalSellers || 0} Người bán • {(stats.totalUsers || 0) - (stats.totalSellers || 0)} Khách hàng
           </p>
         </div>
 
@@ -132,10 +95,10 @@ export function AdminDashboard() {
             </span>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
-            Total Products
+            Tổng sản phẩm
           </h3>
           <p className="text-2xl font-bold text-gray-900">{(stats.activeProducts || 0) + (stats.pendingProducts || 0)}</p>
-          <p className="text-xs text-gray-500 mt-2">{stats.pendingProducts || 0} pending approval</p>
+          <p className="text-xs text-gray-500 mt-2">{stats.pendingProducts || 0} đang chờ duyệt</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -149,11 +112,11 @@ export function AdminDashboard() {
             </span>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
-            Platform Revenue
+            Doanh thu hệ thống
           </h3>
-          <p className="text-2xl font-bold text-gray-900">${(stats.revenue || 0).toLocaleString()}</p>
+          <p className="text-2xl font-bold text-gray-900">{formatVND(stats.revenue || 0)}</p>
           <p className="text-xs text-gray-500 mt-2">
-            This month (5% commission)
+            Tháng này (5% hoa hồng)
           </p>
         </div>
 
@@ -168,10 +131,10 @@ export function AdminDashboard() {
             </span>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
-            Total Orders
+            Tổng đơn hàng
           </h3>
           <p className="text-2xl font-bold text-gray-900">{stats.totalOrders || 0}</p>
-          <p className="text-xs text-gray-500 mt-2">1,204 active deliveries</p>
+          <p className="text-xs text-gray-500 mt-2">{stats.totalOrders || 0} đơn hàng đang hoạt động</p>
         </div>
       </div>
 
@@ -181,12 +144,12 @@ export function AdminDashboard() {
         <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-900">
-              Revenue Trend
+              Xu hướng doanh thu
             </h3>
             <select className="bg-gray-50 border border-gray-200 text-gray-700 py-1.5 pl-3 pr-8 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option>This Week</option>
-              <option>Last Week</option>
-              <option>This Month</option>
+              <option>Tuần này</option>
+              <option>Tuần trước</option>
+              <option>Tháng này</option>
             </select>
           </div>
           <div className="h-80">
@@ -234,7 +197,7 @@ export function AdminDashboard() {
                     fill: '#6b7280',
                     fontSize: 12
                   }}
-                  tickFormatter={(value) => `$${value}`} />
+                  tickFormatter={(value) => formatVND(value)} />
                 
                 <Tooltip
                   contentStyle={{
@@ -242,7 +205,7 @@ export function AdminDashboard() {
                     border: 'none',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                   }}
-                  formatter={(value: number) => [`$${value}`, 'Revenue']} />
+                  formatter={(value: number) => [formatVND(value), 'Doanh thu']} />
                 
                 <Area
                   type="monotone"
@@ -261,7 +224,7 @@ export function AdminDashboard() {
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-900">
-              Orders Volume
+              Lượng đơn hàng
             </h3>
           </div>
           <div className="h-80">
@@ -321,10 +284,10 @@ export function AdminDashboard() {
         <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-900">
-              Recent Activity
+              Hoạt động gần đây
             </h3>
             <button className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
-              View All
+              Xem tất cả
             </button>
           </div>
 
@@ -362,7 +325,7 @@ export function AdminDashboard() {
         {/* Quick Actions */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">
-            Quick Actions
+            Thao tác nhanh
           </h3>
           <div className="space-y-3">
             <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50 transition-colors group">
@@ -371,7 +334,7 @@ export function AdminDashboard() {
                   <ShieldCheckIcon className="h-5 w-5" />
                 </div>
                 <span className="font-medium text-gray-900">
-                  Review Pending Products
+                  Duyệt sản phẩm chờ
                 </span>
               </div>
               {stats.pendingProducts > 0 &&
@@ -387,7 +350,7 @@ export function AdminDashboard() {
                   <UsersIcon className="h-5 w-5" />
                 </div>
                 <span className="font-medium text-gray-900">
-                  Manage Seller Requests
+                  Quản lý yêu cầu người bán
                 </span>
               </div>
               <span className="bg-yellow-100 text-yellow-600 text-xs font-bold px-2 py-1 rounded-full">
@@ -401,7 +364,7 @@ export function AdminDashboard() {
                   <DollarSignIcon className="h-5 w-5" />
                 </div>
                 <span className="font-medium text-gray-900">
-                  Process Payouts
+                  Xử lý thanh toán
                 </span>
               </div>
             </button>

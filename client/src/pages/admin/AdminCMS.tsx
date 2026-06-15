@@ -3,88 +3,15 @@ import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useSiteSettings } from '../../context/SiteSettingsContext';
 import {
-  UsersIcon,
   PackageIcon,
-  ShoppingBagIcon,
-  DollarSignIcon,
-  LayoutTemplateIcon,
-  ActivityIcon,
   PlusIcon,
   EditIcon,
   Trash2Icon,
   GripVerticalIcon,
   ImagePlusIcon,
-  SettingsIcon,
-  GlobeIcon,
-  MailIcon,
   XIcon } from
 'lucide-react';
-const ADMIN_SIDEBAR = [
-{
-  icon: ActivityIcon,
-  label: 'Dashboard',
-  path: '/admin/dashboard'
-},
-{
-  icon: UsersIcon,
-  label: 'Users',
-  path: '/admin/users'
-},
-{
-  icon: PackageIcon,
-  label: 'Categories',
-  path: '/admin/categories'
-},
-{
-  icon: PackageIcon,
-  label: 'Products',
-  path: '/admin/products'
-},
-{
-  icon: ShoppingBagIcon,
-  label: 'Orders',
-  path: '/admin/orders'
-},
-// {
-//   icon: DollarSignIcon,
-//   label: 'Finance',
-//   path: '/admin/finance'
-// },
-{
-  icon: LayoutTemplateIcon,
-  label: 'CMS',
-  path: '/admin/cms'
-}];
-
-// Mock Data
-const MOCK_BANNERS = [
-{
-  id: 'BAN-001',
-  title: 'Summer Sale Hero',
-  image:
-  'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&q=80',
-  link: '/products?category=summer',
-  status: 'active',
-  order: 1
-},
-{
-  id: 'BAN-002',
-  title: 'New Electronics Arrival',
-  image:
-  'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800&q=80',
-  link: '/products?category=electronics',
-  status: 'active',
-  order: 2
-},
-{
-  id: 'BAN-003',
-  title: 'Winter Clearance',
-  image:
-  'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80',
-  link: '/products?category=winter',
-  status: 'draft',
-  order: 3
-}];
+import { ADMIN_SIDEBAR } from '../../constants/sidebar';
 
 export function AdminCMS() {
   const [activeTab, setActiveTab] = useState('banners');
@@ -139,15 +66,15 @@ export function AdminCMS() {
   const tabs = [
   {
     id: 'banners',
-    label: 'Homepage Banners'
+    label: 'Banner trang chủ'
   },
   {
     id: 'categories',
-    label: 'Category Display'
+    label: 'Danh mục hiển thị'
   },
   {
     id: 'settings',
-    label: 'Site Settings'
+    label: 'Cài đặt trang'
   }];
 
   const handleToggleStatus = async (id: string, currentStatus: string) => {
@@ -293,7 +220,7 @@ export function AdminCMS() {
   return (
     <DashboardLayout
       sidebarItems={ADMIN_SIDEBAR}
-      title="Content Management"
+      title="Quản lý giao diện & cài đặt"
       role="Admin">
       
       {/* Tabs */}

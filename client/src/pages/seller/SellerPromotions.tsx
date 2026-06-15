@@ -2,12 +2,6 @@ import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
-  PackageIcon,
-  ShoppingBagIcon,
-  BarChart2Icon,
-  TagIcon,
-  StarIcon,
-  MessageSquareIcon,
   PlusIcon,
   SearchIcon,
   Trash2Icon,
@@ -19,14 +13,7 @@ import {
 
 const API = `${import.meta.env.VITE_API_URL}/api`;
 
-const SELLER_SIDEBAR = [
-  { icon: BarChart2Icon, label: 'Dashboard', path: '/seller/dashboard' },
-  { icon: PackageIcon, label: 'Products', path: '/seller/products' },
-  { icon: ShoppingBagIcon, label: 'Orders', path: '/seller/orders' },
-  { icon: TagIcon, label: 'Promotions', path: '/seller/promotions' },
-  { icon: StarIcon, label: 'Reviews', path: '/seller/reviews' },
-  { icon: MessageSquareIcon, label: 'Messages', path: '/seller/messages' },
-];
+import { SELLER_SIDEBAR } from '../../constants/sidebar';
 
 const emptyForm = {
   code: '',

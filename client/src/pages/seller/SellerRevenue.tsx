@@ -1,12 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import {
-  PackageIcon,
   ShoppingBagIcon,
-  BarChart2Icon,
-  TagIcon,
-  StarIcon,
-  MessageSquareIcon,
   TrendingUpIcon,
   DollarSignIcon,
   CreditCardIcon,
@@ -15,12 +10,9 @@ import {
   DownloadIcon 
 } from 'lucide-react';
 
-const formatVND = (price: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+import { formatVND } from '../../utils/format';
 
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -29,37 +21,7 @@ import {
   AreaChart,
   Area } from
 'recharts';
-const SELLER_SIDEBAR = [
-{
-  icon: BarChart2Icon,
-  label: 'Dashboard',
-  path: '/seller/dashboard'
-},
-{
-  icon: PackageIcon,
-  label: 'Products',
-  path: '/seller/products'
-},
-{
-  icon: ShoppingBagIcon,
-  label: 'Orders',
-  path: '/seller/orders'
-},
-{
-  icon: TagIcon,
-  label: 'Promotions',
-  path: '/seller/promotions'
-},
-{
-  icon: StarIcon,
-  label: 'Reviews',
-  path: '/seller/reviews'
-},
-{
-  icon: MessageSquareIcon,
-  label: 'Messages',
-  path: '/seller/messages'
-}];
+import { SELLER_SIDEBAR } from '../../constants/sidebar';
 
 
 export function SellerRevenue() {
@@ -72,11 +34,9 @@ export function SellerRevenue() {
     revenueData: [],
     recentTransactions: []
   });
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
-      setLoading(true);
       try {
         const token = localStorage.getItem("token");
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/seller?dateRange=${dateRange}`, {
@@ -88,8 +48,6 @@ export function SellerRevenue() {
         }
       } catch (error) {
         console.error("Failed to fetch dashboard stats", error);
-      } finally {
-        setLoading(false);
       }
     };
     fetchStats();
@@ -98,7 +56,7 @@ export function SellerRevenue() {
   return (
     <DashboardLayout
       sidebarItems={SELLER_SIDEBAR}
-      title="Revenue Dashboard"
+      title="Bảng điều khiển doanh thu"
       role="Seller">
       
       {/* Header Actions */}

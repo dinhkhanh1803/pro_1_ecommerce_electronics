@@ -1,10 +1,7 @@
 import { Link } from 'react-router-dom';
 import { StarIcon, HeartIcon, ShoppingCartIcon } from 'lucide-react';
 import { useWishlist } from '../hooks/useWishlist';
-
-// Giá trong DB đã là VNĐ — không cần convert
-const formatVND = (price: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+import { formatVND } from '../utils/format';
 
 interface ProductCardProps {
   id: string;

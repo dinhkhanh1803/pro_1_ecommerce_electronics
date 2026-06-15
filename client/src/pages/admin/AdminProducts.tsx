@@ -1,13 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
-import { StatusBadge } from '../../components/StatusBadge';
 import {
-  UsersIcon,
-  PackageIcon,
-  ShoppingBagIcon,
-  DollarSignIcon,
-  LayoutTemplateIcon,
-  ActivityIcon,
   SearchIcon,
   FilterIcon,
   CheckIcon,
@@ -15,42 +8,8 @@ import {
   EyeIcon,
   TrashIcon } from
 'lucide-react';
-const ADMIN_SIDEBAR = [
-{
-  icon: ActivityIcon,
-  label: 'Dashboard',
-  path: '/admin/dashboard'
-},
-{
-  icon: UsersIcon,
-  label: 'Users',
-  path: '/admin/users'
-},
-{
-  icon: PackageIcon,
-  label: 'Categories',
-  path: '/admin/categories'
-},
-{
-  icon: PackageIcon,
-  label: 'Products',
-  path: '/admin/products'
-},
-{
-  icon: ShoppingBagIcon,
-  label: 'Orders',
-  path: '/admin/orders'
-},
-// {
-//   icon: DollarSignIcon,
-//   label: 'Finance',
-//   path: '/admin/finance'
-// },
-{
-  icon: LayoutTemplateIcon,
-  label: 'CMS',
-  path: '/admin/cms'
-}];
+import { ADMIN_SIDEBAR } from '../../constants/sidebar';
+import { formatVND } from '../../utils/format';
 
 export function AdminProducts() {
   const [activeTab, setActiveTab] = useState('pending');
@@ -82,15 +41,15 @@ export function AdminProducts() {
   const tabs = [
   {
     id: 'pending',
-    label: 'Pending Approval'
+    label: 'Chờ duyệt'
   },
   {
     id: 'active',
-    label: 'Active Products'
+    label: 'Đang hoạt động'
   },
   {
     id: 'rejected',
-    label: 'Rejected'
+    label: 'Bị từ chối'
   }];
 
   const filteredProducts = productsList.filter((product) => {
@@ -145,7 +104,7 @@ export function AdminProducts() {
   return (
     <DashboardLayout
       sidebarItems={ADMIN_SIDEBAR}
-      title="Product Moderation"
+      title="Duyệt sản phẩm"
       role="Admin">
       
       {/* Header Actions */}
@@ -240,7 +199,7 @@ export function AdminProducts() {
                       {product.category?.name || "Unknown"}
                     </td>
                     <td className="p-4 text-sm font-medium text-gray-900">
-                      ${product.price ? product.price.toFixed(2) : "0.00"}
+                      {product.price ? formatVND(product.price) : "0 ₫"}
                     </td>
                     <td className="p-4 text-sm text-gray-600">
                       {new Date(product.createdAt).toLocaleDateString()}
@@ -362,7 +321,7 @@ export function AdminProducts() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Giá bán</h4>
-                      <p className="text-lg font-black text-indigo-600">${selectedProduct.price?.toFixed(2)}</p>
+                      <p className="text-lg font-black text-indigo-600">{formatVND(selectedProduct.price || 0)}</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Kho</h4>

@@ -1,13 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
   UsersIcon,
   PackageIcon,
-  ShoppingBagIcon,
-  DollarSignIcon,
-  LayoutTemplateIcon,
-  ActivityIcon,
   SearchIcon,
   FilterIcon,
   EyeIcon,
@@ -17,44 +13,8 @@ import {
   XIcon
 } from 'lucide-react';
 
-const formatVND = (price: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-const ADMIN_SIDEBAR = [
-{
-  icon: ActivityIcon,
-  label: 'Dashboard',
-  path: '/admin/dashboard'
-},
-{
-  icon: UsersIcon,
-  label: 'Users',
-  path: '/admin/users'
-},
-{
-  icon: PackageIcon,
-  label: 'Categories',
-  path: '/admin/categories'
-},
-{
-  icon: PackageIcon,
-  label: 'Products',
-  path: '/admin/products'
-},
-{
-  icon: ShoppingBagIcon,
-  label: 'Orders',
-  path: '/admin/orders'
-},
-// {
-//   icon: DollarSignIcon,
-//   label: 'Finance',
-//   path: '/admin/finance'
-// },
-{
-  icon: LayoutTemplateIcon,
-  label: 'CMS',
-  path: '/admin/cms'
-}];
+import { ADMIN_SIDEBAR } from '../../constants/sidebar';
+import { formatVND } from '../../utils/format';
 
 export function AdminOrders() {
   const [activeTab, setActiveTab] = useState('all');
@@ -88,27 +48,27 @@ export function AdminOrders() {
   const tabs = [
   {
     id: 'all',
-    label: 'All Orders'
+    label: 'Tất cả đơn'
   },
   {
     id: 'pending',
-    label: 'Pending'
+    label: 'Chờ thanh toán'
   },
   {
     id: 'processing',
-    label: 'Processing'
+    label: 'Chờ giao hàng'
   },
   {
     id: 'shipping',
-    label: 'Shipping'
+    label: 'Đang giao'
   },
   {
     id: 'delivered',
-    label: 'Delivered'
+    label: 'Đã giao thành công'
   },
   {
     id: 'cancelled',
-    label: 'Cancelled'
+    label: 'Đã hủy'
   }];
 
   const filteredOrders = ordersList.filter((order) => {
@@ -127,7 +87,7 @@ export function AdminOrders() {
   return (
     <DashboardLayout
       sidebarItems={ADMIN_SIDEBAR}
-      title="System Orders"
+      title="Đơn hàng hệ thống"
       role="Admin">
       
       {/* Header Actions */}

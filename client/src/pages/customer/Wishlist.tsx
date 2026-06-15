@@ -3,9 +3,7 @@ import { Link } from 'react-router-dom';
 import { CustomerLayout } from '../../components/CustomerLayout';
 import { HeartIcon, Trash2Icon, ShoppingCartIcon } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
-
-const formatVND = (price: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+import { formatVND } from '../../utils/format';
 
 const API = `${import.meta.env.VITE_API_URL}/api`;
 

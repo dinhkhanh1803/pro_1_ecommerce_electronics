@@ -1,119 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
-import { StatusBadge } from '../../components/StatusBadge';
 import {
-  UsersIcon,
-  PackageIcon,
   ShoppingBagIcon,
-  DollarSignIcon,
-  LayoutTemplateIcon,
-  ActivityIcon,
   SearchIcon,
   FilterIcon,
   LockIcon,
   UnlockIcon,
   MoreVerticalIcon,
-  ShieldIcon,
   XIcon,
   MailIcon,
   PhoneIcon,
   MapPinIcon,
   CalendarIcon
 } from 'lucide-react';
-const ADMIN_SIDEBAR = [
-{
-  icon: ActivityIcon,
-  label: 'Dashboard',
-  path: '/admin/dashboard'
-},
-{
-  icon: UsersIcon,
-  label: 'Users',
-  path: '/admin/users'
-},
-{
-  icon: PackageIcon,
-  label: 'Categories',
-  path: '/admin/categories'
-},
-{
-  icon: PackageIcon,
-  label: 'Products',
-  path: '/admin/products'
-},
-{
-  icon: ShoppingBagIcon,
-  label: 'Orders',
-  path: '/admin/orders'
-},
-// {
-//   icon: DollarSignIcon,
-//   label: 'Finance',
-//   path: '/admin/finance'
-// },
-{
-  icon: LayoutTemplateIcon,
-  label: 'CMS',
-  path: '/admin/cms'
-}];
-
-// Mock Data
-const MOCK_USERS = [
-{
-  id: 'USR-001',
-  name: 'John Doe',
-  email: 'john.doe@example.com',
-  avatar:
-  'https://ui-avatars.com/api/?name=John+Doe&background=6366f1&color=fff',
-  role: 'customer',
-  status: 'active',
-  joinDate: 'Oct 24, 2023',
-  orders: 12
-},
-{
-  id: 'USR-002',
-  name: 'TechGadgets Official',
-  email: 'contact@techgadgets.com',
-  avatar:
-  'https://ui-avatars.com/api/?name=Tech+Gadgets&background=ec4899&color=fff',
-  role: 'seller',
-  status: 'active',
-  joinDate: 'Jan 15, 2023',
-  orders: 1450
-},
-{
-  id: 'USR-003',
-  name: 'Jane Smith',
-  email: 'jane.smith@example.com',
-  avatar:
-  'https://ui-avatars.com/api/?name=Jane+Smith&background=10b981&color=fff',
-  role: 'customer',
-  status: 'locked',
-  joinDate: 'Sep 10, 2023',
-  orders: 0
-},
-{
-  id: 'USR-004',
-  name: 'Fashion Boutique',
-  email: 'hello@fashionboutique.com',
-  avatar:
-  'https://ui-avatars.com/api/?name=Fashion+Boutique&background=f59e0b&color=fff',
-  role: 'seller',
-  status: 'active',
-  joinDate: 'Mar 22, 2023',
-  orders: 890
-},
-{
-  id: 'USR-005',
-  name: 'Admin User',
-  email: 'admin@shophub.com',
-  avatar:
-  'https://ui-avatars.com/api/?name=Admin+User&background=6366f1&color=fff',
-  role: 'admin',
-  status: 'active',
-  joinDate: 'Jan 01, 2023',
-  orders: 0
-}];
+import { ADMIN_SIDEBAR } from '../../constants/sidebar';
 
 export function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -156,7 +56,7 @@ export function AdminUsers() {
   const totalPages = Math.ceil(filteredUsers.length / pageSize);
   const paginatedUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const handleToggleLock = async (userId: string, currentStatus: string) => {
+  const handleToggleLock = async (userId: string) => {
     try {
       const token = localStorage.getItem("token");
       await fetch(`${import.meta.env.VITE_API_URL}/api/users/${userId}/lock`, {
@@ -194,7 +94,7 @@ export function AdminUsers() {
   return (
     <DashboardLayout
       sidebarItems={ADMIN_SIDEBAR}
-      title="User Management"
+      title="Quản lý người dùng"
       role="Admin">
       
       {/* Header Actions */}
@@ -314,7 +214,7 @@ export function AdminUsers() {
                         {user.role !== 'admin' &&
                     <button
                       onClick={() =>
-                      handleToggleLock(user._id, user.status)
+                      handleToggleLock(user._id)
                       }
                       className={`p-1.5 rounded-lg transition-colors ${user.status === 'active' ? 'text-gray-400 hover:text-red-600 hover:bg-red-50' : 'text-red-500 hover:text-green-600 hover:bg-green-50'}`}
                       title={

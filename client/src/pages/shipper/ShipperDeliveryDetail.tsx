@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
-  TruckIcon,
   DollarSignIcon,
   UserIcon,
   MapPinIcon,
@@ -15,22 +14,7 @@ import {
   CameraIcon,
   AlertCircleIcon } from
 'lucide-react';
-const SHIPPER_SIDEBAR = [
-{
-  icon: TruckIcon,
-  label: 'Deliveries',
-  path: '/shipper/deliveries'
-},
-{
-  icon: DollarSignIcon,
-  label: 'COD Collection',
-  path: '/shipper/cod'
-},
-{
-  icon: UserIcon,
-  label: 'Profile',
-  path: '/shipper/profile'
-}];
+import { SHIPPER_SIDEBAR } from '../../constants/sidebar';
 
 // Mock Data
 const MOCK_DELIVERY = {
@@ -53,15 +37,12 @@ const MOCK_DELIVERY = {
   notes: 'Please call when you arrive at the lobby.'
 };
 export function ShipperDeliveryDetail() {
-  const { id } = useParams();
-  const navigate = useNavigate();
   const [deliveryStatus, setDeliveryStatus] = useState(MOCK_DELIVERY.status);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [updateType, setUpdateType] = useState<'delivered' | 'failed' | null>(
     null
   );
   const [failureReason, setFailureReason] = useState('');
-  const [proofImage, setProofImage] = useState<string | null>(null);
   const handleStatusUpdate = () => {
     if (updateType) {
       setDeliveryStatus(updateType);

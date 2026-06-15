@@ -1,100 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
-  PackageIcon,
-  ShoppingBagIcon,
-  BarChart2Icon,
-  TagIcon,
-  StarIcon,
-  MessageSquareIcon,
   PlusIcon,
   SearchIcon,
   FilterIcon,
   EditIcon,
-  Trash2Icon,
-  MoreVerticalIcon } from
+  Trash2Icon } from
 'lucide-react';
-const SELLER_SIDEBAR = [
-{
-  icon: BarChart2Icon,
-  label: 'Dashboard',
-  path: '/seller/dashboard'
-},
-{
-  icon: PackageIcon,
-  label: 'Products',
-  path: '/seller/products'
-},
-{
-  icon: ShoppingBagIcon,
-  label: 'Orders',
-  path: '/seller/orders'
-},
-{
-  icon: TagIcon,
-  label: 'Promotions',
-  path: '/seller/promotions'
-},
-{
-  icon: StarIcon,
-  label: 'Reviews',
-  path: '/seller/reviews'
-},
-{
-  icon: MessageSquareIcon,
-  label: 'Messages',
-  path: '/seller/messages'
-}];
-
-// Mock Data
-const MOCK_PRODUCTS = [
-{
-  id: 'PRD-001',
-  name: 'Wireless Noise-Cancelling Headphones Pro',
-  category: 'Electronics',
-  price: 299.99,
-  stock: 45,
-  status: 'active',
-  image:
-  'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=150&q=80',
-  sales: 124
-},
-{
-  id: 'PRD-002',
-  name: 'Smart Watch Series 7',
-  category: 'Wearables',
-  price: 399.0,
-  stock: 12,
-  status: 'active',
-  image:
-  'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=150&q=80',
-  sales: 89
-},
-{
-  id: 'PRD-003',
-  name: 'Premium Leather Backpack',
-  category: 'Accessories',
-  price: 129.5,
-  stock: 0,
-  status: 'draft',
-  image:
-  'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=150&q=80',
-  sales: 0
-},
-{
-  id: 'PRD-004',
-  name: 'Minimalist Desk Lamp',
-  category: 'Home',
-  price: 89.99,
-  stock: 5,
-  status: 'active',
-  image:
-  'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=150&q=80',
-  sales: 42
-}];
+import { SELLER_SIDEBAR } from '../../constants/sidebar';
 
 export function SellerProducts() {
   const { user } = useAuth();
@@ -167,7 +83,7 @@ export function SellerProducts() {
   return (
     <DashboardLayout
       sidebarItems={SELLER_SIDEBAR}
-      title="Products"
+      title="Sản phẩm"
       role="Seller">
       
       {/* Header Actions */}

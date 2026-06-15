@@ -10,12 +10,10 @@ import {
   MapPinIcon,
   TruckIcon,
 } from 'lucide-react';
+import { formatVND } from '../../utils/format';
+import { FREE_SHIP_THRESHOLD, SHIPPING_FEE } from '../../constants/common';
 
-const formatVND = (price: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-
-const SHIPPING_BASE = 30_000;
-const FREE_SHIP_THRESHOLD = 500_000;
+const SHIPPING_BASE = SHIPPING_FEE;
 const EXPRESS_ADDITIONAL = 30_000;
 
 export function Checkout() {

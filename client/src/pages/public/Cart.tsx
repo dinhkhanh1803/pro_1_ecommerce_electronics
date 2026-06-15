@@ -15,12 +15,8 @@ import {
   Loader2Icon,
 } from 'lucide-react';
 
-const formatVND = (price: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-
-// Phí ship: miễn phí nếu đơn >= 500k
-const FREE_SHIP_THRESHOLD = 500_000;
-const SHIPPING_FEE = 30_000;
+import { formatVND } from '../../utils/format';
+import { FREE_SHIP_THRESHOLD, SHIPPING_FEE } from '../../constants/common';
 
 export function Cart() {
   const { cartItems, updateQuantity, removeItem, subtotal } = useCart();

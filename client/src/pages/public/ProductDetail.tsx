@@ -19,8 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../hooks/useWishlist';
 
 // Giá trong DB đã là VNĐ
-const formatVND = (price: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+import { formatVND } from '../../utils/format';
 
 export function ProductDetail() {
   const { id } = useParams();

@@ -2,12 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import {
-  PackageIcon,
-  ShoppingBagIcon,
-  BarChart2Icon,
-  TagIcon,
-  StarIcon,
-  MessageSquareIcon,
   ChevronLeftIcon,
   UploadCloudIcon,
   XIcon,
@@ -15,37 +9,7 @@ import {
   Trash2Icon } from
   'lucide-react';
 import { useParams } from 'react-router-dom';
-const SELLER_SIDEBAR = [
-{
-  icon: BarChart2Icon,
-  label: 'Dashboard',
-  path: '/seller/dashboard'
-},
-{
-  icon: PackageIcon,
-  label: 'Products',
-  path: '/seller/products'
-},
-{
-  icon: ShoppingBagIcon,
-  label: 'Orders',
-  path: '/seller/orders'
-},
-{
-  icon: TagIcon,
-  label: 'Promotions',
-  path: '/seller/promotions'
-},
-{
-  icon: StarIcon,
-  label: 'Reviews',
-  path: '/seller/reviews'
-},
-{
-  icon: MessageSquareIcon,
-  label: 'Messages',
-  path: '/seller/messages'
-}];
+import { SELLER_SIDEBAR } from '../../constants/sidebar';
 
 export function SellerProductForm() {
   const navigate = useNavigate();
@@ -254,7 +218,7 @@ export function SellerProductForm() {
   return (
     <DashboardLayout
       sidebarItems={SELLER_SIDEBAR}
-      title={id ? "Edit Product" : "Add Product"}
+      title={id ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}
       role="Seller">
       
       <div className="mb-6">
