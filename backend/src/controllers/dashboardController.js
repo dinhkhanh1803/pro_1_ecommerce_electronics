@@ -4,43 +4,72 @@ import Order from "../models/Order.js";
 
 export const getDashboardStats = async (req, res, next) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const totalSellers = await User.countDocuments({ role: "seller" });
-    const pendingProducts = await Product.countDocuments({ status: "pending" });
-    const activeProducts = await Product.countDocuments({ status: "active" });
-    const totalOrders = await Order.countDocuments();
+    const { startDate, endDate, export: isExport } = req.query;
+
+    let userFilter = {};
+    let productFilter = {};
+    let orderFilter = {};
+
+    let start = null;
+    let end = null;
+
+    if (startDate || endDate) {
+      start = startDate ? new Date(startDate) : new Date(0);
+      end = endDate ? new Date(endDate) : new Date();
+      if (startDate) start.setHours(0, 0, 0, 0);
+      if (endDate) end.setHours(23, 59, 59, 999);
+
+      userFilter.createdAt = { $gte: start, $lte: end };
+      productFilter.createdAt = { $gte: start, $lte: end };
+      orderFilter.createdAt = { $gte: start, $lte: end };
+    }
+
+    const totalUsers = await User.countDocuments(userFilter);
+    const totalSellers = await User.countDocuments({ role: "seller", ...userFilter });
+    const pendingProducts = await Product.countDocuments({ status: "pending", ...productFilter });
+    const activeProducts = await Product.countDocuments({ status: "active", ...productFilter });
+    const totalOrders = await Order.countDocuments(orderFilter);
     
-    // Revenue logic: 5% of all delivered orders
-    const deliveredOrders = await Order.find({ orderStatus: "delivered" });
+    // Revenue logic: 5% of all delivered orders in the range
+    const deliveredOrders = await Order.find({ orderStatus: "delivered", ...orderFilter });
     const revenue = deliveredOrders.reduce((sum, order) => sum + (order.totalAmount * 0.05), 0);
 
-    // Trend mapping (last 7 days)
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    const last7Days = new Date(today);
-    last7Days.setDate(today.getDate() - 6);
-    last7Days.setHours(0, 0, 0, 0);
+    // Trend mapping based on filter dates
+    let trendStart = new Date();
+    let trendEnd = new Date();
+    trendEnd.setHours(23, 59, 59, 999);
 
-    const orders7Days = await Order.find({ createdAt: { $gte: last7Days, $lte: today } });
+    if (start && end) {
+      trendStart = new Date(start);
+      trendEnd = new Date(end);
+    } else {
+      // default last 7 days
+      trendStart.setDate(trendStart.getDate() - 6);
+      trendStart.setHours(0, 0, 0, 0);
+    }
+
+    const ordersInTrend = await Order.find({ createdAt: { $gte: trendStart, $lte: trendEnd } });
     
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const revenueDataMap = {};
     const ordersDataMap = {};
 
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(last7Days);
-      d.setDate(d.getDate() + i);
-      const label = dayNames[d.getDay()];
+    // Loop through dates day-by-day
+    const currentDate = new Date(trendStart);
+    let iterations = 0;
+    while (currentDate <= trendEnd && iterations < 366) {
+      const label = currentDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
       revenueDataMap[label] = 0;
       ordersDataMap[label] = 0;
+      currentDate.setDate(currentDate.getDate() + 1);
+      iterations++;
     }
 
-    orders7Days.forEach(o => {
-      const dayLabel = dayNames[o.createdAt.getDay()];
-      if (ordersDataMap[dayLabel] !== undefined) {
-        ordersDataMap[dayLabel] += 1;
+    ordersInTrend.forEach(o => {
+      const label = new Date(o.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+      if (ordersDataMap[label] !== undefined) {
+        ordersDataMap[label] += 1;
         if (o.orderStatus === 'delivered') {
-          revenueDataMap[dayLabel] += (o.totalAmount * 0.05);
+          revenueDataMap[label] += (o.totalAmount * 0.05);
         }
       }
     });
@@ -48,10 +77,10 @@ export const getDashboardStats = async (req, res, next) => {
     const revenueData = Object.keys(revenueDataMap).map(k => ({ name: k, revenue: revenueDataMap[k] }));
     const ordersData = Object.keys(ordersDataMap).map(k => ({ name: k, orders: ordersDataMap[k] }));
 
-    // Recent Activity
-    const recentUsers = await User.find().sort({ createdAt: -1 }).limit(5);
-    const recentProducts = await Product.find().sort({ createdAt: -1 }).limit(5).populate("seller", "name");
-    const recentOrders = await Order.find().sort({ createdAt: -1 }).limit(5).populate("customer", "name");
+    // Recent Activity (we also filter or sort latest)
+    const recentUsers = await User.find(userFilter).sort({ createdAt: -1 }).limit(5);
+    const recentProducts = await Product.find(productFilter).sort({ createdAt: -1 }).limit(5).populate("seller", "name");
+    const recentOrders = await Order.find(orderFilter).sort({ createdAt: -1 }).limit(5).populate("customer", "name");
 
     const activities = [
       ...recentUsers.map(u => ({
@@ -75,9 +104,9 @@ export const getDashboardStats = async (req, res, next) => {
         time: o.createdAt,
         type: 'order'
       }))
-    ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 8);
+    ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 8);
 
-    res.json({
+    const responseData = {
       totalUsers,
       totalSellers,
       pendingProducts,
@@ -87,7 +116,28 @@ export const getDashboardStats = async (req, res, next) => {
       revenueData,
       ordersData,
       activities
-    });
+    };
+
+    if (isExport === 'true') {
+      const ordersList = await Order.find(orderFilter)
+        .populate("customer", "name email phone role status")
+        .populate("seller", "name email phone")
+        .populate("products.product", "name sku price")
+        .sort({ createdAt: -1 });
+
+      const productsList = await Product.find()
+        .populate("seller", "name email")
+        .populate("category", "name")
+        .sort({ createdAt: -1 });
+
+      const usersList = await User.find(userFilter).sort({ createdAt: -1 });
+
+      responseData.ordersList = ordersList;
+      responseData.productsList = productsList;
+      responseData.usersList = usersList;
+    }
+
+    res.json(responseData);
   } catch(error) { next(error); }
 };
 

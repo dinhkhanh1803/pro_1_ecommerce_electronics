@@ -7,8 +7,9 @@ import {
   DollarSignIcon,
   TrendingUpIcon,
   ActivityIcon,
-  ShieldCheckIcon } from
-'lucide-react';
+  ShieldCheckIcon,
+  FileSpreadsheetIcon
+} from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -22,6 +23,7 @@ import {
 'recharts';
 import { ADMIN_SIDEBAR } from '../../constants/sidebar';
 import { formatVND } from '../../utils/format';
+import { exportAdminDashboardToExcel } from '../../utils/excelExport';
 
 // Mapped directly from API now
 
@@ -47,22 +49,193 @@ const getIconForActivity = (type: string) => {
 
 export function AdminDashboard() {
   const [stats, setStats] = useState<any>({});
+  const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/stats`, {
+    let url = `${import.meta.env.VITE_API_URL}/api/dashboard/stats`;
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const queryStr = params.toString();
+    if (queryStr) url += `?${queryStr}`;
+
+    fetch(url, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json())
       .then(data => setStats(data))
       .catch(console.error);
-  }, []);
+  }, [startDate, endDate]);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const token = localStorage.getItem("token");
+      let url = `${import.meta.env.VITE_API_URL}/api/dashboard/stats?export=true`;
+      if (startDate) url += `&startDate=${startDate}`;
+      if (endDate) url += `&endDate=${endDate}`;
+
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const fullStats = await res.json();
+      await exportAdminDashboardToExcel(fullStats);
+    } catch (error) {
+      console.error('Lỗi khi xuất excel:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    setIsExportingPDF(true);
+    try {
+      const html2pdf = await new Promise<any>((resolve, reject) => {
+        if ((window as any).html2pdf) {
+          resolve((window as any).html2pdf);
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        script.onload = () => resolve((window as any).html2pdf);
+        script.onerror = (err) => reject(err);
+        document.head.appendChild(script);
+      });
+
+      const element = document.getElementById('admin-dashboard-content');
+      if (!element) return;
+
+      const opt = {
+        margin: 10,
+        filename: `Bao_cao_tong_quan_ShopHub_${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+
+      const pdfBlob = await html2pdf().from(element).set(opt).outputPdf('blob');
+      const url = window.URL.createObjectURL(pdfBlob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `Bao_cao_tong_quan_ShopHub_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Lỗi khi xuất PDF:', error);
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
+
   return (
     <DashboardLayout
       sidebarItems={ADMIN_SIDEBAR}
       title="Tổng quan Quản trị"
       role="Admin">
       
+      {/* Top action header */}
+      <div data-html2canvas-ignore="true" className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-8 bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Báo cáo & Thống kê hệ thống</h2>
+          <p className="text-sm text-gray-500 mt-1">Xem phân tích dữ liệu hoạt động và xuất báo cáo PDF/Excel.</p>
+        </div>
+        
+        {/* Actions wrapper */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 w-full xl:w-auto">
+          {/* Date filters */}
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 p-2 rounded-xl text-sm shrink-0">
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-gray-400 font-medium px-1">Từ</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-transparent border-0 text-gray-700 font-medium focus:ring-0 focus:outline-none w-32"
+              />
+            </div>
+            <div className="h-4 w-px bg-gray-300" />
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-gray-400 font-medium px-1">Đến</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-transparent border-0 text-gray-700 font-medium focus:ring-0 focus:outline-none w-32"
+              />
+            </div>
+            {(startDate || endDate) && (
+              <button
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                }}
+                className="text-xs text-red-500 hover:text-red-700 font-bold px-2 py-1 bg-red-50 rounded-lg ml-1 hover:bg-red-100 transition-colors"
+                title="Xóa bộ lọc"
+              >
+                Xóa
+              </button>
+            )}
+          </div>
+
+          {/* Export buttons */}
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            {/* Excel export */}
+            <button
+              onClick={handleExport}
+              disabled={isExporting || isExportingPDF}
+              className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow active:scale-95 disabled:pointer-events-none"
+            >
+              {isExporting ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Đang tải...
+                </>
+              ) : (
+                <>
+                  <FileSpreadsheetIcon className="h-4 w-4" />
+                  Xuất Excel
+                </>
+              )}
+            </button>
+
+            {/* PDF export */}
+            <button
+              onClick={handleExportPDF}
+              disabled={isExporting || isExportingPDF}
+              className="flex-1 md:flex-none bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow active:scale-95 disabled:pointer-events-none"
+            >
+              {isExportingPDF ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Đang tạo PDF...
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12l3 3m0 0l3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                  Xuất PDF
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="admin-dashboard-content" className="space-y-6">
+
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -370,6 +543,7 @@ export function AdminDashboard() {
             </button>
           </div>
         </div>
+      </div>
       </div>
     </DashboardLayout>);
 
