@@ -106,6 +106,30 @@ export const getDashboardStats = async (req, res, next) => {
       }))
     ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 8);
 
+    // Calculate order status distribution
+    const statusCounts = await Order.aggregate([
+      { $match: orderFilter },
+      { $group: { _id: "$orderStatus", count: { $sum: 1 } } }
+    ]);
+
+    const statusLabels = {
+      pending: "Chờ xử lý",
+      processing: "Đang xử lý",
+      shipped: "Đang giao",
+      delivered: "Hoàn thành",
+      cancelled: "Đã hủy",
+      returned: "Đã trả hàng"
+    };
+
+    const orderStatusData = Object.keys(statusLabels).map(status => {
+      const found = statusCounts.find(item => item._id === status);
+      return {
+        name: statusLabels[status],
+        value: found ? found.count : 0,
+        status: status
+      };
+    }).filter(item => item.value > 0);
+
     const responseData = {
       totalUsers,
       totalSellers,
@@ -115,6 +139,7 @@ export const getDashboardStats = async (req, res, next) => {
       revenue,
       revenueData,
       ordersData,
+      orderStatusData,
       activities
     };
 
@@ -290,4 +315,74 @@ export const getSellerDashboardStats = async (req, res, next) => {
 
   } catch (error) { next(error); }
 };
+
+export const getTopProducts = async (req, res, next) => {
+  try {
+    const { range } = req.query; // 'day' | 'week' | 'month' | 'year'
+
+    const now = new Date();
+    let startDate = new Date();
+
+    if (range === 'day') {
+      startDate.setHours(0, 0, 0, 0);
+    } else if (range === 'week') {
+      const day = startDate.getDay();
+      const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
+      startDate.setDate(diff);
+      startDate.setHours(0, 0, 0, 0);
+    } else if (range === 'month') {
+      startDate.setDate(1);
+      startDate.setHours(0, 0, 0, 0);
+    } else if (range === 'year') {
+      startDate.setMonth(0, 1);
+      startDate.setHours(0, 0, 0, 0);
+    } else {
+      // Default: month
+      startDate.setDate(1);
+      startDate.setHours(0, 0, 0, 0);
+    }
+
+    const topProducts = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: now },
+          orderStatus: { $ne: "cancelled" }
+        }
+      },
+      { $unwind: "$products" },
+      {
+        $group: {
+          _id: "$products.product",
+          totalQuantity: { $sum: "$products.quantity" },
+          totalRevenue: { $sum: { $multiply: ["$products.quantity", "$products.price"] } }
+        }
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "productInfo"
+        }
+      },
+      { $match: { productInfo: { $ne: [] } } },
+      { $unwind: "$productInfo" },
+      { $sort: { totalQuantity: -1 } },
+      { $limit: 5 }
+    ]);
+
+    const result = topProducts.map(p => ({
+      id: p.productInfo._id,
+      name: p.productInfo.name,
+      sku: p.productInfo.sku || "N/A",
+      quantity: p.totalQuantity,
+      revenue: p.totalRevenue
+    }));
+
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 

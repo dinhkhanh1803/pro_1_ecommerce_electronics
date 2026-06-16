@@ -19,11 +19,24 @@ import {
   Tooltip,
   ResponsiveContainer,
   AreaChart,
-  Area } from
+  Area,
+  PieChart,
+  Pie,
+  Cell } from
 'recharts';
 import { ADMIN_SIDEBAR } from '../../constants/sidebar';
 import { formatVND } from '../../utils/format';
 import { exportAdminDashboardToExcel } from '../../utils/excelExport';
+
+const STATUS_COLORS: { [key: string]: string } = {
+  "Hoàn thành": "#10b981", // Green
+  "Đang giao": "#3b82f6",   // Blue
+  "Đang xử lý": "#6366f1",  // Indigo
+  "Chờ xử lý": "#f59e0b",   // Amber
+  "Đã hủy": "#ef4444",      // Red
+  "Đã trả hàng": "#8b5cf6"  // Purple
+};
+const COLOR_PALETTE = ["#10b981", "#3b82f6", "#6366f1", "#f59e0b", "#ef4444", "#8b5cf6"];
 
 // Mapped directly from API now
 
@@ -53,6 +66,8 @@ export function AdminDashboard() {
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [topProducts, setTopProducts] = useState<any[]>([]);
+  const [topProductsRange, setTopProductsRange] = useState('month');
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -70,6 +85,17 @@ export function AdminDashboard() {
       .then(data => setStats(data))
       .catch(console.error);
   }, [startDate, endDate]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const url = `${import.meta.env.VITE_API_URL}/api/dashboard/top-products?range=${topProductsRange}`;
+    fetch(url, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => setTopProducts(Array.isArray(data) ? data : []))
+      .catch(console.error);
+  }, [topProductsRange]);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -132,6 +158,16 @@ export function AdminDashboard() {
       setIsExportingPDF(false);
     }
   };
+
+  const orderStatusData = stats.orderStatusData || [];
+  const totalOrderStatusCount = orderStatusData.reduce((sum: number, item: any) => sum + item.value, 0);
+  
+  const chartData = orderStatusData.map((item: any, index: number) => ({
+    name: item.name,
+    value: item.value,
+    percent: totalOrderStatusCount > 0 ? ((item.value / totalOrderStatusCount) * 100).toFixed(1) + '%' : '0%',
+    color: STATUS_COLORS[item.name] || COLOR_PALETTE[index % COLOR_PALETTE.length]
+  }));
 
   return (
     <DashboardLayout
@@ -394,68 +430,146 @@ export function AdminDashboard() {
         </div>
 
         {/* Orders Chart */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-900">
-              Lượng đơn hàng
+              Tỷ lệ trạng thái đơn hàng
             </h3>
           </div>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={stats.ordersData || []}
-                margin={{
-                  top: 10,
-                  right: 10,
-                  left: -20,
-                  bottom: 0
-                }}>
-                
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="#e5e7eb" />
-                
-                <XAxis
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{
-                    fill: '#6b7280',
-                    fontSize: 12
-                  }}
-                  dy={10} />
-                
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{
-                    fill: '#6b7280',
-                    fontSize: 12
-                  }} />
-                
-                <Tooltip
-                  cursor={{
-                    fill: '#f3f4f6'
-                  }}
-                  contentStyle={{
-                    borderRadius: '12px',
-                    border: 'none',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                  }}
-                  formatter={(value: number) => [value, 'Đơn hàng']} />
-                
-                <Bar dataKey="orders" fill="#6366f1" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="flex-grow flex flex-col items-center justify-center">
+            {chartData.length === 0 ? (
+              <p className="text-sm text-gray-500 py-10">Không có dữ liệu đơn hàng.</p>
+            ) : (
+              <>
+                <div className="h-48 w-full mb-6">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={75}
+                        paddingAngle={4}
+                        dataKey="value"
+                      >
+                        {chartData.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: '12px',
+                          border: 'none',
+                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                        }}
+                        formatter={(value: number, name: string, props: any) => {
+                          return [`${value} đơn (${props.payload.percent})`, 'Số lượng'];
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="w-full space-y-2.5">
+                  {chartData.map((item: any) => (
+                    <div key={item.name} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center min-w-0">
+                        <span
+                          className="w-3 h-3 rounded-full mr-2.5 shrink-0"
+                          style={{ backgroundColor: item.color }}
+                        ></span>
+                        <span className="text-gray-600 font-medium truncate whitespace-nowrap">
+                          {item.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
+                        <span className="font-bold text-gray-900">
+                          {item.value} đơn
+                        </span>
+                        <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-lg">
+                          {item.percent}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
 
       {/* Bottom Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Top Selling Products Chart */}
+        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Sản phẩm đặt hàng nhiều nhất
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">Thống kê sản phẩm bán chạy theo số lượng order.</p>
+            </div>
+            <select
+              value={topProductsRange}
+              onChange={(e) => setTopProductsRange(e.target.value)}
+              className="bg-gray-50 border border-gray-200 text-gray-700 py-1.5 pl-3 pr-8 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="day">Hôm nay</option>
+              <option value="week">Tuần này</option>
+              <option value="month">Tháng này</option>
+              <option value="year">Năm nay</option>
+            </select>
+          </div>
+
+          <div className="h-80 flex-grow">
+            {topProducts.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-sm text-gray-500">
+                Không có dữ liệu sản phẩm trong khoảng thời gian này.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  layout="vertical"
+                  data={topProducts}
+                  margin={{
+                    top: 10,
+                    right: 30,
+                    left: 20,
+                    bottom: 10
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
+                  <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#6b7280', fontSize: 11 }}
+                    width={150}
+                    tickFormatter={(val) => val.length > 22 ? val.substring(0, 20) + '...' : val}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '12px',
+                      border: 'none',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    }}
+                    formatter={(value: number, name: string, props: any) => [
+                      `${value} sản phẩm (Doanh thu: ${formatVND(props.payload.revenue)})`,
+                      'Đã bán'
+                    ]}
+                  />
+                  <Bar dataKey="quantity" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
         {/* Recent Activity Feed */}
-        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-900">
               Hoạt động gần đây
@@ -465,12 +579,12 @@ export function AdminDashboard() {
             </button>
           </div>
 
-          <div className="relative">
+          <div className="relative flex-grow">
             {/* Timeline Line */}
             <div className="absolute top-0 bottom-0 left-6 w-px bg-gray-200" />
 
             <div className="space-y-6 relative">
-              {stats.activities?.map((activity: any) => {
+              {stats.activities?.slice(0, 5).map((activity: any) => {
                 const style = getIconForActivity(activity.type);
                 return (
                   <div key={activity.id} className="flex items-start">
@@ -493,55 +607,6 @@ export function AdminDashboard() {
                 <p className="text-center text-gray-500 py-4">Chưa có hoạt động nào gần đây.</p>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">
-            Thao tác nhanh
-          </h3>
-          <div className="space-y-3">
-            <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50 transition-colors group">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm mr-3 group-hover:text-indigo-600">
-                  <ShieldCheckIcon className="h-5 w-5" />
-                </div>
-                <span className="font-medium text-gray-900">
-                  Duyệt sản phẩm chờ
-                </span>
-              </div>
-              {stats.pendingProducts > 0 &&
-                <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded-full animate-pulse">
-                  {stats.pendingProducts}
-                </span>
-              }
-            </button>
-
-            <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50 transition-colors group">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm mr-3 group-hover:text-indigo-600">
-                  <UsersIcon className="h-5 w-5" />
-                </div>
-                <span className="font-medium text-gray-900">
-                  Quản lý yêu cầu người bán
-                </span>
-              </div>
-              <span className="bg-yellow-100 text-yellow-600 text-xs font-bold px-2 py-1 rounded-full">
-                5
-              </span>
-            </button>
-
-            <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50 transition-colors group">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm mr-3 group-hover:text-indigo-600">
-                  <DollarSignIcon className="h-5 w-5" />
-                </div>
-                <span className="font-medium text-gray-900">
-                  Xử lý thanh toán
-                </span>
-              </div>
-            </button>
           </div>
         </div>
       </div>
