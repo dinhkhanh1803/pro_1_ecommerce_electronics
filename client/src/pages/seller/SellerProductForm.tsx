@@ -198,7 +198,7 @@ export function SellerProductForm() {
         navigate('/seller/products');
       } else {
         const errorData = await res.json();
-        alert(errorData.message || (id ? "Failed to update product" : "Failed to create product"));
+        alert(errorData.message || (id ? "Cập nhật sản phẩm thất bại" : "Tạo sản phẩm thất bại"));
       }
     } catch (err) {
       console.error(err);
@@ -227,7 +227,7 @@ export function SellerProductForm() {
           className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
           
           <ChevronLeftIcon className="h-4 w-4 mr-1" />
-          Back to Products
+           Quay lại Sản phẩm
         </Link>
       </div>
 
@@ -235,7 +235,7 @@ export function SellerProductForm() {
         {/* Basic Info */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 md:p-8 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">
-            Basic Information
+            Thông tin cơ bản
           </h3>
 
           <div className="space-y-6">
@@ -244,7 +244,7 @@ export function SellerProductForm() {
                 htmlFor="name"
                 className="block text-sm font-medium text-gray-700 mb-1">
                 
-                Product Name <span className="text-red-500">*</span>
+                Tên sản phẩm <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -252,7 +252,7 @@ export function SellerProductForm() {
                 value={productData.name}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="e.g. Wireless Noise-Cancelling Headphones Pro"
+                 placeholder="VD: Tai nghe chụp tai chống ồn Wireless Pro"
                 required />
               
             </div>
@@ -262,7 +262,7 @@ export function SellerProductForm() {
                 htmlFor="description"
                 className="block text-sm font-medium text-gray-700 mb-1">
                 
-                Description <span className="text-red-500">*</span>
+                Mô tả <span className="text-red-500">*</span>
               </label>
               <textarea
                 id="description"
@@ -270,7 +270,7 @@ export function SellerProductForm() {
                 value={productData.description}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y"
-                placeholder="Describe your product..."
+                placeholder="Mô tả sản phẩm của bạn..."
                 required />
               
             </div>
@@ -281,7 +281,7 @@ export function SellerProductForm() {
                   htmlFor="category"
                   className="block text-sm font-medium text-gray-700 mb-1">
                   
-                  Category <span className="text-red-500">*</span>
+                  Danh mục <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="category"
@@ -290,7 +290,7 @@ export function SellerProductForm() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none bg-white"
                   required>
                   
-                  <option value="">Select a category</option>
+                  <option value="">Chọn một danh mục</option>
                   {categories.map((cat: any) => (
                     <option key={cat._id} value={cat._id}>{cat.name}</option>
                   ))}
@@ -301,7 +301,7 @@ export function SellerProductForm() {
                   htmlFor="brand"
                   className="block text-sm font-medium text-gray-700 mb-1">
                   
-                  Brand (Optional)
+                  Thương hiệu (Tùy chọn)
                 </label>
                 <input
                   type="text"
@@ -309,7 +309,7 @@ export function SellerProductForm() {
                   value={productData.brand}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="e.g. Sony" />
+                  placeholder="VD: Sony" />
                 
               </div>
             </div>
@@ -319,7 +319,7 @@ export function SellerProductForm() {
         {/* Media */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 md:p-8 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">
-            Product Images
+            Hình ảnh sản phẩm
           </h3>
 
           <div className="space-y-4">
@@ -353,14 +353,14 @@ export function SellerProductForm() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
-                  <span className="text-xs font-medium">Uploading</span>
+                  <span className="text-xs font-medium">Đang tải lên</span>
                 </div>
               ))}
 
               {images.length + uploadingCount < 8 && (
                 <label className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer">
                   <UploadCloudIcon className="h-6 w-6 mb-1" />
-                  <span className="text-xs font-medium">Upload</span>
+                  <span className="text-xs font-medium">Tải lên</span>
                   <input
                     type="file"
                     className="hidden"
@@ -385,7 +385,7 @@ export function SellerProductForm() {
         {/* Pricing & Inventory */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 md:p-8 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">
-            Pricing & Inventory
+            Giá cả & Kho hàng
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -394,11 +394,11 @@ export function SellerProductForm() {
                 htmlFor="price"
                 className="block text-sm font-medium text-gray-700 mb-1">
                 
-                Regular Price ($) <span className="text-red-500">*</span>
+                Giá bán thường (đ) <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  $
+                  đ
                 </span>
                 <input
                   type="number"
@@ -408,7 +408,7 @@ export function SellerProductForm() {
                   value={productData.price}
                   onChange={handleInputChange}
                   className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="0.00"
+                  placeholder="0"
                   required />
                 
               </div>
@@ -418,11 +418,11 @@ export function SellerProductForm() {
                 htmlFor="comparePrice"
                 className="block text-sm font-medium text-gray-700 mb-1">
                 
-                Compare at Price ($)
+                Giá gốc trước giảm (đ)
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  $
+                  đ
                 </span>
                 <input
                   type="number"
@@ -432,12 +432,11 @@ export function SellerProductForm() {
                   value={productData.compareAtPrice}
                   onChange={handleInputChange}
                   className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="0.00" />
+                  placeholder="0" />
                 
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                To show a reduced price, move the product's original price into
-                Compare at price.
+                Để hiển thị giá giảm, vui lòng đặt giá gốc trước giảm của sản phẩm cao hơn giá bán thường.
               </p>
             </div>
             <div>
@@ -445,7 +444,7 @@ export function SellerProductForm() {
                 htmlFor="sku"
                 className="block text-sm font-medium text-gray-700 mb-1">
                 
-                SKU (Stock Keeping Unit)
+                Mã SKU (Mã phân loại hàng hóa)
               </label>
               <input
                 type="text"
@@ -453,7 +452,7 @@ export function SellerProductForm() {
                 value={productData.sku}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="e.g. WH-1000XM4" />
+                placeholder="VD: WH-1000XM4" />
               
             </div>
             <div className="text-sm text-gray-500 md:col-span-2">
@@ -464,14 +463,14 @@ export function SellerProductForm() {
           {/* Variants */}
           <div className="border-t border-gray-200 pt-6">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-md font-semibold text-gray-900">Variants</h4>
+              <h4 className="text-md font-semibold text-gray-900">Biến thể</h4>
               <button
                 type="button"
                 onClick={addVariant}
                 className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center">
                 
                 <PlusIcon className="h-4 w-4 mr-1" />
-                Add Variant
+                Thêm biến thể
               </button>
             </div>
 
@@ -483,11 +482,11 @@ export function SellerProductForm() {
                 
                   <div className="flex-1">
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Variant Name
+                      Tên biến thể
                     </label>
                     <input
                     type="text"
-                    placeholder="e.g. Size M, Color Red"
+                    placeholder="VD: Size M, Màu Đỏ"
                     value={variant.name}
                     onChange={(e) => handleVariantChange(index, 'name', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
@@ -495,11 +494,11 @@ export function SellerProductForm() {
                   </div>
                   <div className="w-24">
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Price Add ($)
+                      Giá cộng thêm (đ)
                     </label>
                     <input
                     type="number"
-                    placeholder="0.00"
+                    placeholder="0"
                     value={variant.price}
                     onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
@@ -507,7 +506,7 @@ export function SellerProductForm() {
                   </div>
                   <div className="w-24">
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Stock
+                      Kho
                     </label>
                     <input
                     type="number"
@@ -539,19 +538,19 @@ export function SellerProductForm() {
             onClick={() => navigate('/seller/products')}
             className="px-6 py-2 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">
             
-            Cancel
+             Hủy
           </button>
           <button
             type="button"
             className="px-6 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors">
             
-            Save as Draft
+             Lưu bản nháp
           </button>
           <button
             type="submit"
             className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors">
             
-            {id ? "Update Product" : "Publish Product"}
+             {id ? "Cập nhật sản phẩm" : "Đăng sản phẩm"}
           </button>
         </div>
       </form>

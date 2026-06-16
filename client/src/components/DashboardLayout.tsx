@@ -152,14 +152,14 @@ export function DashboardLayout({
           </div>
 
           <div className="flex items-center space-x-4">
-            <div className="relative hidden md:block">
+            {/* <div className="relative hidden md:block">
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Tìm kiếm..."
                 className="pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-64"
               />
-            </div>
+            </div> */}
 
             {/* <button className="relative p-2 text-gray-400 hover:text-gray-500 transition-colors">
               <BellIcon className="h-6 w-6" />

@@ -176,57 +176,95 @@ export const getSellerDashboardStats = async (req, res, next) => {
       createdAt: { $gte: startDate, $lte: endDate }
     };
 
-    // We fetch all orders within this date range for metrics
-    const ordersRange = await Order.find(matchDateFilter).populate("customer", "name email");
+    // Calculate duration to get the previous period
+    const durationMs = endDate.getTime() - startDate.getTime();
+    const prevStartDate = new Date(startDate.getTime() - durationMs);
+    const prevEndDate = new Date(startDate.getTime() - 1);
 
-    // "Successful" orders - for Revenue / Avg Order Value
+    const prevMatchDateFilter = {
+      seller: sellerId,
+      createdAt: { $gte: prevStartDate, $lte: prevEndDate }
+    };
+
+    // Fetch orders in parallel for efficiency
+    const [ordersRange, prevOrdersRange] = await Promise.all([
+      Order.find(matchDateFilter).populate("customer", "name email").sort({ createdAt: -1 }),
+      Order.find(prevMatchDateFilter)
+    ]);
+
+    // Current period metrics
     const successfulOrders = ordersRange.filter(o => o.orderStatus === 'delivered' || o.paymentStatus === 'completed');
-    
     const totalOrdersCount = ordersRange.length;
     const totalRevenue = successfulOrders.reduce((acc, o) => acc + o.totalAmount, 0);
     const avgOrderValue = successfulOrders.length > 0 ? (totalRevenue / successfulOrders.length) : 0;
-    
-    // Unique Customers logic
+
     const uniqueCustomersMap = {};
     ordersRange.forEach(o => {
-      if(o.customer && o.customer._id) {
-         uniqueCustomersMap[o.customer._id.toString()] = true;
+      if (o.customer && o.customer._id) {
+        uniqueCustomersMap[o.customer._id.toString()] = true;
       }
     });
     const uniqueCustomers = Object.keys(uniqueCustomersMap).length;
 
-    // Daily Revenue Data using Aggregation
-    const revenueDataPipeline = [
-      {
-        $match: {
-           seller: sellerId,
-           createdAt: { $gte: startDate, $lte: endDate },
-           $or: [{ orderStatus: 'delivered' }, { paymentStatus: 'completed' }]
-        }
-      },
-      {
-        $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          revenue: { $sum: "$totalAmount" },
-          orders: { $sum: 1 }
-        }
-      },
-      { $sort: { "_id": 1 } }
-    ];
+    // Previous period metrics
+    const prevSuccessfulOrders = prevOrdersRange.filter(o => o.orderStatus === 'delivered' || o.paymentStatus === 'completed');
+    const prevTotalOrdersCount = prevOrdersRange.length;
+    const prevTotalRevenue = prevSuccessfulOrders.reduce((acc, o) => acc + o.totalAmount, 0);
+    const prevAvgOrderValue = prevSuccessfulOrders.length > 0 ? (prevTotalRevenue / prevSuccessfulOrders.length) : 0;
 
-    const aggregatedData = await Order.aggregate(revenueDataPipeline);
-    
-    // Format for Recharts
-    const revenueData = aggregatedData.map(item => {
-      // Create a nice date string like 'Oct 24'
-      const dateObj = new Date(item._id);
-      const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      return {
-        date: formattedDate,
-        revenue: item.revenue,
-        orders: item.orders
-      };
+    const prevUniqueCustomersMap = {};
+    prevOrdersRange.forEach(o => {
+      if (o.customer) {
+        prevUniqueCustomersMap[o.customer.toString()] = true;
+      }
     });
+    const prevUniqueCustomers = Object.keys(prevUniqueCustomersMap).length;
+
+    // Helper to calculate trend
+    const calculateTrend = (current, previous) => {
+      if (previous === 0) {
+        return current > 0 ? "+100%" : "0%";
+      }
+      const diff = ((current - previous) / previous) * 100;
+      const sign = diff >= 0 ? "+" : "";
+      return `${sign}${diff.toFixed(1)}%`;
+    };
+
+    const revenueTrend = calculateTrend(totalRevenue, prevTotalRevenue);
+    const ordersTrend = calculateTrend(totalOrdersCount, prevTotalOrdersCount);
+    const avgOrderValueTrend = calculateTrend(avgOrderValue, prevAvgOrderValue);
+    const uniqueCustomersTrend = calculateTrend(uniqueCustomers, prevUniqueCustomers);
+
+    // Generate date series day-by-day
+    const dateLabels = [];
+    const revenueDataMap = {};
+    const ordersDataMap = {};
+
+    let currentDate = new Date(startDate);
+    let iterations = 0;
+    while (currentDate <= endDate && iterations < 366) {
+      const label = currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      dateLabels.push(label);
+      revenueDataMap[label] = 0;
+      ordersDataMap[label] = 0;
+      currentDate.setDate(currentDate.getDate() + 1);
+      iterations++;
+    }
+
+    // Populate revenueDataMap and ordersDataMap
+    successfulOrders.forEach(o => {
+      const label = new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (revenueDataMap[label] !== undefined) {
+        revenueDataMap[label] += o.totalAmount;
+        ordersDataMap[label] += 1;
+      }
+    });
+
+    const revenueData = dateLabels.map(label => ({
+      date: label,
+      revenue: revenueDataMap[label],
+      orders: ordersDataMap[label]
+    }));
 
     // Recent Transactions (Limit 10)
     const recentTransactions = ordersRange.slice(0, 10).map(o => ({
@@ -242,10 +280,14 @@ export const getSellerDashboardStats = async (req, res, next) => {
       totalOrders: totalOrdersCount,
       avgOrderValue,
       uniqueCustomers,
+      revenueTrend,
+      ordersTrend,
+      avgOrderValueTrend,
+      uniqueCustomersTrend,
       revenueData,
       recentTransactions
     });
 
-  } catch(error) { next(error); }
+  } catch (error) { next(error); }
 };
 

@@ -37,11 +37,11 @@ export function CustomerLayout({ children, title }: CustomerLayoutProps) {
       label: 'Danh sách yêu thích',
       icon: HeartIcon
     },
-    {
+    ...(user?.role !== 'admin' && user?.role !== 'seller' ? [{
       path: '/chat',
       label: 'Tin nhắn',
       icon: MessageSquareIcon
-    }
+    }] : [])
   ];
 
   return (

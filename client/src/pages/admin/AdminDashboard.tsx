@@ -442,7 +442,8 @@ export function AdminDashboard() {
                     borderRadius: '12px',
                     border: 'none',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                  }} />
+                  }}
+                  formatter={(value: number) => [value, 'Đơn hàng']} />
                 
                 <Bar dataKey="orders" fill="#6366f1" radius={[4, 4, 0, 0]} />
               </BarChart>

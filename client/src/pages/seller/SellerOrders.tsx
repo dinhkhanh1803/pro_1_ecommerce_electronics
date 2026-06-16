@@ -120,7 +120,7 @@ export function SellerOrders() {
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search orders (ID, Customer)..."
+              placeholder="Tìm kiếm đơn hàng (ID, Khách hàng)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -161,25 +161,25 @@ export function SellerOrders() {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Order ID
+                  Mã đơn hàng
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Date
+                  Ngày đặt
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Customer
+                  Khách hàng
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Items
+                  Số sản phẩm
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Total
+                  Tổng tiền
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
+                  Trạng thái
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
-                  Actions
+                  Hành động
                 </th>
               </tr>
             </thead>
@@ -187,7 +187,7 @@ export function SellerOrders() {
               {loading ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-gray-500">
-                    Loading orders...
+                    Đang tải đơn hàng...
                   </td>
                 </tr>
               ) : orders.length > 0 ? (
@@ -205,11 +205,11 @@ export function SellerOrders() {
                       </button>
                     </td>
                     <td className="p-4 text-sm text-gray-600">
-                      {new Date(order.createdAt).toLocaleDateString()}
+                      {new Date(order.createdAt).toLocaleDateString("vi-VN")}
                     </td>
                     <td className="p-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {order.customer?.name || "Unknown Customer"}
+                        {order.customer?.name || "Khách hàng không xác định"}
                       </div>
                       <div className="text-xs text-gray-500">
                         {order.paymentMethod}
@@ -220,7 +220,7 @@ export function SellerOrders() {
                         (sum: number, p: any) => sum + p.quantity,
                         0,
                       ) || 0}{" "}
-                      items
+                      sản phẩm
                     </td>
                     <td className="p-4 text-sm font-medium text-gray-900">
                       {new Intl.NumberFormat("vi-VN", {
@@ -250,7 +250,7 @@ export function SellerOrders() {
                               }
                               className="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                             >
-                              <span>Update</span>
+                               <span>Cập nhật</span>
                               <ChevronDownIcon className="h-4 w-4" />
                             </button>
 
@@ -280,7 +280,7 @@ export function SellerOrders() {
                         <button
                           onClick={() => setSelectedOrder(order)}
                           className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
-                          title="View Details"
+                          title="Xem chi tiết"
                         >
                           <EyeIcon className="h-5 w-5" />
                         </button>
@@ -291,7 +291,7 @@ export function SellerOrders() {
               ) : (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-gray-500">
-                    No orders found matching the selected criteria.
+                    Không tìm thấy đơn hàng nào phù hợp với tiêu chí đã chọn.
                   </td>
                 </tr>
               )}
@@ -303,17 +303,17 @@ export function SellerOrders() {
         {!loading && orders.length > 0 && (
           <div className="relative z-0 px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
             <p className="text-sm text-gray-500">
-              Showing{" "}
+              Hiển thị từ{" "}
               <span className="font-medium text-gray-900">
                 {(page - 1) * 5 + 1}
               </span>{" "}
-              to{" "}
+              đến{" "}
               <span className="font-medium text-gray-900">
                 {Math.min(page * 5, totalOrders)}
               </span>{" "}
-              of{" "}
+              trên{" "}
               <span className="font-medium text-gray-900">{totalOrders}</span>{" "}
-              results
+              kết quả
             </p>
             <div className="flex items-center space-x-2">
               <button
@@ -321,7 +321,7 @@ export function SellerOrders() {
                 disabled={page === 1}
                 className="px-4 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors shadow-sm"
               >
-                Previous
+                Trước
               </button>
 
               <div className="flex items-center px-4 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 shadow-inner">
@@ -333,7 +333,7 @@ export function SellerOrders() {
                 disabled={page === totalPages}
                 className="px-4 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors shadow-sm"
               >
-                Next
+                Sau
               </button>
             </div>
           </div>
@@ -346,7 +346,7 @@ export function SellerOrders() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-in zoom-in-95">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center shrink-0">
               <h2 className="text-xl font-semibold text-gray-900">
-                Order Details
+                Chi tiết đơn hàng
               </h2>
               <button
                 onClick={() => setSelectedOrder(null)}
@@ -372,7 +372,7 @@ export function SellerOrders() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl">
                 <div>
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                    Order Info
+                    Thông tin đơn hàng
                   </h3>
                   <div className="space-y-1">
                     <p className="text-sm">
@@ -380,19 +380,19 @@ export function SellerOrders() {
                       <span className="font-medium">{selectedOrder._id}</span>
                     </p>
                     <p className="text-sm">
-                      <span className="text-gray-500">Date:</span>{" "}
+                      <span className="text-gray-500">Ngày đặt:</span>{" "}
                       <span className="font-medium">
-                        {new Date(selectedOrder.createdAt).toLocaleString()}
+                        {new Date(selectedOrder.createdAt).toLocaleString("vi-VN")}
                       </span>
                     </p>
                     <p className="text-sm">
-                      <span className="text-gray-500">Status:</span>{" "}
+                      <span className="text-gray-500">Trạng thái:</span>{" "}
                       <span className="font-medium capitalize text-indigo-600">
                         {selectedOrder.orderStatus}
                       </span>
                     </p>
                     <p className="text-sm">
-                      <span className="text-gray-500">Payment:</span>{" "}
+                      <span className="text-gray-500">Thanh toán:</span>{" "}
                       <span className="font-medium">
                         {selectedOrder.paymentMethod}
                       </span>
@@ -401,11 +401,11 @@ export function SellerOrders() {
                 </div>
                 <div>
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                    Customer Info
+                    Thông tin khách hàng
                   </h3>
                   <div className="space-y-1">
                     <p className="text-sm font-medium">
-                      {selectedOrder.customer?.name || "Unknown"}
+                      {selectedOrder.customer?.name || "Không xác định"}
                     </p>
                     <p className="text-sm text-gray-600">
                       {selectedOrder.customer?.email}
@@ -417,7 +417,7 @@ export function SellerOrders() {
                       className="text-sm text-gray-600 mt-2 line-clamp-2"
                       title={selectedOrder.shippingAddress}
                     >
-                      <span className="text-gray-500">Address:</span>{" "}
+                      <span className="text-gray-500">Địa chỉ:</span>{" "}
                       {selectedOrder.shippingAddress}
                     </p>
                   </div>
@@ -426,21 +426,21 @@ export function SellerOrders() {
 
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                  Order Items
+                  Danh sách sản phẩm
                 </h3>
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <table className="w-full text-sm text-left">
                     <thead className="bg-gray-50 border-b border-gray-200 text-gray-500">
                       <tr>
-                        <th className="px-4 py-3 font-medium">Product</th>
+                        <th className="px-4 py-3 font-medium">Sản phẩm</th>
                         <th className="px-4 py-3 font-medium text-center">
-                          Qty
+                          Số lượng
                         </th>
                         <th className="px-4 py-3 font-medium text-right">
-                          Price
+                          Đơn giá
                         </th>
                         <th className="px-4 py-3 font-medium text-right">
-                          Total
+                          Thành tiền
                         </th>
                       </tr>
                     </thead>
@@ -457,7 +457,7 @@ export function SellerOrders() {
                               className="w-10 h-10 rounded-lg object-cover border border-gray-200"
                             />
                             <span className="font-medium text-gray-900 line-clamp-1">
-                              {item.product?.name || "Product"}
+                              {item.product?.name || "Sản phẩm"}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-center text-gray-600">
@@ -485,7 +485,7 @@ export function SellerOrders() {
 
             <div className="p-6 border-t border-gray-100 bg-gray-50 shrink-0 flex justify-between items-center rounded-b-2xl">
               <span className="font-medium text-gray-500 uppercase tracking-wider text-sm">
-                Total Amount
+                Tổng tiền
               </span>
               <span className="text-2xl font-bold text-indigo-600">
                 {new Intl.NumberFormat("vi-VN", {

@@ -114,7 +114,7 @@ export function AdminUsers() {
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search users..."
+              placeholder="Tìm kiếm người dùng..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -126,11 +126,11 @@ export function AdminUsers() {
               onChange={(e) => setRoleFilter(e.target.value)}
               className="appearance-none bg-white border border-gray-300 text-gray-700 py-2 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
             >
-              <option value="all">All Roles</option>
-              <option value="customer">Customers</option>
-              <option value="seller">Sellers</option>
-              <option value="shipper">Shippers</option>
-              <option value="admin">Admins</option>
+              <option value="all">Tất cả vai trò</option>
+              <option value="customer">Khách hàng</option>
+              <option value="seller">Người bán</option>
+              <option value="shipper">Người giao hàng</option>
+              <option value="admin">Quản trị viên</option>
             </select>
             <FilterIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
           </div>
@@ -148,22 +148,22 @@ export function AdminUsers() {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  User
+                  Người dùng
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Role
+                  Vai trò
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
+                  Trạng thái
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Join Date
+                  Ngày tham gia
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Orders/Sales
+                  Đơn hàng/Doanh số
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
-                  Actions
+                  Hành động
                 </th>
               </tr>
             </thead>
@@ -209,21 +209,21 @@ export function AdminUsers() {
                                 : "bg-gray-100 text-gray-800 border-gray-200"
                         } border`}
                       >
-                        <option value="customer">Customer</option>
-                        <option value="seller">Seller</option>
-                        <option value="shipper">Shipper</option>
-                        <option value="admin">Admin</option>
+                        <option value="customer">Khách hàng</option>
+                        <option value="seller">Người bán</option>
+                        <option value="shipper">Người giao hàng</option>
+                        <option value="admin">Quản trị viên</option>
                       </select>
                     </td>
                     <td className="p-4">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${user.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
                       >
-                        {user.status}
+                        {user.status === "active" ? "Hoạt động" : "Bị khóa"}
                       </span>
                     </td>
                     <td className="p-4 text-sm text-gray-600">
-                      {new Date(user.createdAt).toLocaleDateString()}
+                      {new Date(user.createdAt).toLocaleDateString("vi-VN")}
                     </td>
                     <td className="p-4 text-sm font-medium text-gray-900">
                       {user.orders}
@@ -236,8 +236,8 @@ export function AdminUsers() {
                             className={`p-1.5 rounded-lg transition-colors ${user.status === "active" ? "text-gray-400 hover:text-red-600 hover:bg-red-50" : "text-red-500 hover:text-green-600 hover:bg-green-50"}`}
                             title={
                               user.status === "active"
-                                ? "Lock User"
-                                : "Unlock User"
+                                ? "Khóa người dùng"
+                                : "Mở khóa người dùng"
                             }
                           >
                             {user.status === "active" ? (
@@ -250,7 +250,7 @@ export function AdminUsers() {
                         <button
                           onClick={() => setSelectedUser(user)}
                           className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
-                          title="View Details"
+                          title="Xem chi tiết"
                         >
                           <MoreVerticalIcon className="h-4 w-4" />
                         </button>
@@ -261,7 +261,7 @@ export function AdminUsers() {
               ) : (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-gray-500">
-                    No users found matching the selected criteria.
+                    Không tìm thấy người dùng nào phù hợp với tiêu chí đã chọn.
                   </td>
                 </tr>
               )}
@@ -273,19 +273,19 @@ export function AdminUsers() {
         {filteredUsers.length > 0 && (
           <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
             <p className="text-sm text-gray-500">
-              Showing{" "}
+              Hiển thị từ{" "}
               <span className="font-medium text-gray-900">
                 {(currentPage - 1) * pageSize + 1}
               </span>{" "}
-              to{" "}
+              đến{" "}
               <span className="font-medium text-gray-900">
                 {Math.min(currentPage * pageSize, filteredUsers.length)}
               </span>{" "}
-              of{" "}
+              trên{" "}
               <span className="font-medium text-gray-900">
                 {filteredUsers.length}
               </span>{" "}
-              results
+              kết quả
             </p>
             <div className="flex space-x-2">
               <button
@@ -293,7 +293,7 @@ export function AdminUsers() {
                 disabled={currentPage === 1}
                 className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
               >
-                Previous
+                Trước
               </button>
               <button
                 onClick={() =>
@@ -302,7 +302,7 @@ export function AdminUsers() {
                 disabled={currentPage === totalPages || totalPages === 0}
                 className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
               >
-                Next
+                Sau
               </button>
             </div>
           </div>
@@ -352,7 +352,13 @@ export function AdminUsers() {
                               : "bg-gray-200 text-gray-800"
                       }`}
                     >
-                      {selectedUser.role}
+                      {selectedUser.role === "admin"
+                        ? "Quản trị viên"
+                        : selectedUser.role === "seller"
+                          ? "Người bán"
+                          : selectedUser.role === "shipper"
+                            ? "Người giao hàng"
+                            : "Khách hàng"}
                     </span>
                     <span
                       className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold capitalize ${
@@ -361,7 +367,7 @@ export function AdminUsers() {
                           : "bg-red-100 text-red-800"
                       }`}
                     >
-                      {selectedUser.status}
+                      {selectedUser.status === "active" ? "Hoạt động" : "Bị khóa"}
                     </span>
                   </div>
                 </div>

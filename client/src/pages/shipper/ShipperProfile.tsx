@@ -100,7 +100,7 @@ export function ShipperProfile() {
               <p className="text-gray-500 font-medium">{user?.email}</p>
               <div className="mt-2 flex items-center space-x-2">
                 <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full uppercase tracking-wider">
-                  Shipper Since {user?.createdAt ? new Date(user.createdAt).getFullYear() : '2024'}
+                  Nhân viên giao hàng từ {user?.createdAt ? new Date(user.createdAt).getFullYear() : '2024'}
                 </span>
               </div>
             </div>

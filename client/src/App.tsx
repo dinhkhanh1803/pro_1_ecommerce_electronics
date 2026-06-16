@@ -100,6 +100,7 @@ export function App() {
               <Route path="/admin/orders" element={<AdminOrders />} />
               {/* <Route path="/admin/finance" element={<AdminFinance />} /> */}
               <Route path="/admin/cms" element={<AdminCMS />} />
+              <Route path="/admin/messages" element={<Chat />} />
             </Route>
 
             {/* Shipper Pages */}

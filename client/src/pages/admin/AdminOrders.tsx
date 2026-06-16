@@ -104,7 +104,7 @@ export function AdminOrders() {
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search orders (ID, Customer, Seller)..."
+              placeholder="Tìm kiếm đơn hàng (ID, Khách hàng, Người bán)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -146,25 +146,25 @@ export function AdminOrders() {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Order ID
+                  Mã đơn hàng
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Date
+                  Ngày đặt
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Customer
+                  Khách hàng
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Seller
+                  Người bán
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Total
+                  Tổng cộng
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
+                  Trạng thái
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
-                  Actions
+                  Hành động
                 </th>
               </tr>
             </thead>
@@ -185,7 +185,7 @@ export function AdminOrders() {
                     </td>
                     <td className="p-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {order.customer?.name || "Unknown"}
+                        {order.customer?.name || "Không xác định"}
                       </div>
                       <div className="text-xs text-gray-500 uppercase tracking-widest mt-1">
                         {order.paymentMethod}
@@ -205,7 +205,7 @@ export function AdminOrders() {
                         <button
                           onClick={() => setSelectedOrderDetails(order)}
                           className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors opacity-0 group-hover:opacity-100"
-                          title="View Details"
+                          title="Xem chi tiết"
                         >
                           <EyeIcon className="h-5 w-5" />
                         </button>
@@ -216,7 +216,7 @@ export function AdminOrders() {
               ) : (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-gray-500">
-                    No orders found matching the selected criteria.
+                    Không tìm thấy đơn hàng nào phù hợp với tiêu chí đã chọn.
                   </td>
                 </tr>
               )}
@@ -228,19 +228,19 @@ export function AdminOrders() {
         {filteredOrders.length > 0 && (
           <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
             <p className="text-sm text-gray-500">
-              Showing{" "}
+              Hiển thị từ{" "}
               <span className="font-medium text-gray-900">
                 {(currentPage - 1) * pageSize + 1}
               </span>{" "}
-              to{" "}
+              đến{" "}
               <span className="font-medium text-gray-900">
                 {Math.min(currentPage * pageSize, filteredOrders.length)}
               </span>{" "}
-              of{" "}
+              trên{" "}
               <span className="font-medium text-gray-900">
                 {filteredOrders.length}
               </span>{" "}
-              results
+              kết quả
             </p>
             <div className="flex space-x-2">
               <button
@@ -248,7 +248,7 @@ export function AdminOrders() {
                 disabled={currentPage === 1}
                 className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
               >
-                Previous
+                Trước
               </button>
               <button
                 onClick={() =>
@@ -257,7 +257,7 @@ export function AdminOrders() {
                 disabled={currentPage === totalPages || totalPages === 0}
                 className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
               >
-                Next
+                Sau
               </button>
             </div>
           </div>

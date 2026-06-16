@@ -53,8 +53,8 @@ export function AdminFinance() {
 
   const filteredTransactions = transactions.filter((trx) => {
     const matchesType = typeFilter === 'all' || trx.type === typeFilter;
-    const fromName = trx.fromUser?.name || 'System';
-    const toName = trx.toUser?.name || 'System';
+    const fromName = trx.fromUser?.name || 'Hệ thống';
+    const toName = trx.toUser?.name || 'Hệ thống';
     const matchesSearch =
       trx._id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       fromName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -82,10 +82,10 @@ export function AdminFinance() {
             </span>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
-            Total Processing Volume
+            Tổng khối lượng giao dịch
           </h3>
           <p className="text-2xl font-bold text-gray-900">${(metrics.totalVolume || 0).toLocaleString()}</p>
-          <p className="text-xs text-gray-500 mt-2">Last 30 days</p>
+          <p className="text-xs text-gray-500 mt-2">30 ngày qua</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -99,10 +99,10 @@ export function AdminFinance() {
             </span>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
-            Platform Revenue (Fees)
+            Doanh thu phí nền tảng
           </h3>
           <p className="text-2xl font-bold text-gray-900">${(metrics.platformRevenue || 0).toLocaleString()}</p>
-          <p className="text-xs text-gray-500 mt-2">Last 30 days</p>
+          <p className="text-xs text-gray-500 mt-2">30 ngày qua</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -112,10 +112,10 @@ export function AdminFinance() {
             </div>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
-            Pending Payouts
+            Yêu cầu rút tiền chờ duyệt
           </h3>
           <p className="text-2xl font-bold text-gray-900">${(metrics.pendingPayouts || 0).toLocaleString()}</p>
-          <p className="text-xs text-gray-500 mt-2">To 142 sellers</p>
+          <p className="text-xs text-gray-500 mt-2">Đến các người bán</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -128,9 +128,9 @@ export function AdminFinance() {
               -1.2%
             </span>
           </div>
-          <h3 className="text-sm font-medium text-gray-500 mb-1">Refunds</h3>
+          <h3 className="text-sm font-medium text-gray-500 mb-1">Hoàn tiền</h3>
           <p className="text-2xl font-bold text-gray-900">${(metrics.refunds || 0).toLocaleString()}</p>
-          <p className="text-xs text-gray-500 mt-2">Last 30 days</p>
+          <p className="text-xs text-gray-500 mt-2">30 ngày qua</p>
         </div>
       </div>
 
@@ -140,16 +140,16 @@ export function AdminFinance() {
         <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-900">
-              Revenue Analytics
+              Phân tích doanh thu
             </h3>
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
                 <span className="w-3 h-3 rounded-full bg-indigo-500 mr-2"></span>
-                <span className="text-sm text-gray-600">Total Volume</span>
+                <span className="text-sm text-gray-600">Tổng khối lượng</span>
               </div>
               <div className="flex items-center">
                 <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
-                <span className="text-sm text-gray-600">Platform Fees</span>
+                <span className="text-sm text-gray-600">Phí nền tảng</span>
               </div>
             </div>
           </div>
@@ -208,7 +208,7 @@ export function AdminFinance() {
                   }}
                   formatter={(value: number, name: string) => [
                   `$${value}`,
-                  name === 'revenue' ? 'Total Volume' : 'Platform Fees']
+                  name === 'revenue' ? 'Tổng khối lượng' : 'Phí nền tảng']
                   } />
                 
                 <Line
@@ -241,7 +241,7 @@ export function AdminFinance() {
         {/* Payment Methods */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">
-            Payment Methods
+            Phương thức thanh toán
           </h3>
           <div className="flex-1 flex flex-col items-center justify-center">
             <div className="h-48 w-full mb-6">
@@ -266,7 +266,7 @@ export function AdminFinance() {
                       border: 'none',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                     }}
-                    formatter={(value: number) => [`${value}%`, 'Usage']} />
+                    formatter={(value: number) => [`${value}%`, 'Tỷ lệ sử dụng']} />
                   
                 </PieChart>
               </ResponsiveContainer>
@@ -300,14 +300,14 @@ export function AdminFinance() {
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
         <div className="p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h3 className="text-lg font-semibold text-gray-900">
-            Recent Transactions
+            Giao dịch gần đây
           </h3>
           <div className="flex items-center space-x-2 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-64">
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search transactions..."
+                placeholder="Tìm kiếm giao dịch..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
@@ -319,10 +319,10 @@ export function AdminFinance() {
                 onChange={(e) => setTypeFilter(e.target.value)}
                 className="appearance-none bg-white border border-gray-300 text-gray-700 py-2 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
                 
-                <option value="all">All Types</option>
-                <option value="payment">Payments</option>
-                <option value="payout">Payouts</option>
-                <option value="refund">Refunds</option>
+                <option value="all">Tất cả loại</option>
+                <option value="payment">Thanh toán</option>
+                <option value="payout">Rút tiền</option>
+                <option value="refund">Hoàn tiền</option>
               </select>
               <FilterIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
@@ -337,25 +337,25 @@ export function AdminFinance() {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Transaction ID
+                  Mã giao dịch
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Type
+                  Loại
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  From / To
+                  Từ / Đến
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Amount
+                  Số tiền
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Fee
+                  Phí
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Net
+                  Thực nhận
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
+                  Trạng thái
                 </th>
               </tr>
             </thead>
@@ -370,21 +370,21 @@ export function AdminFinance() {
                       <div className="text-sm font-medium text-gray-900">
                         {trx._id}
                       </div>
-                      <div className="text-xs text-gray-500">{new Date(trx.createdAt).toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">{new Date(trx.createdAt).toLocaleString("vi-VN")}</div>
                     </td>
                     <td className="p-4">
                       <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${trx.type === 'payment' ? 'bg-blue-100 text-blue-800' : trx.type === 'payout' ? 'bg-purple-100 text-purple-800' : 'bg-red-100 text-red-800'}`}>
                     
-                        {trx.type}
+                        {trx.type === 'payment' ? 'Thanh toán' : trx.type === 'payout' ? 'Rút tiền' : 'Hoàn tiền'}
                       </span>
                     </td>
                     <td className="p-4">
                       <div className="text-sm text-gray-900">
-                        <span className="text-gray-500">From:</span> {trx.fromUser?.name || 'System'}
+                        <span className="text-gray-500">Từ:</span> {trx.fromUser?.name || 'Hệ thống'}
                       </div>
                       <div className="text-sm text-gray-900">
-                        <span className="text-gray-500">To:</span> {trx.toUser?.name || 'System'}
+                        <span className="text-gray-500">Đến:</span> {trx.toUser?.name || 'Hệ thống'}
                       </div>
                     </td>
                     <td className="p-4 text-sm font-medium text-gray-900">
@@ -406,7 +406,7 @@ export function AdminFinance() {
 
               <tr>
                   <td colSpan={7} className="p-8 text-center text-gray-500">
-                    No transactions found matching the selected criteria.
+                    Không tìm thấy giao dịch nào phù hợp với tiêu chí đã chọn.
                   </td>
                 </tr>
               }
@@ -418,28 +418,28 @@ export function AdminFinance() {
         {filteredTransactions.length > 0 &&
         <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
             <p className="text-sm text-gray-500">
-              Showing <span className="font-medium text-gray-900">1</span> to{' '}
+              Hiển thị từ <span className="font-medium text-gray-900">1</span> đến{' '}
               <span className="font-medium text-gray-900">
                 {filteredTransactions.length}
               </span>{' '}
-              of{' '}
+              trên{' '}
               <span className="font-medium text-gray-900">
                 {filteredTransactions.length}
               </span>{' '}
-              results
+              kết quả
             </p>
             <div className="flex space-x-2">
               <button
               className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
               disabled>
               
-                Previous
+                Trước
               </button>
               <button
               className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
               disabled>
               
-                Next
+                Sau
               </button>
             </div>
           </div>

@@ -42,15 +42,15 @@ export function SellerReviews() {
   const tabs = [
   {
     id: 'all',
-    label: 'All Reviews'
+    label: 'Tất cả đánh giá'
   },
   {
     id: 'pending',
-    label: 'Needs Reply'
+    label: 'Chưa trả lời'
   },
   {
     id: 'replied',
-    label: 'Replied'
+    label: 'Đã trả lời'
   }];
 
   const filteredReviews = reviews.filter((review) => {
@@ -92,7 +92,7 @@ export function SellerReviews() {
   return (
     <DashboardLayout
       sidebarItems={SELLER_SIDEBAR}
-      title="Customer Reviews"
+      title="Đánh giá của khách hàng"
       role="Seller">
       
       {/* Header Actions */}
@@ -102,7 +102,7 @@ export function SellerReviews() {
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search reviews..."
+              placeholder="Tìm kiếm đánh giá..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
@@ -178,7 +178,7 @@ export function SellerReviews() {
                       <div className="flex items-center space-x-2">
                         {!review.reply &&
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            Needs Reply
+                            Chưa trả lời
                           </span>
                     }
                         <button className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors">
@@ -201,7 +201,7 @@ export function SellerReviews() {
                         <div className="absolute -left-2 top-4 w-4 h-4 bg-gray-50 border-t border-l border-gray-100 transform -rotate-45"></div>
                         <div className="flex items-center space-x-2 mb-2">
                           <span className="font-semibold text-sm text-indigo-600">
-                            Your Reply
+                            Phản hồi của bạn
                           </span>
                           <span className="text-xs text-gray-500">
                             {new Date(review.updatedAt).toLocaleDateString('vi-VN')}
@@ -216,7 +216,7 @@ export function SellerReviews() {
                             <textarea
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
-                      placeholder="Write your reply..."
+                      placeholder="Viết phản hồi của bạn..."
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y text-sm mb-3"
                       rows={3} />
                     
@@ -225,14 +225,14 @@ export function SellerReviews() {
                         onClick={() => setReplyingTo(null)}
                         className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                         
-                                Cancel
+                                Hủy
                               </button>
                               <button
                         onClick={() => handleReplySubmit(review._id)}
                         disabled={!replyText.trim()}
                         className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         
-                                Submit Reply
+                                Gửi phản hồi
                               </button>
                             </div>
                           </div> :
@@ -245,7 +245,7 @@ export function SellerReviews() {
                     className="flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
                     
                             <ReplyIcon className="h-4 w-4 mr-1.5" />
-                            Reply to Review
+                            Phản hồi đánh giá
                           </button>
                   }
                       </div>
@@ -256,7 +256,7 @@ export function SellerReviews() {
           ) :
 
           <div className="p-8 text-center text-gray-500">
-              No reviews found matching the selected criteria.
+              Không tìm thấy đánh giá nào phù hợp với tiêu chí đã chọn.
             </div>
           }
         </div>
@@ -265,28 +265,28 @@ export function SellerReviews() {
         {filteredReviews.length > 0 &&
         <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
             <p className="text-sm text-gray-500">
-              Showing <span className="font-medium text-gray-900">1</span> to{' '}
+              Hiển thị từ <span className="font-medium text-gray-900">1</span> đến{' '}
               <span className="font-medium text-gray-900">
                 {filteredReviews.length}
               </span>{' '}
-              of{' '}
+              trên{' '}
               <span className="font-medium text-gray-900">
                 {filteredReviews.length}
               </span>{' '}
-              results
+              kết quả
             </p>
             <div className="flex space-x-2">
               <button
               className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
               disabled>
               
-                Previous
+                Trước
               </button>
               <button
               className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
               disabled>
               
-                Next
+                Sau
               </button>
             </div>
           </div>

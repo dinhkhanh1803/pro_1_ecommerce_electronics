@@ -52,7 +52,7 @@ export function SellerProducts() {
   }, [user]);
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this product?")) {
+    if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
       try {
         const token = localStorage.getItem("token");
         await fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`, {
@@ -93,7 +93,7 @@ export function SellerProducts() {
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search products..."
+              placeholder="Tìm kiếm sản phẩm..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
@@ -109,7 +109,7 @@ export function SellerProducts() {
           className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-medium w-full sm:w-auto justify-center">
           
           <PlusIcon className="h-4 w-4 mr-2" />
-          Add Product
+          Thêm sản phẩm
         </Link>
       </div>
 
@@ -117,14 +117,14 @@ export function SellerProducts() {
       {selectedProducts.length > 0 &&
       <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 mb-6 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
           <span className="text-sm font-medium text-indigo-800">
-            {selectedProducts.length} product(s) selected
+            Đã chọn {selectedProducts.length} sản phẩm
           </span>
           <div className="flex space-x-2">
             {/* <button className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
               Change Status
             </button> */}
             <button className="px-3 py-1.5 bg-white border border-red-200 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">
-              Delete
+              Xóa
             </button>
           </div>
         </div>
@@ -148,22 +148,22 @@ export function SellerProducts() {
                   
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Product
+                  Sản phẩm
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Category
+                  Danh mục
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Price
+                  Giá
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Stock
+                  Kho
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Sale
+                  Giảm giá
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
+                  Trạng thái
                 </th>
                 <th className="p-4 w-16"></th>
               </tr>
@@ -199,7 +199,7 @@ export function SellerProducts() {
                     </div>
                   </td>
                   <td className="p-4 text-sm text-gray-600">
-                    {product.category?.name || "Unknown"}
+                    {product.category?.name || "Không xác định"}
                   </td>
                   <td className="p-4 text-sm font-medium text-gray-900">
                     {product.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price) : "0 ₫"}
@@ -226,14 +226,14 @@ export function SellerProducts() {
                       <Link
                       to={`/seller/products/${product._id}/edit`}
                       className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
-                      title="Edit">
+                      title="Sửa">
                       
                         <EditIcon className="h-4 w-4" />
                       </Link>
                       <button
                       onClick={() => handleDelete(product._id)}
                       className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                      title="Delete">
+                      title="Xóa">
                       
                         <Trash2Icon className="h-4 w-4" />
                       </button>
@@ -249,22 +249,22 @@ export function SellerProducts() {
         {/* Pagination */}
         <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
           <p className="text-sm text-gray-500">
-            Showing <span className="font-medium text-gray-900">{totalItems === 0 ? 0 : startIndex + 1}</span> to{' '}
-            <span className="font-medium text-gray-900">{Math.min(startIndex + ITEMS_PER_PAGE, totalItems)}</span> of{' '}
-            <span className="font-medium text-gray-900">{totalItems}</span> results
+            Hiển thị từ <span className="font-medium text-gray-900">{totalItems === 0 ? 0 : startIndex + 1}</span> đến{' '}
+            <span className="font-medium text-gray-900">{Math.min(startIndex + ITEMS_PER_PAGE, totalItems)}</span> trên{' '}
+            <span className="font-medium text-gray-900">{totalItems}</span> kết quả
           </p>
           <div className="flex space-x-2">
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
               className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50">
-              Previous
+              Trước
             </button>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages || totalPages === 0}
               className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50">
-              Next
+              Sau
             </button>
           </div>
         </div>

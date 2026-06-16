@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { CustomerLayout } from "../../components/CustomerLayout";
+import { DashboardLayout } from "../../components/DashboardLayout";
 import { useAuth } from "../../context/AuthContext";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useLocation } from "react-router-dom";
+import { SELLER_SIDEBAR, ADMIN_SIDEBAR } from "../../constants/sidebar";
 import { 
   SendIcon, 
   MessageSquareIcon, 
@@ -13,7 +15,12 @@ import {
 export function Chat() {
   const { user, token } = useAuth();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const contactIdFromUrl = searchParams.get("contactId");
+
+  const isDashboard = location.pathname.startsWith("/seller") || location.pathname.startsWith("/admin");
+  const sidebarItems = location.pathname.startsWith("/admin") ? ADMIN_SIDEBAR : SELLER_SIDEBAR;
+  const dashboardRole = location.pathname.startsWith("/admin") ? "Admin" : "Seller";
 
   const [loading, setLoading] = useState(false);
   const [contacts, setContacts] = useState<any[]>([]);
@@ -130,9 +137,8 @@ export function Chat() {
     c.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  return (
-    <CustomerLayout title="Hộp thư tin nhắn">
-      <div className="bg-white rounded-[2rem] shadow-xl shadow-indigo-100/20 overflow-hidden border border-indigo-50 flex h-[700px] max-h-[80vh]">
+  const chatContent = (
+    <div className="bg-white rounded-[2rem] shadow-xl shadow-indigo-100/20 overflow-hidden border border-indigo-50 flex h-[700px] max-h-[80vh]">
         {/* Inbox List */}
         <div className="w-80 border-r border-indigo-50 flex flex-col bg-white">
           <div className="p-8 border-b border-indigo-50">
@@ -200,7 +206,7 @@ export function Chat() {
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                     <img 
-                      src={`https://ui-avatars.com/api/?name=${selectedContact.name}&background=6366f1&color=fff&bold=true`} 
+                       src={`https://ui-avatars.com/api/?name=${selectedContact.name}&background=6366f1&color=fff&bold=true`} 
                       className="w-11 h-11 rounded-2xl border-2 border-indigo-50 shadow-sm" 
                     />
                     <div className="absolute -top-1 -right-1 p-1 bg-green-500 rounded-lg animate-pulse border-2 border-white"></div>
@@ -288,6 +294,23 @@ export function Chat() {
           )}
         </div>
       </div>
+  );
+
+  if (isDashboard) {
+    return (
+      <DashboardLayout
+        sidebarItems={sidebarItems}
+        title="Hộp thư tin nhắn"
+        role={dashboardRole}
+      >
+        {chatContent}
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <CustomerLayout title="Hộp thư tin nhắn">
+      {chatContent}
     </CustomerLayout>
   );
 }

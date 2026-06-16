@@ -114,7 +114,7 @@ export function AdminProducts() {
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search products or sellers..."
+              placeholder="Tìm kiếm sản phẩm hoặc người bán..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
@@ -151,22 +151,22 @@ export function AdminProducts() {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Product
+                  Sản phẩm
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Seller
+                  Người bán
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Category
+                  Danh mục
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Price
+                  Giá
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Submitted
+                  Ngày nộp
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
-                  Actions
+                  Hành động
                 </th>
               </tr>
             </thead>
@@ -193,16 +193,16 @@ export function AdminProducts() {
                       </div>
                     </td>
                     <td className="p-4 text-sm font-medium text-gray-900">
-                      {product.seller?.name || "Unknown"}
+                      {product.seller?.name || "Không xác định"}
                     </td>
                     <td className="p-4 text-sm text-gray-600">
-                      {product.category?.name || "Unknown"}
+                      {product.category?.name || "Không xác định"}
                     </td>
                     <td className="p-4 text-sm font-medium text-gray-900">
                       {product.price ? formatVND(product.price) : "0 ₫"}
                     </td>
                     <td className="p-4 text-sm text-gray-600">
-                      {new Date(product.createdAt).toLocaleDateString()}
+                      {new Date(product.createdAt).toLocaleDateString("vi-VN")}
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
@@ -213,14 +213,14 @@ export function AdminProducts() {
                         handleAction(product._id, 'approve')
                         }
                         className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-green-200 bg-green-50/50"
-                        title="Approve">
+                        title="Duyệt">
                         
                               <CheckIcon className="h-4 w-4" />
                             </button>
                             <button
                         onClick={() => handleAction(product._id, 'reject')}
                         className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-200 bg-red-50/50"
-                        title="Reject">
+                        title="Từ chối">
                         
                               <XIcon className="h-4 w-4" />
                             </button>
@@ -229,14 +229,14 @@ export function AdminProducts() {
                         <button
                           onClick={() => setSelectedProduct(product)}
                           className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors opacity-0 group-hover:opacity-100"
-                          title="View Details"
+                          title="Xem chi tiết"
                         >
                           <EyeIcon className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(product._id)}
                           className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
-                          title="Delete Product"
+                          title="Xóa sản phẩm"
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
@@ -247,7 +247,7 @@ export function AdminProducts() {
 
               <tr>
                   <td colSpan={6} className="p-8 text-center text-gray-500">
-                    No products found matching the selected criteria.
+                    Không tìm thấy sản phẩm nào phù hợp với tiêu chí đã chọn.
                   </td>
                 </tr>
               }
@@ -259,30 +259,30 @@ export function AdminProducts() {
         {filteredProducts.length > 0 &&
           <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
             <p className="text-sm text-gray-500">
-              Showing <span className="font-medium text-gray-900">{(currentPage - 1) * pageSize + 1}</span> to{' '}
+              Hiển thị từ <span className="font-medium text-gray-900">{(currentPage - 1) * pageSize + 1}</span> đến{' '}
               <span className="font-medium text-gray-900">
                 {Math.min(currentPage * pageSize, filteredProducts.length)}
               </span>{' '}
-              of{' '}
+              trên{' '}
               <span className="font-medium text-gray-900">
                 {filteredProducts.length}
               </span>{' '}
-              results
+              kết quả
             </p>
             <div className="flex space-x-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50 text-center flex items-center justify-center"
               >
-                Previous
+                Trước
               </button>
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50 text-center flex items-center justify-center"
               >
-                Next
+                Sau
               </button>
             </div>
           </div>
@@ -334,11 +334,11 @@ export function AdminProducts() {
               <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 space-y-3">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500 font-medium">Người bán:</span>
-                  <span className="font-bold text-gray-900">{selectedProduct.seller?.name || "Unknown"}</span>
+                  <span className="font-bold text-gray-900">{selectedProduct.seller?.name || "Không xác định"}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500 font-medium">Danh mục:</span>
-                  <span className="font-bold text-gray-900">{selectedProduct.category?.name || "Unknown"}</span>
+                  <span className="font-bold text-gray-900">{selectedProduct.category?.name || "Không xác định"}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500 font-medium">Ngày đăng:</span>
@@ -350,7 +350,7 @@ export function AdminProducts() {
                     selectedProduct.status === 'active' ? 'bg-green-100 text-green-800' : 
                     selectedProduct.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
                   }`}>
-                    {selectedProduct.status}
+                    {selectedProduct.status === 'active' ? 'Hoạt động' : selectedProduct.status === 'pending' ? 'Chờ duyệt' : 'Bị từ chối'}
                   </span>
                 </div>
               </div>

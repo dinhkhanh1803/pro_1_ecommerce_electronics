@@ -44,6 +44,11 @@ export const ADMIN_SIDEBAR = [
     label: "CMS",
     path: "/admin/cms",
   },
+  {
+    icon: MessageSquareIcon,
+    label: "Tin nhắn",
+    path: "/admin/messages",
+  },
 ];
 
 export const SELLER_SIDEBAR = [
