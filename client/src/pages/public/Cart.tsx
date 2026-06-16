@@ -157,7 +157,7 @@ export function Cart() {
                   {/* Quantity */}
                   <div className="flex items-center gap-2 bg-gray-100 rounded-xl p-1 shrink-0">
                     <button
-                      onClick={() => updateQuantity(item.id, -1)}
+                      onClick={() => updateQuantity(item.id, -1, item.color, item.size)}
                       className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-all"
                     >
                       <MinusIcon className="w-3.5 h-3.5" />
@@ -166,7 +166,7 @@ export function Cart() {
                       {item.quantity}
                     </span>
                     <button
-                      onClick={() => updateQuantity(item.id, 1)}
+                      onClick={() => updateQuantity(item.id, 1, item.color, item.size)}
                       className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-all"
                     >
                       <PlusIcon className="w-3.5 h-3.5" />
@@ -182,7 +182,7 @@ export function Cart() {
 
                   {/* Remove */}
                   <button
-                    onClick={() => removeItem(item.id)}
+                    onClick={() => removeItem(item.id, item.color, item.size)}
                     className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
                     title="Xóa"
                   >
