@@ -101,10 +101,34 @@ export const createOrder = async (req, res, next) => {
       return res.status(400).json({ message: "Order must include at least one product" });
     }
 
-    // Validate stock at variant level and decrement inventory.
+    const requestedSeller = mongoose.Types.ObjectId.isValid(seller) ? seller.toString() : null;
+    let resolvedSeller = requestedSeller;
+    const validatedProducts = [];
+    const stockUpdates = [];
+
+    // Validate seller, stock and variants before mutating inventory.
     for (const item of products) {
+      if (!mongoose.Types.ObjectId.isValid(item.product)) {
+        return res.status(400).json({ message: "Invalid product id in order" });
+      }
+
       const dbProduct = await Product.findById(item.product);
       if (!dbProduct) return res.status(404).json({ message: "Product not found" });
+
+      const productSeller = dbProduct.seller?.toString();
+      if (!productSeller) {
+        return res.status(400).json({ message: `Product ${dbProduct.name} is missing seller information` });
+      }
+
+      if (!resolvedSeller) {
+        resolvedSeller = productSeller;
+      }
+
+      if (productSeller !== resolvedSeller) {
+        return res.status(400).json({
+          message: "Order contains products from multiple sellers. Please place separate orders.",
+        });
+      }
 
       const variantName = String(item.variantName || "Default");
       const variantIndex = Array.isArray(dbProduct.variants)
@@ -124,16 +148,30 @@ export const createOrder = async (req, res, next) => {
         });
       }
 
-      dbProduct.variants[variantIndex].stock = available - requested;
-      await dbProduct.save();
+      validatedProducts.push({
+        product: item.product,
+        variantName,
+        quantity: requested,
+        price: Number(item.price) || dbProduct.price + (Number(dbProduct.variants[variantIndex].priceAdd) || 0),
+      });
+      stockUpdates.push({ dbProduct, variantIndex, available, requested });
+    }
+
+    if (!resolvedSeller) {
+      return res.status(400).json({ message: "Order seller could not be determined" });
+    }
+
+    for (const update of stockUpdates) {
+      update.dbProduct.variants[update.variantIndex].stock = update.available - update.requested;
+      await update.dbProduct.save();
     }
     
     // In a real app, products should be validated with DB prices
     const orderData = {
       customer: req.user._id,
-      seller,
-      products,
-      totalAmount,
+      seller: resolvedSeller,
+      products: validatedProducts,
+      totalAmount: Number(totalAmount) || 0,
       shippingAddress,
       paymentMethod: paymentMethod || "COD",
     };

@@ -15,6 +15,10 @@ import { FREE_SHIP_THRESHOLD, SHIPPING_FEE } from '../../constants/common';
 
 const SHIPPING_BASE = SHIPPING_FEE;
 const EXPRESS_ADDITIONAL = 30_000;
+const OBJECT_ID_PATTERN = /^[0-9a-fA-F]{24}$/;
+
+const getSellerId = (seller: any): string =>
+  typeof seller === 'string' ? seller : seller?._id ? String(seller._id) : '';
 
 export function Checkout() {
   const { cartItems, subtotal, clearCart } = useCart();
@@ -84,6 +88,18 @@ export function Checkout() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const resolveSellerId = async (item: any) => {
+    const currentSellerId = getSellerId(item.seller);
+    if (OBJECT_ID_PATTERN.test(currentSellerId || '')) return currentSellerId;
+
+    const productRes = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${item.id}`);
+    if (!productRes.ok) return '';
+
+    const product = await productRes.json();
+    const productSellerId = getSellerId(product.seller);
+    return OBJECT_ID_PATTERN.test(productSellerId || '') ? productSellerId : '';
+  };
+
   const handlePlaceOrder = async () => {
     if (!formData.fullName || !formData.phone || !formData.street || !formData.city) {
       alert('Vui lòng nhập đầy đủ thông tin giao hàng.');
@@ -111,11 +127,22 @@ export function Checkout() {
       }
 
       // 2. Map items and POST to /api/orders
+      const cartItemsWithSeller = await Promise.all(
+        cartItems.map(async (item) => ({
+          item,
+          sellerId: await resolveSellerId(item),
+        }))
+      );
+
+      const missingSellerItem = cartItemsWithSeller.find(({ sellerId }) => !sellerId);
+      if (missingSellerItem) {
+        alert(`San pham "${missingSellerItem.item.name}" thieu thong tin nguoi ban. Vui long xoa san pham nay khoi gio hang roi them lai.`);
+        return;
+      }
+
       // Group items by seller
       const sellerGroups: Record<string, any[]> = {};
-      cartItems.forEach(item => {
-        // Fallback context seller if not saved previously
-        const sellerId = item.seller || 'undefined'; 
+      cartItemsWithSeller.forEach(({ item, sellerId }) => {
         if (!sellerGroups[sellerId]) sellerGroups[sellerId] = [];
         sellerGroups[sellerId].push({
           product: item.id,
@@ -149,9 +176,9 @@ export function Checkout() {
       });
 
       const responses = await Promise.all(ordersPromises);
-      const allSuccess = responses.every(res => res.ok);
+      const failedResponse = responses.find(res => !res.ok);
 
-      if (allSuccess) {
+      if (!failedResponse) {
         const resultOrders = await Promise.all(responses.map(res => res.json()));
         const orderIds = resultOrders.map(o => o._id);
 
@@ -180,6 +207,11 @@ export function Checkout() {
         clearCart();
         navigate('/orders');
       } else {
+        const errorData = await failedResponse.json().catch(() => null);
+        if (errorData?.message) {
+          alert(errorData.message);
+          return;
+        }
         alert('Có lỗi xảy ra khi tạo một số phần của đơn hàng.');
       }
     } catch (err) {

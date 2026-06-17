@@ -1,5 +1,9 @@
 export const errorHandler = (err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
+  let statusCode = err.statusCode || err.status || 500;
+
+  if (err.name === "CastError" || err.name === "ValidationError") {
+    statusCode = 400;
+  }
 
   res.status(statusCode).json({
     message: err.message,
