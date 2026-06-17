@@ -3,6 +3,24 @@ import Order from "../models/Order.js";
 import Coupon from "../models/Coupon.js";
 import Product from "../models/Product.js";
 
+const getErrorStatusCode = (err) => {
+  if (err?.statusCode || err?.status) return err.statusCode || err.status;
+  if (err?.name === "CastError" || err?.name === "ValidationError") return 400;
+  return 500;
+};
+
+const handleCreateOrderError = (err, res, next) => {
+  if (typeof next === "function") {
+    return next(err);
+  }
+
+  const statusCode = getErrorStatusCode(err);
+  return res.status(statusCode).json({
+    message: err?.message || "Failed to create order",
+    stack: process.env.NODE_ENV === "production" ? null : err?.stack,
+  });
+};
+
 // GET /api/orders/my-orders - Lấy đơn hàng của người mua hiện tại
 export const getMyOrders = async (req, res, next) => {
   try {
@@ -189,7 +207,7 @@ export const createOrder = async (req, res, next) => {
     const order = await Order.create(orderData);
     
     res.status(201).json(order);
-  } catch (err) { next(err); }
+  } catch (err) { return handleCreateOrderError(err, res, next); }
 };
 
 // PUT /api/orders/:id/status - Cập nhật trạng thái đơn hàng (Dành cho Seller/Admin)
