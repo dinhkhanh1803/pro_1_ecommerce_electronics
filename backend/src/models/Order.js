@@ -24,7 +24,7 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-orderSchema.pre("save", async function (next) {
+orderSchema.pre("save", async function () {
   if (this.isModified("orderStatus") && this.orderStatus === "cancelled") {
     // 1. Hoàn kho cho sản phẩm/biến thể
     for (const item of this.products) {
@@ -53,7 +53,6 @@ orderSchema.pre("save", async function (next) {
       }
     }
   }
-  next();
 });
 
 export default mongoose.model("Order", orderSchema);
