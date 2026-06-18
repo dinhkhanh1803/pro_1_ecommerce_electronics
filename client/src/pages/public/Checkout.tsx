@@ -9,6 +9,7 @@ import {
   BanknoteIcon,
   MapPinIcon,
   TruckIcon,
+  QrCodeIcon,
 } from 'lucide-react';
 import { formatVND } from '../../utils/format';
 import { FREE_SHIP_THRESHOLD, SHIPPING_FEE } from '../../constants/common';
@@ -93,6 +94,9 @@ export function Checkout() {
     }
 
     try {
+      const orderPaymentMethod =
+        paymentMethod === 'cod' ? 'COD' : paymentMethod === 'vnpay' ? 'VNPay' : 'MoMo';
+
       // 1. Save profile information if it was missing or if user explicitly wants to save it
       // Logic: Save if phone was missing or if it's a new address
       const fullAddress = `${formData.street}, ${formData.city}, ${formData.state} ${formData.zip}`.trim().replace(/, ,/g, ',');
@@ -130,7 +134,7 @@ export function Checkout() {
           products,
           totalAmount: total,
           shippingAddress: fullAddress,
-          paymentMethod: paymentMethod === 'cod' ? 'COD' : 'VNPay',
+          paymentMethod: orderPaymentMethod,
           couponCode: couponCode || null
         })
       });
@@ -159,6 +163,27 @@ export function Checkout() {
               return;
            } else {
               alert(vnpayData.message || 'Khong the tao lien ket thanh toan VNPay.');
+              return;
+           }
+        }
+
+        if (paymentMethod === 'momo') {
+           const momoRes = await fetch(`${import.meta.env.VITE_API_URL}/api/payment/create_momo_payment_url`, {
+             method: 'POST',
+             headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+             },
+             body: JSON.stringify({ amount: total, orderIds })
+           });
+           const momoData = await momoRes.json();
+           if (momoData.paymentUrl) {
+              // KHÔNG xóa giỏ hàng ở đây - chỉ xóa sau khi MoMo xác nhận thành công
+              // Giỏ hàng sẽ được xóa ở trang PaymentReturn nếu thanh toán thành công
+              window.location.href = momoData.paymentUrl;
+              return;
+           } else {
+              alert(momoData.message || 'Không thể tạo liên kết thanh toán MoMo.');
               return;
            }
         }
@@ -392,6 +417,21 @@ export function Checkout() {
                 </label>
 
                 <label
+                  className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-colors ${paymentMethod === 'momo' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="momo"
+                    checked={paymentMethod === 'momo'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-4 h-4 text-indigo-600 mr-3"
+                  />
+                  <WalletIcon className="h-6 w-6 text-gray-600 mr-3" />
+                  <span className="font-semibold text-gray-900">MoMo</span>
+                </label>
+
+                <label
                   className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-colors ${paymentMethod === 'vnpay' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}
                 >
                   <input
@@ -402,7 +442,7 @@ export function Checkout() {
                     onChange={(e) => setPaymentMethod(e.target.value)}
                     className="w-4 h-4 text-indigo-600 mr-3"
                   />
-                  <WalletIcon className="h-6 w-6 text-gray-600 mr-3" />
+                  <QrCodeIcon className="h-6 w-6 text-gray-600 mr-3" />
                   <span className="font-semibold text-gray-900">VNPay</span>
                 </label>
               </div>

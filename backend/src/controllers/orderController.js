@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Coupon from "../models/Coupon.js";
 import Product from "../models/Product.js";
+import { applyOrderInventory, restoreOrderInventory } from "../utils/orderInventory.js";
 
 const getErrorStatusCode = (err) => {
   if (err?.statusCode || err?.status) return err.statusCode || err.status;
@@ -117,9 +118,8 @@ export const createOrder = async (req, res, next) => {
     }
 
     const validatedProducts = [];
-    const stockUpdates = [];
-
-    // Validate stock and variants before mutating inventory.
+    // Validate stock and variants before creating the order. Online payments apply
+    // inventory only after the payment gateway confirms success.
     for (const item of products) {
       if (!mongoose.Types.ObjectId.isValid(item.product)) {
         return res.status(400).json({ message: "Invalid product id in order" });
@@ -152,12 +152,6 @@ export const createOrder = async (req, res, next) => {
         quantity: requested,
         price: Number(item.price) || dbProduct.price + (Number(dbProduct.variants[variantIndex].priceAdd) || 0),
       });
-      stockUpdates.push({ dbProduct, variantIndex, available, requested });
-    }
-
-    for (const update of stockUpdates) {
-      update.dbProduct.variants[update.variantIndex].stock = update.available - update.requested;
-      await update.dbProduct.save();
     }
     
     // In a real app, products should be validated with DB prices
@@ -179,8 +173,12 @@ export const createOrder = async (req, res, next) => {
       }
     }
 
-    const order = await Order.create(orderData);
-    
+    const order = new Order(orderData);
+    if (order.paymentMethod === "COD") {
+      await applyOrderInventory(order);
+    }
+    await order.save();
+
     res.status(201).json(order);
   } catch (err) { return handleCreateOrderError(err, res, next); }
 };
@@ -218,6 +216,10 @@ export const updateOrderStatus = async (req, res, next) => {
        order.paymentStatus = 'completed';
     }
 
+    if (status === 'cancelled') {
+      await restoreOrderInventory(order);
+    }
+
     await order.save();
     
     res.json(order);
@@ -249,6 +251,7 @@ export const cancelOrder = async (req, res, next) => {
     }
 
     order.orderStatus = 'cancelled';
+    await restoreOrderInventory(order);
     await order.save();
     res.json(order);
   } catch (err) { next(err); }

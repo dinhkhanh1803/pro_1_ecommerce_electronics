@@ -46,7 +46,7 @@ export function Footer() {
               </div>
               <div>
                 <p className="text-white font-semibold text-sm">Thanh toán an toàn</p>
-                <p className="text-xs text-gray-500">COD, VNPay, MoMo</p>
+                <p className="text-xs text-gray-500">COD, MoMo, VNPay</p>
               </div>
             </div>
             <div className="flex items-center space-x-3 group">

@@ -6,7 +6,7 @@ Full-stack e-commerce project for electronics products.
 
 - Frontend: React 18, TypeScript, Vite, TailwindCSS
 - Backend: Node.js, Express, MongoDB (Mongoose), Passport Google OAuth, JWT
-- Services: Cloudinary, Nodemailer, VNPay
+- Services: Cloudinary, Nodemailer, VNPay, MoMo
 
 ## Local Setup
 
@@ -56,11 +56,8 @@ EMAIL_PORT=587
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_app_password
 
-# VNPay
-VNPAY_TMN_CODE=your_vnpay_tmn_code
-VNPAY_HASH_SECRET=your_vnpay_hash_secret
-VNPAY_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-VNPAY_RETURN_URL=http://localhost:5000/api/payment/vnpay_return
+# VNPay / MoMo demo mock (for coursework/demo)
+# No payment gateway merchant keys are required.
 ```
 
 Run backend:
@@ -109,15 +106,10 @@ Required:
 - `EMAIL_PORT`
 - `EMAIL_USER`
 - `EMAIL_PASS`
-- `VNPAY_TMN_CODE`
-- `VNPAY_HASH_SECRET`
-- `VNPAY_RETURN_URL` (must be public backend callback URL, not localhost)
-
 Optional:
 
 - `PORT` (platform usually injects this)
 - `OTP_EXPIRE`
-- `VNPAY_URL` (defaults to VNPay sandbox URL if not set)
 
 ### Frontend (Vercel)
 

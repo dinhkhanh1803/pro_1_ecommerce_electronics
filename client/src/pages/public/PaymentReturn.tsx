@@ -13,7 +13,7 @@ export function PaymentReturn() {
   const { clearCart } = useCart();
 
   useEffect(() => {
-    // Backend đã xác thực VNPay rồi redirect về đây với kết quả trong query params
+    // Backend da xac thuc cong thanh toan roi redirect ve day voi ket qua trong query params
     const params = new URLSearchParams(location.search);
     const success = params.get('success') === 'true';
     const msg = params.get('message') || '';
