@@ -130,6 +130,7 @@ export function AdminUsers() {
               <option value="customer">Khách hàng</option>
               <option value="seller">Người bán</option>
               <option value="shipper">Người giao hàng</option>
+              <option value="warehouse">Quản lý kho</option>
               <option value="admin">Quản trị viên</option>
             </select>
             <FilterIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -206,12 +207,15 @@ export function AdminUsers() {
                               ? "bg-blue-100 text-blue-800 border-blue-200"
                               : user.role === "shipper"
                                 ? "bg-yellow-100 text-yellow-800 border-yellow-200"
-                                : "bg-gray-100 text-gray-800 border-gray-200"
+                                : user.role === "warehouse"
+                                  ? "bg-pink-100 text-pink-800 border-pink-200"
+                                  : "bg-gray-100 text-gray-800 border-gray-200"
                         } border`}
                       >
                         <option value="customer">Khách hàng</option>
                         <option value="seller">Người bán</option>
                         <option value="shipper">Người giao hàng</option>
+                        <option value="warehouse">Quản lý kho</option>
                         <option value="admin">Quản trị viên</option>
                       </select>
                     </td>
@@ -349,7 +353,9 @@ export function AdminUsers() {
                             ? "bg-blue-100 text-blue-800"
                             : selectedUser.role === "shipper"
                               ? "bg-yellow-100 text-yellow-800"
-                              : "bg-gray-200 text-gray-800"
+                              : selectedUser.role === "warehouse"
+                                ? "bg-pink-100 text-pink-800"
+                                : "bg-gray-200 text-gray-800"
                       }`}
                     >
                       {selectedUser.role === "admin"
@@ -358,7 +364,9 @@ export function AdminUsers() {
                           ? "Người bán"
                           : selectedUser.role === "shipper"
                             ? "Người giao hàng"
-                            : "Khách hàng"}
+                            : selectedUser.role === "warehouse"
+                              ? "Quản lý kho"
+                              : "Khách hàng"}
                     </span>
                     <span
                       className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold capitalize ${

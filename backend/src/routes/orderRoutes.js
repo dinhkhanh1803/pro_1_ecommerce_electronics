@@ -23,7 +23,7 @@ router.get("/my-orders", protect, getMyOrders);
 router.get("/all", protect, authorize("admin"), getAllOrders);
 
 // GET /api/orders/seller - Seller gets received orders
-router.get("/seller", protect, authorize("seller", "admin"), getSellerOrders);
+router.get("/seller", protect, authorize("seller", "admin", "warehouse"), getSellerOrders);
 
 // GET /api/orders/shipper - Shipper gets assigned orders
 router.get("/shipper", protect, authorize("shipper", "admin"), getShipperOrders);
@@ -38,7 +38,7 @@ router.post("/", protect, createOrder);
 router.put("/:id/cancel", protect, cancelOrder);
 
 // PUT /api/orders/:id/status - Update order status (Seller/Admin/Shipper)
-router.put("/:id/status", protect, authorize("seller", "admin", "shipper"), updateOrderStatus);
+router.put("/:id/status", protect, authorize("seller", "admin", "shipper", "warehouse"), updateOrderStatus);
 
 // GET /api/orders/:id - Get specific order by id (must be LAST among GET routes)
 router.get("/:id", protect, getOrderById);

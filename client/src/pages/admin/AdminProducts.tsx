@@ -54,10 +54,8 @@ export function AdminProducts() {
 
   const filteredProducts = productsList.filter((product) => {
     const matchesTab = product.status === activeTab;
-    const sellerName = product.seller?.name || '';
     const matchesSearch =
-      product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sellerName.toLowerCase().includes(searchQuery.toLowerCase());
+      product.name?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
@@ -154,9 +152,6 @@ export function AdminProducts() {
                   Sản phẩm
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Người bán
-                </th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Danh mục
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -191,9 +186,6 @@ export function AdminProducts() {
                           <p className="text-xs text-gray-500">{product._id}</p>
                         </div>
                       </div>
-                    </td>
-                    <td className="p-4 text-sm font-medium text-gray-900">
-                      {product.seller?.name || "Không xác định"}
                     </td>
                     <td className="p-4 text-sm text-gray-600">
                       {product.category?.name || "Không xác định"}
@@ -332,10 +324,6 @@ export function AdminProducts() {
               </div>
 
               <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 space-y-3">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500 font-medium">Người bán:</span>
-                  <span className="font-bold text-gray-900">{selectedProduct.seller?.name || "Không xác định"}</span>
-                </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500 font-medium">Danh mục:</span>
                   <span className="font-bold text-gray-900">{selectedProduct.category?.name || "Không xác định"}</span>

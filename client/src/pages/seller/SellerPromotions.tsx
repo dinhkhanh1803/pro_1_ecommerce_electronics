@@ -13,7 +13,8 @@ import {
 
 const API = `${import.meta.env.VITE_API_URL}/api`;
 
-import { SELLER_SIDEBAR } from '../../constants/sidebar';
+import { useAuth } from '../../context/AuthContext';
+import { SELLER_SIDEBAR, WAREHOUSE_SIDEBAR } from '../../constants/sidebar';
 
 const emptyForm = {
   code: '',
@@ -32,6 +33,11 @@ function generateCode() {
 }
 
 export function SellerPromotions() {
+  const { user } = useAuth();
+  const isWarehouse = user?.role === 'warehouse';
+  const sidebarItems = isWarehouse ? WAREHOUSE_SIDEBAR : SELLER_SIDEBAR;
+  const roleName = isWarehouse ? 'Warehouse' : 'Seller';
+
   const [promotions, setPromotions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -125,7 +131,7 @@ export function SellerPromotions() {
   };
 
   return (
-    <DashboardLayout sidebarItems={SELLER_SIDEBAR} title="Khuyến mãi" role="Seller">
+    <DashboardLayout sidebarItems={sidebarItems} title="Khuyến mãi" role={roleName}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="flex items-center space-x-2 w-full sm:w-auto">

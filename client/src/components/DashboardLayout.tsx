@@ -86,7 +86,9 @@ export function DashboardLayout({
                   ? "KÊNH NGƯỜI BÁN"
                   : role === "Shipper"
                     ? "KÊNH GIAO HÀNG"
-                    : `${role.toUpperCase()} PORTAL`}
+                    : role === "Warehouse"
+                      ? "KÊNH THỦ KHO"
+                      : `${role.toUpperCase()} PORTAL`}
             </div>
           </div>
         )}

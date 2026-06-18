@@ -108,7 +108,7 @@ export function Profile() {
             )}
             {user?.role === 'seller' && (
               <button
-                onClick={() => navigate('/seller/dashboard')}
+                onClick={() => navigate('/seller/orders')}
                 className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
               >
                 Kênh người bán
@@ -120,6 +120,14 @@ export function Profile() {
                 className="w-full sm:w-auto px-6 py-3 bg-yellow-600 text-white rounded-xl text-sm font-bold hover:bg-yellow-700 transition-all shadow-lg shadow-yellow-100"
               >
                 Kênh vận chuyển
+              </button>
+            )}
+            {user?.role === 'warehouse' && (
+              <button
+                onClick={() => navigate('/warehouse/dashboard')}
+                className="w-full sm:w-auto px-6 py-3 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-100"
+              >
+                Quản lý kho
               </button>
             )}
             {!isEditing && (

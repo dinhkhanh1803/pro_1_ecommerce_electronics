@@ -30,7 +30,6 @@ import { SellerReviews } from "./pages/seller/SellerReviews";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { AdminCategories } from "./pages/admin/AdminCategories";
 import { AdminUsers } from "./pages/admin/AdminUsers";
-import { AdminProducts } from "./pages/admin/AdminProducts";
 import { AdminOrders } from "./pages/admin/AdminOrders";
 import { AdminFinance } from "./pages/admin/AdminFinance";
 import { AdminCMS } from "./pages/admin/AdminCMS";
@@ -43,6 +42,7 @@ import { ProtectedRoute } from "./pages/auth/ProtectedRoute";
 import OAuthSuccess from "./pages/auth/OAuthSuccess";
 import { ForgotPassword } from "./pages/auth/ForgotPassword";
 import { ResetPassword } from "./pages/auth/ResetPassword";
+import { WarehouseDashboard } from "./pages/warehouse/WarehouseDashboard";
 
 export function App() {
   return (
@@ -78,16 +78,7 @@ export function App() {
 
             {/* Seller Pages */}
             <Route element={<ProtectedRoute allowedRoles={["seller", "admin"]} />}>
-              <Route path="/seller/dashboard" element={<SellerRevenue />} />
-              <Route path="/seller/products" element={<SellerProducts />} />
-              <Route path="/seller/products/new" element={<SellerProductForm />} />
-              <Route
-                path="/seller/products/:id/edit"
-                element={<SellerProductForm />}
-              />
               <Route path="/seller/orders" element={<SellerOrders />} />
-              <Route path="/seller/promotions" element={<SellerPromotions />} />
-              <Route path="/seller/reviews" element={<SellerReviews />} />
               <Route path="/seller/messages" element={<Chat />} />
             </Route>
 
@@ -96,11 +87,22 @@ export function App() {
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/categories" element={<AdminCategories />} />
               <Route path="/admin/users" element={<AdminUsers />} />
-              <Route path="/admin/products" element={<AdminProducts />} />
+              <Route path="/admin/products" element={<SellerProducts />} />
+              <Route path="/admin/products/new" element={<SellerProductForm />} />
+              <Route path="/admin/products/:id/edit" element={<SellerProductForm />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
               {/* <Route path="/admin/finance" element={<AdminFinance />} /> */}
               <Route path="/admin/cms" element={<AdminCMS />} />
               <Route path="/admin/messages" element={<Chat />} />
+            </Route>
+
+            {/* Warehouse Pages */}
+            <Route element={<ProtectedRoute allowedRoles={["warehouse", "admin"]} />}>
+              <Route path="/warehouse/dashboard" element={<WarehouseDashboard />} />
+              <Route path="/warehouse/products" element={<SellerProducts />} />
+              <Route path="/warehouse/products/new" element={<SellerProductForm />} />
+              <Route path="/warehouse/products/:id/edit" element={<SellerProductForm />} />
+              <Route path="/warehouse/promotions" element={<SellerPromotions />} />
             </Route>
 
             {/* Shipper Pages */}

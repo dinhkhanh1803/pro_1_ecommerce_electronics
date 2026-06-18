@@ -53,29 +53,9 @@ export const ADMIN_SIDEBAR = [
 
 export const SELLER_SIDEBAR = [
   {
-    icon: BarChart2Icon,
-    label: "Tổng quan",
-    path: "/seller/dashboard",
-  },
-  {
-    icon: PackageIcon,
-    label: "Sản phẩm",
-    path: "/seller/products",
-  },
-  {
     icon: ShoppingBagIcon,
     label: "Đơn hàng",
     path: "/seller/orders",
-  },
-  {
-    icon: TagIcon,
-    label: "Khuyến mãi",
-    path: "/seller/promotions",
-  },
-  {
-    icon: StarIcon,
-    label: "Đánh giá",
-    path: "/seller/reviews",
   },
   {
     icon: MessageSquareIcon,
@@ -99,5 +79,23 @@ export const SHIPPER_SIDEBAR = [
     icon: UserIcon,
     label: "Hồ sơ",
     path: "/shipper/profile",
+  },
+];
+
+export const WAREHOUSE_SIDEBAR = [
+  {
+    icon: ActivityIcon,
+    label: "Tổng quan",
+    path: "/warehouse/dashboard",
+  },
+  {
+    icon: PackageIcon,
+    label: "Sản phẩm",
+    path: "/warehouse/products",
+  },
+  {
+    icon: TagIcon,
+    label: "Khuyến mãi",
+    path: "/warehouse/promotions",
   },
 ];

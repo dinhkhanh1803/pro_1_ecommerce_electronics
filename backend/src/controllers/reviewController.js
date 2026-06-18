@@ -13,10 +13,10 @@ export const getProductReviews = async (req, res, next) => {
   }
 };
 
-// GET /api/reviews/seller - Get all reviews for products owned by the authenticated seller
+// GET /api/reviews/seller - Get all reviews (global)
 export const getSellerReviews = async (req, res, next) => {
   try {
-    const reviews = await Review.find({ seller: req.user._id })
+    const reviews = await Review.find({})
       .populate("customer", "name email")
       .populate("product", "name images")
       .sort({ createdAt: -1 });
@@ -39,7 +39,6 @@ export const addReview = async (req, res, next) => {
     const review = await Review.create({
       product,
       customer: req.user._id,
-      seller: targetProduct.seller,
       rating,
       comment,
     });
@@ -62,7 +61,7 @@ export const replyReview = async (req, res, next) => {
       return res.status(404).json({ message: "Review not found" });
     }
 
-    if (review.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (req.user.role !== 'seller' && req.user.role !== 'admin') {
       return res.status(403).json({ message: "Not authorized to reply to this review" });
     }
 

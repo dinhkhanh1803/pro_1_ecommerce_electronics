@@ -13,10 +13,10 @@ const router = express.Router();
 // Public: validate mã giảm giá (người mua sử dụng)
 router.post("/validate", protect, validateCoupon);
 
-// Seller/Admin: quản lý mã giảm giá
-router.get("/", protect, authorize("seller", "admin"), getMyCoupons);
-router.post("/", protect, authorize("seller", "admin"), createCoupon);
-router.put("/:id", protect, authorize("seller", "admin"), updateCoupon);
-router.delete("/:id", protect, authorize("seller", "admin"), deleteCoupon);
+// Admin/Warehouse: quản lý mã giảm giá
+router.get("/", protect, authorize("admin", "warehouse"), getMyCoupons);
+router.post("/", protect, authorize("admin", "warehouse"), createCoupon);
+router.put("/:id", protect, authorize("admin", "warehouse"), updateCoupon);
+router.delete("/:id", protect, authorize("admin", "warehouse"), deleteCoupon);
 
 export default router;

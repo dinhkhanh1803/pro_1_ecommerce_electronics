@@ -9,9 +9,30 @@ import {
   Trash2Icon } from
   'lucide-react';
 import { useParams } from 'react-router-dom';
-import { SELLER_SIDEBAR } from '../../constants/sidebar';
+import { useAuth } from '../../context/AuthContext';
+import { ADMIN_SIDEBAR, SELLER_SIDEBAR, WAREHOUSE_SIDEBAR } from '../../constants/sidebar';
+
+
+const formatNumberWithDots = (val: string | number): string => {
+  if (val === undefined || val === null || val === '') return '';
+  const cleanVal = String(val).replace(/\D/g, '');
+  if (!cleanVal) return '';
+  return Number(cleanVal).toLocaleString('vi-VN');
+};
+
+const parseDotsToNumber = (val: string): number => {
+  const cleanVal = val.replace(/\D/g, '');
+  return Number(cleanVal) || 0;
+};
 
 export function SellerProductForm() {
+  const { user } = useAuth();
+  const isWarehouse = user?.role === 'warehouse';
+  const isAdmin = user?.role === 'admin';
+  const sidebarItems = isAdmin
+    ? ADMIN_SIDEBAR
+    : (isWarehouse ? WAREHOUSE_SIDEBAR : SELLER_SIDEBAR);
+  const roleName = isAdmin ? 'Admin' : (isWarehouse ? 'Warehouse' : 'Seller');
   const navigate = useNavigate();
   const { id } = useParams();
   const [images, setImages] = useState<string[]>([]);
@@ -79,17 +100,27 @@ export function SellerProductForm() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
+    let finalValue: any = value;
+    if (id === 'price' || id === 'compareAtPrice') {
+      finalValue = parseDotsToNumber(value);
+    }
     setProductData(prev => ({
       ...prev,
-      [id]: id === 'price' || id === 'compareAtPrice' ? Number(value) : value
+      [id]: finalValue
     }));
   };
 
   const handleVariantChange = (index: number, field: string, value: any) => {
     const newVariants = [...variants];
+    let finalValue = value;
+    if (field === 'price') {
+      finalValue = parseDotsToNumber(String(value));
+    } else if (field === 'stock') {
+      finalValue = Number(value) || 0;
+    }
     newVariants[index] = { 
       ...newVariants[index], 
-      [field]: field === 'price' || field === 'stock' ? Number(value) : value 
+      [field]: finalValue
     };
     setVariants(newVariants);
   };
@@ -195,7 +226,7 @@ export function SellerProductForm() {
         body: JSON.stringify(payload)
       });
       if (res.ok) {
-        navigate('/seller/products');
+        navigate(isAdmin ? '/admin/products' : (isWarehouse ? '/warehouse/products' : '/seller/products'));
       } else {
         const errorData = await res.json();
         alert(errorData.message || (id ? "Cập nhật sản phẩm thất bại" : "Tạo sản phẩm thất bại"));
@@ -207,7 +238,7 @@ export function SellerProductForm() {
 
   if (loading) {
     return (
-      <DashboardLayout sidebarItems={SELLER_SIDEBAR} title="Loading..." role="Seller">
+      <DashboardLayout sidebarItems={sidebarItems} title="Loading..." role={roleName}>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
         </div>
@@ -217,13 +248,13 @@ export function SellerProductForm() {
 
   return (
     <DashboardLayout
-      sidebarItems={SELLER_SIDEBAR}
+      sidebarItems={sidebarItems}
       title={id ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}
-      role="Seller">
+      role={roleName}>
       
       <div className="mb-6">
         <Link
-          to="/seller/products"
+          to={isAdmin ? "/admin/products" : (isWarehouse ? "/warehouse/products" : "/seller/products")}
           className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
           
           <ChevronLeftIcon className="h-4 w-4 mr-1" />
@@ -401,11 +432,9 @@ export function SellerProductForm() {
                   đ
                 </span>
                 <input
-                  type="number"
+                  type="text"
                   id="price"
-                  min="0"
-                  step="0.01"
-                  value={productData.price}
+                  value={formatNumberWithDots(productData.price)}
                   onChange={handleInputChange}
                   className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   placeholder="0"
@@ -535,7 +564,7 @@ export function SellerProductForm() {
         <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
           <button
             type="button"
-            onClick={() => navigate('/seller/products')}
+            onClick={() => navigate(isAdmin ? '/admin/products' : (isWarehouse ? '/warehouse/products' : '/seller/products'))}
             className="px-6 py-2 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">
             
              Hủy

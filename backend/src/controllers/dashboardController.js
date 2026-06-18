@@ -79,7 +79,7 @@ export const getDashboardStats = async (req, res, next) => {
 
     // Recent Activity (we also filter or sort latest)
     const recentUsers = await User.find(userFilter).sort({ createdAt: -1 }).limit(5);
-    const recentProducts = await Product.find(productFilter).sort({ createdAt: -1 }).limit(5).populate("seller", "name");
+    const recentProducts = await Product.find(productFilter).sort({ createdAt: -1 }).limit(5);
     const recentOrders = await Order.find(orderFilter).sort({ createdAt: -1 }).limit(5).populate("customer", "name");
 
     const activities = [
@@ -92,7 +92,7 @@ export const getDashboardStats = async (req, res, next) => {
       })),
       ...recentProducts.map(p => ({
         id: `product-${p._id}`,
-        user: p.seller?.name || 'Seller',
+        user: 'Hệ thống',
         action: `vừa đăng sản phẩm mới: ${p.name}`,
         time: p.createdAt,
         type: 'product'
@@ -146,12 +146,10 @@ export const getDashboardStats = async (req, res, next) => {
     if (isExport === 'true') {
       const ordersList = await Order.find(orderFilter)
         .populate("customer", "name email phone role status")
-        .populate("seller", "name email phone")
         .populate("products.product", "name sku price")
         .sort({ createdAt: -1 });
 
       const productsList = await Product.find()
-        .populate("seller", "name email")
         .populate("category", "name")
         .sort({ createdAt: -1 });
 

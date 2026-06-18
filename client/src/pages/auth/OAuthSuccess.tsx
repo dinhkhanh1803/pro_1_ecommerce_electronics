@@ -34,10 +34,13 @@ export default function OAuthSuccess() {
           navigate("/admin/dashboard");
           break;
         case "seller":
-          navigate("/seller/dashboard");
+          navigate("/seller/orders");
           break;
         case "shipper":
           navigate("/shipper/deliveries");
+          break;
+        case "warehouse":
+          navigate("/warehouse/dashboard");
           break;
         default:
           navigate("/");

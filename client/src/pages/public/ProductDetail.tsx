@@ -105,7 +105,7 @@ export function ProductDetail() {
       variantName: selectedName,
       color: selectedName,
       size: selectedName,
-      seller: typeof product.seller === 'string' ? product.seller : product.seller?._id,
+      seller: "",
     });
     alert('Đã thêm vào giỏ hàng!');
   };

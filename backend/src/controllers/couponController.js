@@ -1,9 +1,10 @@
 import Coupon from "../models/Coupon.js";
 
-// GET /api/coupons - Lấy tất cả coupon của seller đang đăng nhập
+// GET /api/coupons - Lấy tất cả coupon
 export const getMyCoupons = async (req, res, next) => {
   try {
-    const coupons = await Coupon.find({ seller: req.user._id }).sort({ createdAt: -1 });
+    const query = {};
+    const coupons = await Coupon.find(query).sort({ createdAt: -1 });
     res.json(coupons);
   } catch (err) { next(err); }
 };
@@ -39,7 +40,7 @@ export const deleteCoupon = async (req, res, next) => {
   try {
     const coupon = await Coupon.findById(req.params.id);
     if (!coupon) return res.status(404).json({ message: "Không tìm thấy coupon" });
-    if (coupon.seller.toString() !== req.user._id.toString()) {
+    if (req.user.role !== 'admin' && req.user.role !== 'warehouse') {
       return res.status(403).json({ message: "Không có quyền xóa" });
     }
     await coupon.deleteOne();
@@ -52,7 +53,7 @@ export const updateCoupon = async (req, res, next) => {
   try {
     const coupon = await Coupon.findById(req.params.id);
     if (!coupon) return res.status(404).json({ message: "Không tìm thấy coupon" });
-    if (coupon.seller.toString() !== req.user._id.toString()) {
+    if (req.user.role !== 'admin' && req.user.role !== 'warehouse') {
       return res.status(403).json({ message: "Không có quyền" });
     }
     Object.assign(coupon, req.body);

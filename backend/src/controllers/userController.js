@@ -38,7 +38,7 @@ export const toggleUserLock = async (req, res, next) => {
 export const updateUserRole = async (req, res, next) => {
   try {
     const { role } = req.body;
-    if (!["customer", "seller", "admin", "shipper"].includes(role)) {
+    if (!["customer", "seller", "admin", "shipper", "warehouse"].includes(role)) {
       return res.status(400).json({ message: "Invalid role" });
     }
     const user = await User.findById(req.params.id);

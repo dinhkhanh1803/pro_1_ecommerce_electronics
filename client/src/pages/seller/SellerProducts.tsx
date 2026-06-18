@@ -10,10 +10,17 @@ import {
   EditIcon,
   Trash2Icon } from
 'lucide-react';
-import { SELLER_SIDEBAR } from '../../constants/sidebar';
+import { ADMIN_SIDEBAR, SELLER_SIDEBAR, WAREHOUSE_SIDEBAR } from '../../constants/sidebar';
 
 export function SellerProducts() {
   const { user } = useAuth();
+  const isWarehouse = user?.role === 'warehouse';
+  const isAdmin = user?.role === 'admin';
+  const sidebarItems = isAdmin
+    ? ADMIN_SIDEBAR
+    : (isWarehouse ? WAREHOUSE_SIDEBAR : SELLER_SIDEBAR);
+  const roleName = isAdmin ? 'Admin' : (isWarehouse ? 'Warehouse' : 'Seller');
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [productsList, setProductsList] = useState<any[]>([]);
@@ -39,7 +46,10 @@ export function SellerProducts() {
   const fetchProducts = async () => {
     try {
       if (!user?.id) return;
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products?seller=${user.id}`);
+      const url = (user.role === 'warehouse' || user.role === 'admin')
+        ? `${import.meta.env.VITE_API_URL}/api/products`
+        : `${import.meta.env.VITE_API_URL}/api/products?seller=${user.id}`;
+      const res = await fetch(url);
       const data = await res.json();
       setProductsList(data);
     } catch (error) {
@@ -82,9 +92,9 @@ export function SellerProducts() {
   };
   return (
     <DashboardLayout
-      sidebarItems={SELLER_SIDEBAR}
+      sidebarItems={sidebarItems}
       title="Sản phẩm"
-      role="Seller">
+      role={roleName}>
       
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -105,7 +115,7 @@ export function SellerProducts() {
         </div>
 
         <Link
-          to="/seller/products/new"
+          to={isAdmin ? "/admin/products/new" : (isWarehouse ? "/warehouse/products/new" : "/seller/products/new")}
           className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-medium w-full sm:w-auto justify-center">
           
           <PlusIcon className="h-4 w-4 mr-2" />
@@ -224,7 +234,7 @@ export function SellerProducts() {
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Link
-                      to={`/seller/products/${product._id}/edit`}
+                      to={isAdmin ? `/admin/products/${product._id}/edit` : (isWarehouse ? `/warehouse/products/${product._id}/edit` : `/seller/products/${product._id}/edit`)}
                       className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
                       title="Sửa">
                       

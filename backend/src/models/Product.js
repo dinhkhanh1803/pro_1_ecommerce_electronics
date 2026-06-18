@@ -28,11 +28,6 @@ const productSchema = new mongoose.Schema(
       enum: ["draft", "pending", "active", "rejected"],
       default: "pending",
     },
-    seller: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
     sales: { type: Number, default: 0 },
   },
   {

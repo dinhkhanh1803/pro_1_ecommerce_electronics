@@ -14,15 +14,12 @@ const normalizeVariants = (variants = []) => {
 export const createProduct = async (req, res, next) => {
   try {
     // Assuming req.user is populated by authMiddleware
-    const seller = req.user._id; 
-    const productData = { ...req.body, seller };
+    const productData = { ...req.body };
     productData.variants = normalizeVariants(req.body?.variants);
     delete productData.stock;
     
-    // Status can be default 'pending' initially when a seller creates it.
-    if (req.user.role !== 'admin') {
-      productData.status = 'pending';
-    }
+    // Products created by authorized roles (admin/warehouse) are active immediately
+    productData.status = 'active';
 
     const product = await Product.create(productData);
     res.status(201).json(product);
@@ -33,17 +30,15 @@ export const createProduct = async (req, res, next) => {
 
 export const getAllProducts = async (req, res, next) => {
   try {
-    const { seller, category, status, search } = req.query;
+    const { category, status, search } = req.query;
     
     let filter = {};
-    if (seller) filter.seller = seller;
     if (category) filter.category = category;
     if (status) filter.status = status;
     if (search) filter.name = { $regex: search, $options: "i" };
 
     const products = await Product.find(filter)
       .populate("category", "name slug")
-      .populate("seller", "name email")
       .sort({ createdAt: -1 });
 
     res.json(products);
@@ -55,8 +50,7 @@ export const getAllProducts = async (req, res, next) => {
 export const getProductById = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate("category", "name slug")
-      .populate("seller", "name email");
+      .populate("category", "name slug");
 
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json(product);
@@ -70,8 +64,8 @@ export const updateProduct = async (req, res, next) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    // Restrict update to the seller who owns it or an admin
-    if (product.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    // Restrict update to an admin or warehouse staff
+    if (req.user.role !== 'admin' && req.user.role !== 'warehouse') {
       return res.status(403).json({ message: "Not authorized to update this product" });
     }
 
@@ -93,8 +87,8 @@ export const deleteProduct = async (req, res, next) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    // Restrict delete to the seller who owns it or an admin
-    if (product.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    // Restrict delete to an admin or warehouse staff
+    if (req.user.role !== 'admin' && req.user.role !== 'warehouse') {
       return res.status(403).json({ message: "Not authorized to delete this product" });
     }
 

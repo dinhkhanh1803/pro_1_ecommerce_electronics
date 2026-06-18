@@ -17,7 +17,7 @@ const formatCart = (cartDoc) => {
         variantName: item.variantName,
         color: item.color,
         size: item.size,
-        seller: item.product.seller ? item.product.seller.toString() : ""
+        seller: ""
       };
     })
     .filter(Boolean);
@@ -27,7 +27,7 @@ export const getCart = async (req, res, next) => {
   try {
     let cart = await Cart.findOne({ user: req.user._id }).populate({
       path: "items.product",
-      select: "name price images variants seller"
+      select: "name price images variants"
     });
     if (!cart) {
       cart = await Cart.create({ user: req.user._id, items: [] });
@@ -70,7 +70,7 @@ export const addToCart = async (req, res, next) => {
     await cart.save();
     const populated = await cart.populate({
       path: "items.product",
-      select: "name price images variants seller"
+      select: "name price images variants"
     });
     res.json(formatCart(populated));
   } catch (error) { next(error); }
@@ -106,7 +106,7 @@ export const updateCartQuantity = async (req, res, next) => {
 
     const populated = await cart.populate({
       path: "items.product",
-      select: "name price images variants seller"
+      select: "name price images variants"
     });
     res.json(formatCart(populated));
   } catch (error) { next(error); }
@@ -133,7 +133,7 @@ export const removeFromCart = async (req, res, next) => {
 
     const populated = await cart.populate({
       path: "items.product",
-      select: "name price images variants seller"
+      select: "name price images variants"
     });
     res.json(formatCart(populated));
   } catch (error) { next(error); }
@@ -185,7 +185,7 @@ export const mergeCart = async (req, res, next) => {
     await cart.save();
     const populated = await cart.populate({
       path: "items.product",
-      select: "name price images variants seller"
+      select: "name price images variants"
     });
     res.json(formatCart(populated));
   } catch (error) { next(error); }

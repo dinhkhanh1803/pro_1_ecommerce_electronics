@@ -15,10 +15,6 @@ import { FREE_SHIP_THRESHOLD, SHIPPING_FEE } from '../../constants/common';
 
 const SHIPPING_BASE = SHIPPING_FEE;
 const EXPRESS_ADDITIONAL = 30_000;
-const OBJECT_ID_PATTERN = /^[0-9a-fA-F]{24}$/;
-
-const getSellerId = (seller: any): string =>
-  typeof seller === 'string' ? seller : seller?._id ? String(seller._id) : '';
 
 export function Checkout() {
   const { cartItems, subtotal, clearCart } = useCart();
@@ -88,17 +84,7 @@ export function Checkout() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const resolveSellerId = async (item: any) => {
-    const currentSellerId = getSellerId(item.seller);
-    if (OBJECT_ID_PATTERN.test(currentSellerId || '')) return currentSellerId;
 
-    const productRes = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${item.id}`);
-    if (!productRes.ok) return '';
-
-    const product = await productRes.json();
-    const productSellerId = getSellerId(product.seller);
-    return OBJECT_ID_PATTERN.test(productSellerId || '') ? productSellerId : '';
-  };
 
   const handlePlaceOrder = async () => {
     if (!formData.fullName || !formData.phone || !formData.street || !formData.city) {
@@ -127,79 +113,53 @@ export function Checkout() {
       }
 
       // 2. Map items and POST to /api/orders
-      const cartItemsWithSeller = await Promise.all(
-        cartItems.map(async (item) => ({
-          item,
-          sellerId: await resolveSellerId(item),
-        }))
-      );
+      const products = cartItems.map((item) => ({
+        product: item.id,
+        variantName: item.variantName || item.color || 'Default',
+        quantity: item.quantity,
+        price: item.price
+      }));
 
-      const missingSellerItem = cartItemsWithSeller.find(({ sellerId }) => !sellerId);
-      if (missingSellerItem) {
-        alert(`San pham "${missingSellerItem.item.name}" thieu thong tin nguoi ban. Vui long xoa san pham nay khoi gio hang roi them lai.`);
-        return;
-      }
-
-      // Group items by seller
-      const sellerGroups: Record<string, any[]> = {};
-      cartItemsWithSeller.forEach(({ item, sellerId }) => {
-        if (!sellerGroups[sellerId]) sellerGroups[sellerId] = [];
-        sellerGroups[sellerId].push({
-          product: item.id,
-          variantName: item.variantName || item.color || 'Default',
-          quantity: item.quantity,
-          price: item.price
-        });
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          products,
+          totalAmount: total,
+          shippingAddress: fullAddress,
+          paymentMethod: paymentMethod === 'cod' ? 'COD' : 'VNPay',
+          couponCode: couponCode || null
+        })
       });
 
-      const ordersPromises = Object.keys(sellerGroups).map(async (sellerId, index) => {
-        const products = sellerGroups[sellerId];
-        const orderSubtotal = products.reduce((acc, p) => acc + p.price * p.quantity, 0);
-        // Put shipping/discount on the first order, others just subtotal
-        const orderTotal = index === 0 ? orderSubtotal + shipping - discountAmount : orderSubtotal;
-
-        return fetch(`${import.meta.env.VITE_API_URL}/api/orders`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            seller: sellerId,
-            products,
-            totalAmount: orderTotal,
-            shippingAddress: fullAddress,
-            paymentMethod: paymentMethod === 'cod' ? 'COD' : 'VNPay',
-            couponCode: index === 0 ? couponCode : null
-          })
-        });
-      });
-
-      const responses = await Promise.all(ordersPromises);
-      const failedResponse = responses.find(res => !res.ok);
-
-      if (!failedResponse) {
-        const resultOrders = await Promise.all(responses.map(res => res.json()));
-        const orderIds = resultOrders.map(o => o._id);
+      if (res.ok) {
+        const resultOrder = await res.json();
+        const orderIds = [resultOrder._id];
 
         if (paymentMethod === 'vnpay') {
-           // Redirect to VNPay
-           const vnpRes = await fetch(`${import.meta.env.VITE_API_URL}/api/payment/create_payment_url`, {
+           const vnpayRes = await fetch(`${import.meta.env.VITE_API_URL}/api/payment/create_payment_url`, {
              method: 'POST',
              headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`
              },
-             body: JSON.stringify({ amount: total, orderIds })
+             body: JSON.stringify({
+                amount: total,
+                orderIds,
+                orderInfo: 'Thanh toan don hang'
+             })
            });
-           const vnpData = await vnpRes.json();
-           if (vnpData.paymentUrl) {
-              // KHÔNG xóa giỏ hàng ở đây - chỉ xóa sau khi VNPay xác nhận thành công
-              // Giỏ hàng sẽ được xóa ở trang PaymentReturn nếu thanh toán thành công
-              window.location.href = vnpData.paymentUrl;
+           const vnpayData = await vnpayRes.json();
+           if (vnpayData.paymentUrl) {
+              // KHONG xoa gio hang o day - chi xoa sau khi VNPay xac nhan thanh cong
+              window.location.href = vnpayData.paymentUrl;
               return;
            } else {
-              alert('Không thể tạo liên kết thanh toán VNPay.');
+              alert(vnpayData.message || 'Khong the tao lien ket thanh toan VNPay.');
+              return;
            }
         }
 
@@ -207,12 +167,12 @@ export function Checkout() {
         clearCart();
         navigate('/orders');
       } else {
-        const errorData = await failedResponse.json().catch(() => null);
+        const errorData = await res.json().catch(() => null);
         if (errorData?.message) {
           alert(errorData.message);
           return;
         }
-        alert('Có lỗi xảy ra khi tạo một số phần của đơn hàng.');
+        alert('Có lỗi xảy ra khi tạo đơn hàng.');
       }
     } catch (err) {
       console.error(err);

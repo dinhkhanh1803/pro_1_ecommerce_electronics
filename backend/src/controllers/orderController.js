@@ -25,7 +25,6 @@ const handleCreateOrderError = (err, res, next) => {
 export const getMyOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ customer: req.user._id })
-      .populate("seller", "name email")
       .populate("products.product", "name images")
       .sort({ createdAt: -1 });
     res.json(orders);
@@ -37,7 +36,6 @@ export const getAllOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({})
       .populate("customer", "name email phone")
-      .populate("seller", "name email")
       .populate("products.product", "name images")
       .sort({ createdAt: -1 });
     res.json(orders);
@@ -50,7 +48,7 @@ export const getSellerOrders = async (req, res, next) => {
     const { page = 1, limit = 5, status, search } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    let query = { seller: req.user._id };
+    let query = {};
 
     // Lọc theo trạng thái
     if (status && status !== 'all') {
@@ -95,15 +93,14 @@ export const getOrderById = async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate("customer", "name email phone")
-      .populate("seller", "name email phone")
       .populate("products.product", "name images");
       
     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    // Ensure customer, seller, admin or shipper
+    // Ensure customer, admin, shipper, seller or warehouse
     if (order.customer._id.toString() !== req.user._id.toString() &&
-        order.seller._id.toString() !== req.user._id.toString() &&
-        req.user.role !== 'admin' && req.user.role !== 'shipper') {
+        req.user.role !== 'admin' && req.user.role !== 'shipper' &&
+        req.user.role !== 'warehouse' && req.user.role !== 'seller') {
       return res.status(403).json({ message: "Not authorized to view this order" });
     }
     
@@ -114,17 +111,15 @@ export const getOrderById = async (req, res, next) => {
 // POST /api/orders - Tạo đơn hàng mới (từ Checkout)
 export const createOrder = async (req, res, next) => {
   try {
-    const { products, totalAmount, shippingAddress, paymentMethod, seller, couponCode } = req.body;
+    const { products, totalAmount, shippingAddress, paymentMethod, couponCode } = req.body;
     if (!Array.isArray(products) || products.length === 0) {
       return res.status(400).json({ message: "Order must include at least one product" });
     }
 
-    const requestedSeller = mongoose.Types.ObjectId.isValid(seller) ? seller.toString() : null;
-    let resolvedSeller = requestedSeller;
     const validatedProducts = [];
     const stockUpdates = [];
 
-    // Validate seller, stock and variants before mutating inventory.
+    // Validate stock and variants before mutating inventory.
     for (const item of products) {
       if (!mongoose.Types.ObjectId.isValid(item.product)) {
         return res.status(400).json({ message: "Invalid product id in order" });
@@ -132,21 +127,6 @@ export const createOrder = async (req, res, next) => {
 
       const dbProduct = await Product.findById(item.product);
       if (!dbProduct) return res.status(404).json({ message: "Product not found" });
-
-      const productSeller = dbProduct.seller?.toString();
-      if (!productSeller) {
-        return res.status(400).json({ message: `Product ${dbProduct.name} is missing seller information` });
-      }
-
-      if (!resolvedSeller) {
-        resolvedSeller = productSeller;
-      }
-
-      if (productSeller !== resolvedSeller) {
-        return res.status(400).json({
-          message: "Order contains products from multiple sellers. Please place separate orders.",
-        });
-      }
 
       const variantName = String(item.variantName || "Default");
       const variantIndex = Array.isArray(dbProduct.variants)
@@ -175,10 +155,6 @@ export const createOrder = async (req, res, next) => {
       stockUpdates.push({ dbProduct, variantIndex, available, requested });
     }
 
-    if (!resolvedSeller) {
-      return res.status(400).json({ message: "Order seller could not be determined" });
-    }
-
     for (const update of stockUpdates) {
       update.dbProduct.variants[update.variantIndex].stock = update.available - update.requested;
       await update.dbProduct.save();
@@ -187,7 +163,6 @@ export const createOrder = async (req, res, next) => {
     // In a real app, products should be validated with DB prices
     const orderData = {
       customer: req.user._id,
-      seller: resolvedSeller,
       products: validatedProducts,
       totalAmount: Number(totalAmount) || 0,
       shippingAddress,
@@ -221,13 +196,10 @@ export const updateOrderStatus = async (req, res, next) => {
     }
 
     // Role-based status transition logic
-    if (req.user.role === 'seller') {
-       if (order.seller.toString() !== req.user._id.toString()) {
-         return res.status(403).json({ message: "Not authorized to update this order" });
-       }
+    if (req.user.role === 'seller' || req.user.role === 'warehouse') {
        // Trạng thái đã giao và trả hàng phải do Shipper cập nhật
        if (['delivered', 'returned'].includes(status)) {
-         return res.status(403).json({ message: "Quyền này thuộc về Shipper. Người bán không thể cập nhật trạng thái đã giao hoặc trả hàng." });
+         return res.status(403).json({ message: "Quyền này thuộc về Shipper. Không thể cập nhật trạng thái đã giao hoặc trả hàng." });
        }
     } else if (req.user.role === 'shipper') {
        if (!['shipped', 'delivered', 'returned'].includes(status)) {
@@ -257,7 +229,6 @@ export const getShipperOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ orderStatus: { $in: ['shipped', 'delivered', 'returned'] } })
       .populate("customer", "name email phone")
-      .populate("seller", "name email phone")
       .populate("products.product", "name images")
       .sort({ updatedAt: -1 });
     res.json(orders);

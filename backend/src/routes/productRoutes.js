@@ -20,14 +20,14 @@ router.get("/:id", getProductById);
 router.post(
   "/upload-image",
   protect,
-  authorize("seller", "admin"),
+  authorize("admin", "warehouse"),
   upload.single("image"),
   uploadImage
 );
 
-router.post("/", protect, authorize("seller", "admin"), createProduct);
-router.put("/:id", protect, authorize("seller", "admin"), updateProduct);
-router.delete("/:id", protect, authorize("seller", "admin"), deleteProduct);
+router.post("/", protect, authorize("admin", "warehouse"), createProduct);
+router.put("/:id", protect, authorize("admin", "warehouse"), updateProduct);
+router.delete("/:id", protect, authorize("admin", "warehouse"), deleteProduct);
 router.put("/:id/status", protect, authorize("admin"), updateProductStatus);
 
 export default router;

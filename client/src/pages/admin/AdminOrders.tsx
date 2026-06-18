@@ -78,11 +78,9 @@ export function AdminOrders() {
   const filteredOrders = ordersList.filter((order) => {
     const matchesTab = activeTab === "all" || order.orderStatus === activeTab;
     const customerName = order.customer?.name || "";
-    const sellerName = order.seller?.name || "";
     const matchesSearch =
       order._id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sellerName.toLowerCase().includes(searchQuery.toLowerCase());
+      customerName.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
@@ -155,9 +153,6 @@ export function AdminOrders() {
                   Khách hàng
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Người bán
-                </th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Tổng cộng
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -190,9 +185,6 @@ export function AdminOrders() {
                       <div className="text-xs text-gray-500 uppercase tracking-widest mt-1">
                         {order.paymentMethod}
                       </div>
-                    </td>
-                    <td className="p-4 text-sm font-medium text-gray-900">
-                      {order.seller?.name || "ShopHub"}
                     </td>
                     <td className="p-4 text-sm font-bold text-gray-900">
                       {formatVND(order.totalAmount)}
@@ -329,25 +321,21 @@ export function AdminOrders() {
 
                 <div>
                   <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">
-                    Người mua & Người bán
+                    Khách hàng
                   </h4>
                   <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-2">
                     <div className="flex items-center text-sm">
                       <UsersIcon className="h-4 w-4 text-gray-400 mr-2" />
                       <span className="text-gray-700">
-                        Khách:{" "}
+                        Họ tên:{" "}
                         <span className="font-bold text-gray-900">
-                          {selectedOrderDetails.customer?.name}
+                          {selectedOrderDetails.customer?.name || "Không xác định"}
                         </span>
                       </span>
                     </div>
-                    <div className="flex items-center text-sm">
-                      <PackageIcon className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-gray-700">
-                        Host:{" "}
-                        <span className="font-medium text-gray-900">
-                          {selectedOrderDetails.seller?.name || "ShopHub"}
-                        </span>
+                    <div className="flex items-center text-sm text-gray-500 overflow-hidden text-ellipsis">
+                      <span className="text-xs">
+                        Email: {selectedOrderDetails.customer?.email || "N/A"}
                       </span>
                     </div>
                   </div>
