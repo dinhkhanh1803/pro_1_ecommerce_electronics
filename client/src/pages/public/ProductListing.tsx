@@ -231,8 +231,8 @@ export function ProductListing() {
                       name={p.name}
                       price={p.price}
                       oldPrice={p.compareAtPrice}
-                      rating={4.8}
-                      reviewCount={p.sales || 0}
+                      rating={p.rating ?? 5}
+                      reviewCount={p.reviewCount ?? 0}
                       image={p.images?.[0] || "https://via.placeholder.com/500"}
                       badge={p.compareAtPrice > p.price ? "Sale" : undefined}
                       inStock={Number(p.totalVariantStock ?? p.stock ?? 0) > 0}

@@ -1,4 +1,5 @@
 import Product from "../models/Product.js";
+import Review from "../models/Review.js";
 
 const normalizeVariants = (variants = []) => {
   if (!Array.isArray(variants)) return [];
@@ -41,7 +42,34 @@ export const getAllProducts = async (req, res, next) => {
       .populate("category", "name slug")
       .sort({ createdAt: -1 });
 
-    res.json(products);
+    const reviewStats = await Review.aggregate([
+      {
+        $group: {
+          _id: "$product",
+          avgRating: { $avg: "$rating" },
+          reviewCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const statsMap = {};
+    reviewStats.forEach(stat => {
+      statsMap[stat._id.toString()] = {
+        avgRating: Math.round(stat.avgRating * 10) / 10,
+        reviewCount: stat.reviewCount
+      };
+    });
+
+    const productsWithStats = products.map(product => {
+      const stats = statsMap[product._id.toString()];
+      return {
+        ...product.toObject(),
+        rating: stats ? stats.avgRating : 5,
+        reviewCount: stats ? stats.reviewCount : 0
+      };
+    });
+
+    res.json(productsWithStats);
   } catch (error) {
     next(error);
   }
@@ -53,11 +81,31 @@ export const getProductById = async (req, res, next) => {
       .populate("category", "name slug");
 
     if (!product) return res.status(404).json({ message: "Product not found" });
-    res.json(product);
+
+    const reviewStats = await Review.aggregate([
+      { $match: { product: product._id } },
+      {
+        $group: {
+          _id: "$product",
+          avgRating: { $avg: "$rating" },
+          reviewCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const stats = reviewStats[0];
+    const productObj = {
+      ...product.toObject(),
+      rating: stats ? Math.round(stats.avgRating * 10) / 10 : 5,
+      reviewCount: stats ? stats.reviewCount : 0
+    };
+
+    res.json(productObj);
   } catch (error) {
     next(error);
   }
 };
+
 
 export const updateProduct = async (req, res, next) => {
   try {

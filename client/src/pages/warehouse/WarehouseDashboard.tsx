@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "../../components/DashboardLayout";
 import { WAREHOUSE_SIDEBAR } from "../../constants/sidebar";
+import { useSiteSettings } from "../../context/SiteSettingsContext";
 import {
   SearchIcon,
   PrinterIcon,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 
 export function WarehouseDashboard() {
+  const { settings } = useSiteSettings();
   const [productsList, setProductsList] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,10 +41,21 @@ export function WarehouseDashboard() {
         product.sku.toLowerCase().includes(searchQuery.toLowerCase())),
   );
 
+  // Helper to calculate total stock (taking variants into account)
+  const getProductStock = (p: any) => {
+    if (Array.isArray(p.variants) && p.variants.length > 0) {
+      return p.variants.reduce(
+        (sum: number, v: any) => sum + Math.max(0, Number(v.stock) || 0),
+        0,
+      );
+    }
+    return Number(p.stock || 0);
+  };
+
   // Stats calculation
   const totalProducts = productsList.length;
   const totalStock = productsList.reduce(
-    (sum, p) => sum + Number(p.stock || 0),
+    (sum, p) => sum + getProductStock(p),
     0,
   );
   const totalSales = productsList.reduce(
@@ -57,7 +70,7 @@ export function WarehouseDashboard() {
 
     const rowsHtml = filteredProducts
       .map((p: any) => {
-        const stock = Number(p.stock || 0);
+        const stock = getProductStock(p);
         const sales = Number(p.sales || 0);
         const imported = stock + sales;
         const date = new Date(p.createdAt).toLocaleDateString("vi-VN");
@@ -106,7 +119,7 @@ export function WarehouseDashboard() {
         <body>
           <div class="report-header">
             <div class="title">BÁO CÁO TỒNG QUAN HÀNG TỒN KHO & NHẬP XUẤT</div>
-            <div class="metadata">Hệ thống ShopHub • Ngày xuất báo cáo: ${new Date().toLocaleString("vi-VN")}</div>
+            <div class="metadata">Hệ thống ${settings.siteName} • Ngày xuất báo cáo: ${new Date().toLocaleString("vi-VN")}</div>
           </div>
 
           <div class="summary-cards">
@@ -299,7 +312,7 @@ export function WarehouseDashboard() {
                 </tr>
               ) : filteredProducts.length > 0 ? (
                 filteredProducts.map((p) => {
-                  const stock = Number(p.stock || 0);
+                  const stock = getProductStock(p);
                   const sales = Number(p.sales || 0);
                   const imported = stock + sales;
                   const date = new Date(p.createdAt).toLocaleDateString(

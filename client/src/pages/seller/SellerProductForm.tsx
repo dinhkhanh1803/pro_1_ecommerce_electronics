@@ -454,11 +454,9 @@ export function SellerProductForm() {
                   đ
                 </span>
                 <input
-                  type="number"
+                  type="text"
                   id="compareAtPrice"
-                  min="0"
-                  step="0.01"
-                  value={productData.compareAtPrice}
+                  value={formatNumberWithDots(productData.compareAtPrice)}
                   onChange={handleInputChange}
                   className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   placeholder="0" />
@@ -467,22 +465,6 @@ export function SellerProductForm() {
               <p className="text-xs text-gray-500 mt-1">
                 Để hiển thị giá giảm, vui lòng đặt giá gốc trước giảm của sản phẩm cao hơn giá bán thường.
               </p>
-            </div>
-            <div>
-              <label
-                htmlFor="sku"
-                className="block text-sm font-medium text-gray-700 mb-1">
-                
-                Mã SKU (Mã phân loại hàng hóa)
-              </label>
-              <input
-                type="text"
-                id="sku"
-                value={productData.sku}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="VD: WH-1000XM4" />
-              
             </div>
             <div className="text-sm text-gray-500 md:col-span-2">
               Tồn kho sản phẩm được tính tự động bằng tổng tồn kho của tất cả variants.
@@ -526,9 +508,9 @@ export function SellerProductForm() {
                       Giá cộng thêm (đ)
                     </label>
                     <input
-                    type="number"
+                    type="text"
                     placeholder="0"
-                    value={variant.price}
+                    value={formatNumberWithDots(variant.price)}
                     onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
                   

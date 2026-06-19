@@ -48,6 +48,9 @@ productSchema.virtual("isInStock").get(function isInStock() {
 
 productSchema.pre("save", function syncStockFromVariants() {
   this.stock = this.totalVariantStock;
+  if (!this.sku) {
+    this.sku = "SKU-" + Math.floor(10000000 + Math.random() * 90000000).toString();
+  }
 });
 
 productSchema.pre(["findOneAndUpdate", "updateOne", "updateMany"], async function syncUpdatedStock() {
