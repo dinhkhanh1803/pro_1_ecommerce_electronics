@@ -11,6 +11,7 @@ import messageRoutes from "./messageRoutes.js";
 import reviewRoutes from "./reviewRoutes.js";
 import paymentRoutes from "./paymentRoutes.js";
 import cartRoutes from "./cartRoutes.js";
+import chatbotRoutes from "./chatbotRoutes.js";
 import express from "express";
 
 const router = express.Router();
@@ -34,5 +35,6 @@ router.use("/messages", messageRoutes);
 router.use("/reviews", reviewRoutes);
 router.use("/payment", paymentRoutes);
 router.use("/cart", cartRoutes);
+router.use("/chatbot", chatbotRoutes);
 
 export default router;

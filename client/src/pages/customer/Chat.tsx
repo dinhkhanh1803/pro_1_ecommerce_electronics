@@ -124,7 +124,7 @@ export function Chat() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}` 
         },
-        body: JSON.stringify({ recipientId: selectedContact._id, text: newMessage })
+        body: JSON.stringify({ receiverId: selectedContact._id, content: newMessage })
       });
       if (res.ok) {
         setNewMessage("");

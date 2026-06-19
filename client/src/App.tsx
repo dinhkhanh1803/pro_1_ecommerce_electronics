@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { CartProvider } from "./context/CartContext";
 import { SiteSettingsProvider } from "./context/SiteSettingsContext";
 // Public Pages
@@ -41,6 +41,18 @@ import OAuthSuccess from "./pages/auth/OAuthSuccess";
 import { ForgotPassword } from "./pages/auth/ForgotPassword";
 import { ResetPassword } from "./pages/auth/ResetPassword";
 import { WarehouseDashboard } from "./pages/warehouse/WarehouseDashboard";
+import { SalesChatbot } from "./components/SalesChatbot";
+
+const DASHBOARD_PATH_PREFIXES = ["/admin", "/seller", "/warehouse", "/shipper"];
+
+function CustomerChatbotMount() {
+  const { pathname } = useLocation();
+  const isDashboardPath = DASHBOARD_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+
+  return isDashboardPath ? null : <SalesChatbot />;
+}
 
 export function App() {
   return (
@@ -119,6 +131,7 @@ export function App() {
 
           </Route>
         </Routes>
+        <CustomerChatbotMount />
       </BrowserRouter>
     </CartProvider>
     </SiteSettingsProvider>
