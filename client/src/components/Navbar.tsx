@@ -47,7 +47,7 @@ export function Navbar() {
                 className="h-8 w-8 rounded-lg object-cover"
               />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-600 bg-gradient-to-r from-rose-500 to-rose-600 shadow-sm">
                 <span className="text-xl font-bold text-white">
                   {siteSettings.siteName?.charAt(0) || "S"}
                 </span>
@@ -65,14 +65,14 @@ export function Navbar() {
                 placeholder="Tìm kiếm sản phẩm..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 px-4 py-2 pl-10 pr-4 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-xl border border-gray-300 px-4 py-2 pl-10 pr-4 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-rose-500"
               />
               <button
                 type="submit"
                 className="absolute left-3 top-2.5"
                 aria-label="Tìm kiếm"
               >
-                <SearchIcon className="h-5 w-5 text-gray-400 transition-colors hover:text-indigo-500" />
+                <SearchIcon className="h-5 w-5 text-gray-400 transition-colors hover:text-rose-600" />
               </button>
             </form>
           </div>
@@ -81,7 +81,7 @@ export function Navbar() {
             <div className="relative">
               <button
                 onClick={() => setShowCategories(!showCategories)}
-                className="flex items-center space-x-1 text-gray-700 transition-colors hover:text-indigo-500"
+                className="flex items-center space-x-1 text-gray-700 transition-colors hover:text-rose-600"
               >
                 <MenuIcon className="h-5 w-5" />
                 <span className="hidden md:inline">Danh mục</span>
@@ -94,7 +94,7 @@ export function Navbar() {
                     <Link
                       key={category._id}
                       to={`/products?category=${category._id}`}
-                      className="block px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                      className="block px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-rose-50 hover:text-rose-600"
                       onClick={() => setShowCategories(false)}
                     >
                       {category.name}
@@ -106,11 +106,11 @@ export function Navbar() {
 
             <Link
               to="/cart"
-              className="relative text-gray-700 transition-colors hover:text-indigo-500"
+              className="relative text-gray-700 transition-colors hover:text-rose-600"
             >
               <ShoppingCartIcon className="h-6 w-6" />
               {cartCount > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500 text-xs font-bold text-white">
+                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-xs font-bold text-white shadow-sm shadow-rose-200">
                   {cartCount}
                 </span>
               )}
@@ -120,7 +120,7 @@ export function Navbar() {
               {user ? (
                 <Link
                   to="/profile"
-                  className="font-medium text-gray-700 transition-colors hover:text-indigo-500"
+                  className="font-medium text-gray-700 transition-colors hover:text-rose-600"
                 >
                   <UserIcon className="h-5 w-5 sm:hidden" />
                   <span className="hidden sm:inline">{user.name}</span>
@@ -129,14 +129,14 @@ export function Navbar() {
                 <>
                   <Link
                     to="/login"
-                    className="font-medium text-gray-700 transition-colors hover:text-indigo-500"
+                    className="font-medium text-gray-700 transition-colors hover:text-rose-600"
                   >
                     <UserIcon className="h-5 w-5 sm:hidden" />
                     <span className="hidden sm:inline">Login</span>
                   </Link>
                   <Link
                     to="/register"
-                    className="hidden rounded-xl bg-indigo-500 px-4 py-2 font-medium text-white transition-colors hover:bg-indigo-600 sm:inline-flex"
+                    className="hidden rounded-xl bg-rose-600 px-4 py-2 font-medium text-white transition-colors hover:bg-rose-700 sm:inline-flex shadow-sm shadow-rose-200"
                   >
                     Đăng ký
                   </Link>

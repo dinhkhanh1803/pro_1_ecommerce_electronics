@@ -65,7 +65,7 @@ export function ProductCard({
           </button>
           <button
             disabled={!inStock}
-            className="absolute bottom-3 right-3 bg-indigo-500 text-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="absolute bottom-3 right-3 bg-rose-600 text-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-rose-200"
           >
             <ShoppingCartIcon className="h-4 w-4" />
           </button>
@@ -73,7 +73,7 @@ export function ProductCard({
 
         {/* Product Info */}
         <div className="p-4">
-          <h3 className="font-medium text-gray-900 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors text-sm">
+          <h3 className="font-medium text-gray-900 mb-2 line-clamp-2 group-hover:text-rose-600 transition-colors text-sm">
             {name}
           </h3>
 
