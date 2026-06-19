@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../hooks/useWishlist';
+import { useToast } from '../../context/ToastContext';
 
 // Giá trong DB đã là VNĐ
 import { formatVND } from '../../utils/format';
@@ -26,6 +27,7 @@ export function ProductDetail() {
   const { addToCart } = useCart();
   const { user } = useAuth();
   const { isWishlisted, toggleWishlist } = useWishlist();
+  const { showToast } = useToast();
 
   const [product, setProduct] = useState<any>(null);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
@@ -86,11 +88,11 @@ export function ProductDetail() {
     const selectedName = variantObj?.name || selectedVariantObj?.name || 'Default';
     const variantStock = Math.max(0, Number(variantObj?.stock ?? selectedVariantObj?.stock ?? 0));
     if (variantStock <= 0) {
-      alert('Phiên bản đã chọn đã hết hàng.');
+      showToast('Phiên bản đã chọn đã hết hàng.', 'error');
       return;
     }
     if (quantity > variantStock) {
-      alert(`Số lượng vượt quá tồn kho của phiên bản (${variantStock}).`);
+      showToast(`Số lượng vượt quá tồn kho của phiên bản (${variantStock}).`, 'error');
       return;
     }
 
@@ -107,7 +109,7 @@ export function ProductDetail() {
       size: selectedName,
       seller: "",
     });
-    alert('Đã thêm vào giỏ hàng!');
+    showToast('Đã thêm vào giỏ hàng!', 'success');
   };
 
   const handleToggleWishlist = async () => {
@@ -120,7 +122,7 @@ export function ProductDetail() {
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      alert("Vui lòng đăng nhập để đánh giá.");
+      showToast("Vui lòng đăng nhập để đánh giá.", "info");
       return;
     }
     if (!reviewComment.trim()) {
@@ -192,7 +194,7 @@ export function ProductDetail() {
   const avgRating =
     reviews.length > 0
       ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
-      : 0;
+      : 5;
   // ────────────────────────────────────────────────────────────────────────────
 
   if (!product) {
@@ -259,14 +261,20 @@ export function ProductDetail() {
             <div className="flex flex-col">
               {/* Name + Brand */}
               <h1 className="text-3xl font-bold text-gray-900 mb-1">{product.name}</h1>
-              {product.brand && (
-                <p className="text-sm text-gray-500 mb-3">
-                  Thương hiệu: <span className="text-indigo-600 font-semibold">{product.brand}</span>
-                </p>
-              )}
-              {product.sku && (
-                <p className="text-xs text-gray-400 mb-3">SKU: {product.sku}</p>
-              )}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 mb-3">
+                {product.brand && (
+                  <p>
+                    Thương hiệu: <span className="text-indigo-600 font-semibold">{product.brand}</span>
+                  </p>
+                )}
+                {product.brand && product.sku && <span className="text-gray-300">|</span>}
+                {product.sku && (
+                  <p>
+                    Mã SKU: <span className="font-mono text-gray-950 font-medium">{product.sku}</span>
+                  </p>
+                )}
+              </div>
+
 
               {/* Rating */}
               <div className="flex items-center space-x-3 mb-5">
@@ -448,8 +456,8 @@ export function ProductDetail() {
           {activeTab === 'specifications' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0">
               {[
+                ['Mã SKU', product.sku || '—'],
                 ['Thương hiệu', product.brand || '—'],
-                ['SKU', product.sku || '—'],
                 ['Danh mục', product.category?.name || '—'],
                 ['Giá niêm yết', comparePrice > 0 ? formatVND(comparePrice) : '—'],
                 ['Giá bán', formatVND(currentPrice)],
@@ -572,8 +580,8 @@ export function ProductDetail() {
                   name={p.name}
                   price={p.price}
                   oldPrice={p.compareAtPrice}
-                  rating={4.8}
-                  reviewCount={p.sales ?? 0}
+                  rating={p.rating ?? 5}
+                  reviewCount={p.reviewCount ?? 0}
                   image={p.images?.[0] || 'https://via.placeholder.com/500'}
                   badge={p.compareAtPrice > p.price ? 'Sale' : undefined}
                   inStock={Number(p.totalVariantStock ?? p.stock ?? 0) > 0}
