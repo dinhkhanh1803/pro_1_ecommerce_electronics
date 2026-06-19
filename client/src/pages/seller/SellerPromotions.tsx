@@ -9,12 +9,13 @@ import {
   CheckIcon,
   XIcon,
   RefreshCwIcon,
+  PencilIcon,
 } from 'lucide-react';
 
 const API = `${import.meta.env.VITE_API_URL}/api`;
 
 import { useAuth } from '../../context/AuthContext';
-import { SELLER_SIDEBAR, WAREHOUSE_SIDEBAR } from '../../constants/sidebar';
+import { ADMIN_SIDEBAR, SELLER_SIDEBAR, WAREHOUSE_SIDEBAR } from '../../constants/sidebar';
 
 const emptyForm = {
   code: '',
@@ -25,6 +26,7 @@ const emptyForm = {
   startDate: '',
   endDate: '',
   status: 'active',
+  showOnHome: 'false',
 };
 
 function generateCode() {
@@ -34,15 +36,17 @@ function generateCode() {
 
 export function SellerPromotions() {
   const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const isWarehouse = user?.role === 'warehouse';
-  const sidebarItems = isWarehouse ? WAREHOUSE_SIDEBAR : SELLER_SIDEBAR;
-  const roleName = isWarehouse ? 'Warehouse' : 'Seller';
+  const sidebarItems = isAdmin ? ADMIN_SIDEBAR : isWarehouse ? WAREHOUSE_SIDEBAR : SELLER_SIDEBAR;
+  const roleName = isAdmin ? 'Admin' : isWarehouse ? 'Warehouse' : 'Seller';
 
   const [promotions, setPromotions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
@@ -78,6 +82,15 @@ export function SellerPromotions() {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const formatDateForInput = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+      return new Date(dateStr).toISOString().split('T')[0];
+    } catch {
+      return '';
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.code.trim()) { setFormError('Vui lòng nhập mã.'); return; }
@@ -85,26 +98,64 @@ export function SellerPromotions() {
     setSaving(true);
     setFormError('');
     try {
-      const res = await fetch(`${API}/coupons`, {
-        method: 'POST',
+      const url = editingId ? `${API}/coupons/${editingId}` : `${API}/coupons`;
+      const method = editingId ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           ...form,
           value: Number(form.value) || 0,
           minOrder: Number(form.minOrder) || 0,
           usageLimit: form.usageLimit ? Number(form.usageLimit) : null,
+          showOnHome: form.showOnHome === 'true',
         }),
       });
       const data = await res.json();
-      if (!res.ok) { setFormError(data.message || 'Tạo thất bại'); return; }
-      setPromotions(prev => [data, ...prev]);
+      if (!res.ok) { setFormError(data.message || (editingId ? 'Cập nhật thất bại' : 'Tạo thất bại')); return; }
+      
+      if (editingId) {
+        setPromotions(prev => {
+          const updated = prev.map(p => p._id === editingId ? data : p);
+          if (data.showOnHome) {
+            return updated.map(p => p._id === editingId ? p : { ...p, showOnHome: false });
+          }
+          return updated;
+        });
+      } else {
+        setPromotions(prev => {
+          const updated = [data, ...prev];
+          if (data.showOnHome) {
+            return updated.map(p => p._id === data._id ? p : { ...p, showOnHome: false });
+          }
+          return updated;
+        });
+      }
       setIsModalOpen(false);
       setForm(emptyForm);
+      setEditingId(null);
     } catch {
       setFormError('Không thể kết nối server');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleStartEdit = (promo: any) => {
+    setEditingId(promo._id);
+    setForm({
+      code: promo.code || '',
+      type: promo.type || 'percentage',
+      value: promo.value ? String(promo.value) : '',
+      minOrder: promo.minOrder ? String(promo.minOrder) : '',
+      usageLimit: promo.usageLimit ? String(promo.usageLimit) : '',
+      startDate: formatDateForInput(promo.startDate),
+      endDate: formatDateForInput(promo.endDate),
+      status: promo.status || 'active',
+      showOnHome: promo.showOnHome ? 'true' : 'false',
+    });
+    setFormError('');
+    setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -147,7 +198,7 @@ export function SellerPromotions() {
           </div>
         </div>
         <button
-          onClick={() => { setIsModalOpen(true); setForm(emptyForm); setFormError(''); }}
+          onClick={() => { setIsModalOpen(true); setForm(emptyForm); setFormError(''); setEditingId(null); }}
           className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-medium w-full sm:w-auto justify-center"
         >
           <PlusIcon className="h-4 w-4 mr-2" />
@@ -178,6 +229,11 @@ export function SellerPromotions() {
                       <span className="font-mono font-bold text-gray-900 bg-gray-100 px-2.5 py-1 rounded-lg border border-gray-200 text-sm">
                         {promo.code}
                       </span>
+                      {promo.showOnHome && (
+                        <span className="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          Trang chủ
+                        </span>
+                      )}
                       <button
                         onClick={() => handleCopy(promo.code)}
                         className="p-1 text-gray-400 hover:text-indigo-600 transition-colors"
@@ -226,6 +282,13 @@ export function SellerPromotions() {
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
+                        onClick={() => handleStartEdit(promo)}
+                        className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
+                        title="Sửa"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => handleDelete(promo._id)}
                         className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                         title="Xóa"
@@ -246,7 +309,9 @@ export function SellerPromotions() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 relative max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Tạo mã giảm giá</h3>
+              <h3 className="text-xl font-bold text-gray-900">
+                {editingId ? 'Chỉnh sửa mã giảm giá' : 'Tạo mã giảm giá'}
+              </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
                 className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -364,18 +429,32 @@ export function SellerPromotions() {
                 </div>
               </div>
 
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-                <select
-                  name="status"
-                  value={form.status}
-                  onChange={handleFormChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-                >
-                  <option value="active">Kích hoạt</option>
-                  <option value="draft">Nháp</option>
-                </select>
+              {/* Status & Show on Home */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                  <select
+                    name="status"
+                    value={form.status}
+                    onChange={handleFormChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                  >
+                    <option value="active">Kích hoạt</option>
+                    <option value="draft">Nháp</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Hiện ở trang chủ</label>
+                  <select
+                    name="showOnHome"
+                    value={form.showOnHome}
+                    onChange={handleFormChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                  >
+                    <option value="false">Không hiện</option>
+                    <option value="true">Ghim hiện ở trang chủ</option>
+                  </select>
+                </div>
               </div>
 
               {formError && (
@@ -395,7 +474,7 @@ export function SellerPromotions() {
                   disabled={saving}
                   className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 text-sm disabled:opacity-60"
                 >
-                  {saving ? 'Đang lưu...' : 'Tạo mã'}
+                  {saving ? 'Đang lưu...' : editingId ? 'Lưu thay đổi' : 'Tạo mã'}
                 </button>
               </div>
             </form>

@@ -12,12 +12,17 @@ export const getMyCoupons = async (req, res, next) => {
 // POST /api/coupons - Tạo coupon mới
 export const createCoupon = async (req, res, next) => {
   try {
-    const { code, type, value, minOrder, usageLimit, startDate, endDate, status } = req.body;
+    const { code, type, value, minOrder, usageLimit, startDate, endDate, status, showOnHome } = req.body;
 
     // Kiểm tra code đã tồn tại chưa
     const existing = await Coupon.findOne({ code: code.toUpperCase() });
     if (existing) {
       return res.status(400).json({ message: "Mã giảm giá đã tồn tại" });
+    }
+
+    const isPinned = showOnHome === true || showOnHome === "true";
+    if (isPinned) {
+      await Coupon.updateMany({}, { showOnHome: false });
     }
 
     const coupon = await Coupon.create({
@@ -30,6 +35,7 @@ export const createCoupon = async (req, res, next) => {
       endDate,
       status: status || "active",
       seller: req.user._id,
+      showOnHome: isPinned,
     });
     res.status(201).json(coupon);
   } catch (err) { next(err); }
@@ -56,7 +62,16 @@ export const updateCoupon = async (req, res, next) => {
     if (req.user.role !== 'admin' && req.user.role !== 'warehouse') {
       return res.status(403).json({ message: "Không có quyền" });
     }
+
+    const isPinned = req.body.showOnHome === true || req.body.showOnHome === "true";
+    if (isPinned) {
+      await Coupon.updateMany({ _id: { $ne: req.params.id } }, { showOnHome: false });
+    }
+
     Object.assign(coupon, req.body);
+    if (req.body.showOnHome !== undefined) {
+      coupon.showOnHome = isPinned;
+    }
     await coupon.save();
     res.json(coupon);
   } catch (err) { next(err); }
@@ -70,6 +85,10 @@ export const validateCoupon = async (req, res, next) => {
 
     const coupon = await Coupon.findOne({ code: code.toUpperCase(), status: "active" });
     if (!coupon) return res.status(404).json({ message: "Mã không hợp lệ hoặc đã hết hạn" });
+
+    if (coupon.usedBy && coupon.usedBy.some(id => id.toString() === req.user._id.toString())) {
+      return res.status(400).json({ message: "Bạn đã sử dụng mã giảm giá này rồi" });
+    }
 
     const now = new Date();
     if (coupon.startDate && new Date(coupon.startDate) > now) {
@@ -108,5 +127,12 @@ export const validateCoupon = async (req, res, next) => {
       discountAmount,
       freeShipping: coupon.type === "shipping",
     });
+  } catch (err) { next(err); }
+};
+
+export const getPinnedCoupon = async (req, res, next) => {
+  try {
+    const coupon = await Coupon.findOne({ showOnHome: true, status: "active" });
+    res.json(coupon || null);
   } catch (err) { next(err); }
 };

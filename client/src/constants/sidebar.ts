@@ -4,9 +4,7 @@ import {
   PackageIcon,
   ShoppingBagIcon,
   LayoutTemplateIcon,
-  BarChart2Icon,
   TagIcon,
-  StarIcon,
   MessageSquareIcon,
   TruckIcon,
   UserIcon,
@@ -38,6 +36,11 @@ export const ADMIN_SIDEBAR = [
     icon: ShoppingBagIcon,
     label: "Đơn hàng",
     path: "/admin/orders",
+  },
+  {
+    icon: TagIcon,
+    label: "Mã giảm giá",
+    path: "/admin/promotions",
   },
   {
     icon: LayoutTemplateIcon,

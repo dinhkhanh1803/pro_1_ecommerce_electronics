@@ -1,4 +1,3 @@
-import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "./context/CartContext";
 import { SiteSettingsProvider } from "./context/SiteSettingsContext";
@@ -25,15 +24,12 @@ import { Chat } from "./pages/customer/Chat";
 import { SellerProducts } from "./pages/seller/SellerProducts";
 import { SellerProductForm } from "./pages/seller/SellerProductForm";
 import { SellerOrders } from "./pages/seller/SellerOrders";
-import { SellerRevenue } from "./pages/seller/SellerRevenue";
 import { SellerPromotions } from "./pages/seller/SellerPromotions";
-import { SellerReviews } from "./pages/seller/SellerReviews";
 // Admin Pages
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { AdminCategories } from "./pages/admin/AdminCategories";
 import { AdminUsers } from "./pages/admin/AdminUsers";
 import { AdminOrders } from "./pages/admin/AdminOrders";
-import { AdminFinance } from "./pages/admin/AdminFinance";
 import { AdminCMS } from "./pages/admin/AdminCMS";
 // Shipper Pages
 import { ShipperDeliveries } from "./pages/shipper/ShipperDeliveries";
@@ -95,6 +91,7 @@ export function App() {
               <Route path="/admin/products/new" element={<SellerProductForm />} />
               <Route path="/admin/products/:id/edit" element={<SellerProductForm />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
+              <Route path="/admin/promotions" element={<SellerPromotions />} />
               {/* <Route path="/admin/finance" element={<AdminFinance />} /> */}
               <Route path="/admin/cms" element={<AdminCMS />} />
               <Route path="/admin/messages" element={<Chat />} />

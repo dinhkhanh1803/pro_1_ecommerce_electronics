@@ -166,8 +166,13 @@ export const createOrder = async (req, res, next) => {
     if (couponCode) {
       const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), status: "active" });
       if (coupon) {
+        if (coupon.usedBy && coupon.usedBy.some(id => id.toString() === req.user._id.toString())) {
+          return res.status(400).json({ message: "Mã giảm giá này đã được bạn sử dụng" });
+        }
         // Tăng lượt sử dụng khi đặt hàng thành công
         coupon.usageCount += 1;
+        if (!coupon.usedBy) coupon.usedBy = [];
+        coupon.usedBy.push(req.user._id);
         await coupon.save();
         orderData.coupon = couponCode.toUpperCase();
       }
@@ -218,6 +223,18 @@ export const updateOrderStatus = async (req, res, next) => {
 
     if (status === 'cancelled') {
       await restoreOrderInventory(order);
+      if (order.coupon) {
+        const coupon = await Coupon.findOne({ code: order.coupon });
+        if (coupon) {
+          coupon.usageCount = Math.max(0, coupon.usageCount - 1);
+          if (coupon.usedBy) {
+            coupon.usedBy = coupon.usedBy.filter(
+              (id) => id.toString() !== order.customer.toString()
+            );
+          }
+          await coupon.save();
+        }
+      }
     }
 
     await order.save();
@@ -252,6 +269,18 @@ export const cancelOrder = async (req, res, next) => {
 
     order.orderStatus = 'cancelled';
     await restoreOrderInventory(order);
+    if (order.coupon) {
+      const coupon = await Coupon.findOne({ code: order.coupon });
+      if (coupon) {
+        coupon.usageCount = Math.max(0, coupon.usageCount - 1);
+        if (coupon.usedBy) {
+          coupon.usedBy = coupon.usedBy.filter(
+            (id) => id.toString() !== order.customer.toString()
+          );
+        }
+        await coupon.save();
+      }
+    }
     await order.save();
     res.json(order);
   } catch (err) { next(err); }

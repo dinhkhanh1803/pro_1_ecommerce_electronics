@@ -42,6 +42,16 @@ const couponSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    showOnHome: {
+      type: Boolean,
+      default: false,
+    },
+    usedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   { timestamps: true }
 );

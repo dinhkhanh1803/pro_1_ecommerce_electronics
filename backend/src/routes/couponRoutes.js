@@ -5,10 +5,14 @@ import {
   deleteCoupon,
   updateCoupon,
   validateCoupon,
+  getPinnedCoupon,
 } from "../controllers/couponController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// Public: lấy mã giảm giá được ghim lên trang chủ
+router.get("/pinned", getPinnedCoupon);
 
 // Public: validate mã giảm giá (người mua sử dụng)
 router.post("/validate", protect, validateCoupon);
