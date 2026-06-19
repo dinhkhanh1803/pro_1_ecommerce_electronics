@@ -16,8 +16,10 @@ import {
 
 
 import { formatVND } from '../../utils/format';
+import { useSiteSettings } from '../../context/SiteSettingsContext';
 
 export function OrderHistory() {
+  const { settings } = useSiteSettings();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
@@ -206,7 +208,7 @@ export function OrderHistory() {
                   <div className="flex items-center text-sm font-semibold text-gray-500 mb-2 sm:mb-0">
                     <WalletIcon className="w-4 h-4 mr-2 text-indigo-400" />
                     <span>Thanh toán: <span className="text-gray-900 font-bold uppercase">{order.paymentMethod}</span></span>
-                    {order.paymentMethod === 'VNPay' && (
+                    {['VNPay', 'MoMo'].includes(order.paymentMethod) && (
                        <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${
                          order.paymentStatus === 'completed' ? 'bg-green-100 text-green-700' :
                          order.paymentStatus === 'failed' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
@@ -215,7 +217,7 @@ export function OrderHistory() {
                        </span>
                     )}
                     <span className="mx-3 text-indigo-200">|</span>
-                    <span>Cửa hàng: <span className="text-indigo-600 font-bold italic">{order.seller?.name || 'ShopHub'}</span></span>
+                    <span>Cửa hàng: <span className="text-indigo-600 font-bold italic">{order.seller?.name || settings.siteName}</span></span>
                   </div>
                   <div className="text-right">
                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest mr-3">Tổng cộng</span>
@@ -251,7 +253,14 @@ export function OrderHistory() {
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">Chi tiết đơn hàng</h3>
-                <p className="text-sm text-gray-500 font-mono">#{selectedOrderDetails._id.slice(-8).toUpperCase()}</p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-gray-500 font-medium">
+                  <p>
+                    Mã đơn: <span className="font-mono">{selectedOrderDetails._id}</span>
+                  </p>
+                  <p>
+                    Thời gian đặt: {new Date(selectedOrderDetails.createdAt).toLocaleString("vi-VN")}
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => setSelectedOrderDetails(null)}
@@ -289,15 +298,15 @@ export function OrderHistory() {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Người bán</h4>
+                  <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Cửa hàng</h4>
                   <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-2">
                     <div className="flex items-center text-sm">
                       <PackageIcon className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="font-medium text-gray-900">{selectedOrderDetails.seller?.name || 'ShopHub'}</span>
+                      <span className="font-medium text-gray-900">{selectedOrderDetails.seller?.name || settings.siteName}</span>
                     </div>
                     <div className="flex items-center text-sm">
                       <MessageSquareIcon className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-gray-700">{selectedOrderDetails.seller?.email || 'N/A'}</span>
+                      <span className="text-gray-700">{selectedOrderDetails.seller?.email || settings.supportEmail}</span>
                     </div>
                   </div>
                 </div>
@@ -315,7 +324,14 @@ export function OrderHistory() {
                         />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-gray-900 truncate">{p.product?.name}</p>
-                        <p className="text-xs text-gray-500">Sl: {p.quantity}</p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="text-xs text-gray-500 font-medium">Sl: {p.quantity}</span>
+                          {p.variantName && p.variantName !== "Default" && (
+                            <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-bold">
+                              Biến thể: {p.variantName}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <p className="text-sm font-bold text-gray-900">{formatVND(p.price * p.quantity)}</p>
                     </div>
@@ -324,22 +340,41 @@ export function OrderHistory() {
               </div>
 
               {/* Summary */}
-              <div className="bg-indigo-50/50 rounded-xl p-5 space-y-3">
-                 <div className="flex justify-between text-sm">
-                   <span className="text-gray-600">Hình thức thanh toán</span>
-                   <span className="font-bold text-gray-900">{selectedOrderDetails.paymentMethod}</span>
-                 </div>
-                 {selectedOrderDetails.coupon && (
-                 <div className="flex justify-between text-sm">
-                   <span className="text-gray-600">Mã giảm giá</span>
-                   <span className="font-bold text-green-600">{selectedOrderDetails.coupon}</span>
-                 </div>
-                 )}
-                 <div className="pt-3 border-t border-indigo-100 border-dashed flex justify-between">
-                   <span className="font-bold text-gray-900">Tổng thanh toán</span>
-                   <span className="text-xl font-black text-red-600">{formatVND(selectedOrderDetails.totalAmount)}</span>
-                 </div>
-              </div>
+              {(() => {
+                const subtotal = selectedOrderDetails.products.reduce(
+                  (sum: number, p: any) => sum + p.price * p.quantity,
+                  0
+                );
+                const discount = subtotal - selectedOrderDetails.totalAmount;
+                return (
+                  <div className="bg-indigo-50/50 rounded-xl p-5 space-y-3">
+                     <div className="flex justify-between text-sm">
+                       <span className="text-gray-600">Tạm tính</span>
+                       <span className="font-bold text-gray-900">{formatVND(subtotal)}</span>
+                     </div>
+                     {selectedOrderDetails.coupon && (
+                     <div className="flex justify-between text-sm">
+                       <span className="text-gray-600">Mã giảm giá đã áp</span>
+                       <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 font-mono text-xs">{selectedOrderDetails.coupon}</span>
+                     </div>
+                     )}
+                     {discount > 0 && (
+                     <div className="flex justify-between text-sm text-green-600 font-medium">
+                       <span>Số tiền giảm</span>
+                       <span>-{formatVND(discount)}</span>
+                     </div>
+                     )}
+                     <div className="flex justify-between text-sm">
+                       <span className="text-gray-600">Hình thức thanh toán</span>
+                       <span className="font-bold text-gray-900">{selectedOrderDetails.paymentMethod}</span>
+                     </div>
+                     <div className="pt-3 border-t border-indigo-100 border-dashed flex justify-between">
+                       <span className="font-bold text-gray-900">Tổng thanh toán</span>
+                       <span className="text-xl font-black text-red-600">{formatVND(selectedOrderDetails.totalAmount)}</span>
+                     </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="p-4 border-t border-gray-100 flex justify-end">

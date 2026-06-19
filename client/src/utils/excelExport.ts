@@ -31,7 +31,7 @@ const autofitColumns = (sheet: any) => {
   });
 };
 
-export async function exportAdminDashboardToExcel(stats: any) {
+export async function exportAdminDashboardToExcel(stats: any, siteName: string = 'ShopHub') {
   const workbook = new ExcelJS.Workbook();
   
   // ==========================================
@@ -43,7 +43,7 @@ export async function exportAdminDashboardToExcel(stats: any) {
   // 1. Title Block
   sheetTongQuan.mergeCells('A1:G2');
   const titleCell = sheetTongQuan.getCell('A1');
-  titleCell.value = 'BÁO CÁO TỔNG QUAN HỆ THỐNG - SHOPHUB';
+  titleCell.value = `BÁO CÁO TỔNG QUAN HỆ THỐNG - ${siteName.toUpperCase()}`;
   titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFF' } };
   titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '4F46E5' } }; // Indigo-600
   titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -176,7 +176,7 @@ export async function exportAdminDashboardToExcel(stats: any) {
   sheetDoanhThu.getCell('B3').value = new Date().toLocaleString('vi-VN');
 
   // Headers
-  const dtHeaders = ['Mã Đơn Hàng', 'Khách Hàng', 'Người Bán', 'Tổng Tiền Đơn', 'Hoa Hồng (5%)', 'Thanh Toán', 'Ngày Đặt'];
+  const dtHeaders = ['Mã Đơn Hàng', 'Khách Hàng', 'Tổng Tiền Đơn', 'Hoa Hồng (5%)', 'Thanh Toán', 'Ngày Đặt'];
   const dtHeaderRow = sheetDoanhThu.getRow(5);
   dtHeaderRow.height = 24;
   dtHeaders.forEach((h, i) => {
@@ -199,16 +199,15 @@ export async function exportAdminDashboardToExcel(stats: any) {
     r.height = 20;
     r.getCell(1).value = o._id.toString().slice(-8).toUpperCase();
     r.getCell(2).value = o.customer?.name || 'N/A';
-    r.getCell(3).value = o.seller?.name || 'N/A';
-    r.getCell(4).value = o.totalAmount || 0;
-    r.getCell(5).value = (o.totalAmount || 0) * 0.05;
-    r.getCell(6).value = o.paymentMethod || 'COD';
-    r.getCell(7).value = o.createdAt ? new Date(o.createdAt).toLocaleDateString('vi-VN') : 'N/A';
+    r.getCell(3).value = o.totalAmount || 0;
+    r.getCell(4).value = (o.totalAmount || 0) * 0.05;
+    r.getCell(5).value = o.paymentMethod || 'COD';
+    r.getCell(6).value = o.createdAt ? new Date(o.createdAt).toLocaleDateString('vi-VN') : 'N/A';
 
+    r.getCell(3).numFmt = '#,##0" ₫"';
     r.getCell(4).numFmt = '#,##0" ₫"';
-    r.getCell(5).numFmt = '#,##0" ₫"';
+    r.getCell(3).alignment = { horizontal: 'left', vertical: 'middle' };
     r.getCell(4).alignment = { horizontal: 'left', vertical: 'middle' };
-    r.getCell(5).alignment = { horizontal: 'left', vertical: 'middle' };
 
     totalOrderAmount += o.totalAmount || 0;
     totalCommission += (o.totalAmount || 0) * 0.05;
@@ -216,21 +215,21 @@ export async function exportAdminDashboardToExcel(stats: any) {
     dtCurrentRow++;
   });
 
-  applyZebraAndBorders(sheetDoanhThu, 5, dtCurrentRow, 7, 'F0FDF4');
+  applyZebraAndBorders(sheetDoanhThu, 5, dtCurrentRow, 6, 'F0FDF4');
 
   // Summary row
   const dtSummaryRow = sheetDoanhThu.getRow(dtCurrentRow);
   dtSummaryRow.height = 22;
   dtSummaryRow.getCell(1).value = 'TỔNG CỘNG';
   dtSummaryRow.getCell(1).font = { bold: true, color: { argb: '065F46' } };
-  dtSummaryRow.getCell(4).value = totalOrderAmount;
+  dtSummaryRow.getCell(3).value = totalOrderAmount;
+  dtSummaryRow.getCell(3).font = { bold: true, color: { argb: '065F46' } };
+  dtSummaryRow.getCell(3).numFmt = '#,##0" ₫"';
+  dtSummaryRow.getCell(4).value = totalCommission;
   dtSummaryRow.getCell(4).font = { bold: true, color: { argb: '065F46' } };
   dtSummaryRow.getCell(4).numFmt = '#,##0" ₫"';
-  dtSummaryRow.getCell(5).value = totalCommission;
-  dtSummaryRow.getCell(5).font = { bold: true, color: { argb: '065F46' } };
-  dtSummaryRow.getCell(5).numFmt = '#,##0" ₫"';
 
-  for (let c = 1; c <= 7; c++) {
+  for (let c = 1; c <= 6; c++) {
     dtSummaryRow.getCell(c).border = borderStyle;
     dtSummaryRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'D1FAE5' } };
   }
@@ -258,7 +257,7 @@ export async function exportAdminDashboardToExcel(stats: any) {
   sheetDonHang.getCell('B3').value = new Date().toLocaleString('vi-VN');
 
   // Headers
-  const dhHeaders = ['Mã Đơn Hàng', 'Khách Hàng', 'Người Bán', 'Số Lượng SP', 'Tổng Tiền', 'Thanh Toán', 'Trạng Thái TT', 'Trạng Thái ĐH', 'Ngày Đặt'];
+  const dhHeaders = ['Mã Đơn Hàng', 'Khách Hàng', 'Số Lượng SP', 'Tổng Tiền', 'Thanh Toán', 'Trạng Thái TT', 'Trạng Thái ĐH', 'Ngày Đặt'];
   const dhHeaderRow = sheetDonHang.getRow(5);
   dhHeaderRow.height = 24;
   dhHeaders.forEach((h, i) => {
@@ -277,37 +276,36 @@ export async function exportAdminDashboardToExcel(stats: any) {
     r.height = 20;
     r.getCell(1).value = o._id.toString().slice(-8).toUpperCase();
     r.getCell(2).value = o.customer?.name || 'N/A';
-    r.getCell(3).value = o.seller?.name || 'N/A';
     
     const qty = Array.isArray(o.products) ? o.products.reduce((acc: number, item: any) => acc + (item.quantity || 0), 0) : 0;
-    r.getCell(4).value = qty;
-    r.getCell(5).value = o.totalAmount || 0;
-    r.getCell(6).value = o.paymentMethod || 'COD';
-    r.getCell(7).value = o.paymentStatus || 'pending';
-    r.getCell(8).value = o.orderStatus || 'pending';
-    r.getCell(9).value = o.createdAt ? new Date(o.createdAt).toLocaleDateString('vi-VN') : 'N/A';
+    r.getCell(3).value = qty;
+    r.getCell(4).value = o.totalAmount || 0;
+    r.getCell(5).value = o.paymentMethod || 'COD';
+    r.getCell(6).value = o.paymentStatus || 'pending';
+    r.getCell(7).value = o.orderStatus || 'pending';
+    r.getCell(8).value = o.createdAt ? new Date(o.createdAt).toLocaleDateString('vi-VN') : 'N/A';
 
-    r.getCell(4).numFmt = '#,##0';
-    r.getCell(5).numFmt = '#,##0" ₫"';
+    r.getCell(3).numFmt = '#,##0';
+    r.getCell(4).numFmt = '#,##0" ₫"';
+    r.getCell(3).alignment = { horizontal: 'left', vertical: 'middle' };
     r.getCell(4).alignment = { horizontal: 'left', vertical: 'middle' };
-    r.getCell(5).alignment = { horizontal: 'left', vertical: 'middle' };
 
     dhTotalAmount += o.totalAmount || 0;
     dhCurrentRow++;
   });
 
-  applyZebraAndBorders(sheetDonHang, 5, dhCurrentRow, 9, 'EEF2F6');
+  applyZebraAndBorders(sheetDonHang, 5, dhCurrentRow, 8, 'EEF2F6');
 
   // Summary row
   const dhSummaryRow = sheetDonHang.getRow(dhCurrentRow);
   dhSummaryRow.height = 22;
   dhSummaryRow.getCell(1).value = 'TỔNG CỘNG';
   dhSummaryRow.getCell(1).font = { bold: true, color: { argb: '1E1B4B' } };
-  dhSummaryRow.getCell(5).value = dhTotalAmount;
-  dhSummaryRow.getCell(5).font = { bold: true, color: { argb: '1E1B4B' } };
-  dhSummaryRow.getCell(5).numFmt = '#,##0" ₫"';
+  dhSummaryRow.getCell(4).value = dhTotalAmount;
+  dhSummaryRow.getCell(4).font = { bold: true, color: { argb: '1E1B4B' } };
+  dhSummaryRow.getCell(4).numFmt = '#,##0" ₫"';
 
-  for (let c = 1; c <= 9; c++) {
+  for (let c = 1; c <= 8; c++) {
     dhSummaryRow.getCell(c).border = borderStyle;
     dhSummaryRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0E7FF' } };
   }
@@ -335,7 +333,7 @@ export async function exportAdminDashboardToExcel(stats: any) {
   sheetTonKho.getCell('B3').value = new Date().toLocaleString('vi-VN');
 
   // Headers
-  const tkHeaders = ['Mã Sản Phẩm', 'Tên Sản Phẩm', 'SKU', 'Thương Hiệu', 'Danh Mục', 'Giá Bán', 'Tồn Kho', 'Người Bán', 'Đã Bán', 'Trạng Thái'];
+  const tkHeaders = ['Mã Sản Phẩm', 'Tên Sản Phẩm', 'SKU', 'Thương Hiệu', 'Danh Mục', 'Giá Bán', 'Tồn Kho', 'Đã Bán', 'Trạng Thái'];
   const tkHeaderRow = sheetTonKho.getRow(5);
   tkHeaderRow.height = 24;
   tkHeaders.forEach((h, i) => {
@@ -366,23 +364,22 @@ export async function exportAdminDashboardToExcel(stats: any) {
       : (p.stock || 0);
 
     r.getCell(7).value = totalVariantStock;
-    r.getCell(8).value = p.seller?.name || 'N/A';
-    r.getCell(9).value = p.sales || 0;
-    r.getCell(10).value = p.status === 'active' ? 'Đang hoạt động' : p.status === 'pending' ? 'Chờ duyệt' : p.status === 'draft' ? 'Nháp' : 'Từ chối';
+    r.getCell(8).value = p.sales || 0;
+    r.getCell(9).value = p.status === 'active' ? 'Đang hoạt động' : p.status === 'pending' ? 'Chờ duyệt' : p.status === 'draft' ? 'Nháp' : 'Từ chối';
 
     r.getCell(6).numFmt = '#,##0" ₫"';
     r.getCell(7).numFmt = '#,##0';
-    r.getCell(9).numFmt = '#,##0';
+    r.getCell(8).numFmt = '#,##0';
     r.getCell(6).alignment = { horizontal: 'left', vertical: 'middle' };
     r.getCell(7).alignment = { horizontal: 'left', vertical: 'middle' };
-    r.getCell(9).alignment = { horizontal: 'left', vertical: 'middle' };
+    r.getCell(8).alignment = { horizontal: 'left', vertical: 'middle' };
 
     totalStockVal += totalVariantStock;
     totalSalesVal += p.sales || 0;
     tkCurrentRow++;
   });
 
-  applyZebraAndBorders(sheetTonKho, 5, tkCurrentRow, 10, 'F0FDFA');
+  applyZebraAndBorders(sheetTonKho, 5, tkCurrentRow, 9, 'F0FDFA');
 
   // Summary row
   const tkSummaryRow = sheetTonKho.getRow(tkCurrentRow);
@@ -392,11 +389,11 @@ export async function exportAdminDashboardToExcel(stats: any) {
   tkSummaryRow.getCell(7).value = totalStockVal;
   tkSummaryRow.getCell(7).font = { bold: true, color: { argb: '115E59' } };
   tkSummaryRow.getCell(7).numFmt = '#,##0';
-  tkSummaryRow.getCell(9).value = totalSalesVal;
-  tkSummaryRow.getCell(9).font = { bold: true, color: { argb: '115E59' } };
-  tkSummaryRow.getCell(9).numFmt = '#,##0';
+  tkSummaryRow.getCell(8).value = totalSalesVal;
+  tkSummaryRow.getCell(8).font = { bold: true, color: { argb: '115E59' } };
+  tkSummaryRow.getCell(8).numFmt = '#,##0';
 
-  for (let c = 1; c <= 10; c++) {
+  for (let c = 1; c <= 9; c++) {
     tkSummaryRow.getCell(c).border = borderStyle;
     tkSummaryRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'CCFBF1' } };
   }
@@ -445,7 +442,7 @@ export async function exportAdminDashboardToExcel(stats: any) {
     r.getCell(2).value = u.email || 'N/A';
     r.getCell(3).value = u.phone || 'N/A';
     
-    const roleMap: any = { admin: 'Quản trị viên', seller: 'Người bán', shipper: 'Giao hàng', customer: 'Khách hàng' };
+    const roleMap: any = { admin: 'Quản trị viên', seller: 'Người bán', shipper: 'Giao hàng', warehouse: 'Quản lý kho', customer: 'Khách hàng' };
     r.getCell(4).value = roleMap[u.role] || u.role || 'Khách hàng';
     r.getCell(5).value = u.status === 'active' ? 'Đang hoạt động' : 'Đang khóa';
     r.getCell(6).value = u.verified ? 'Đã xác thực' : 'Chưa xác thực';
@@ -477,7 +474,7 @@ export async function exportAdminDashboardToExcel(stats: any) {
   const url = window.URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = `Bao_cao_tong_hop_ShopHub_${new Date().toISOString().split('T')[0]}.xlsx`;
+  anchor.download = `Bao_cao_tong_hop_${siteName}_${new Date().toISOString().split('T')[0]}.xlsx`;
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
@@ -537,4 +534,89 @@ async function convertSvgToPngBuffer(svgElement: any): Promise<ArrayBuffer> {
       reject(error);
     }
   });
+}
+
+export async function exportOrdersToExcel(orders: any[]) {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('Danh sách đơn hàng');
+  sheet.views = [{ showGridLines: true }];
+
+  // Title Row
+  sheet.mergeCells('A1:G1');
+  const titleCell = sheet.getCell('A1');
+  titleCell.value = 'BÁO CÁO NHẬP XUẤT ĐƠN HÀNG';
+  titleCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '4F46E5' } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  sheet.getRow(1).height = 30;
+
+  // Metadata
+  sheet.getCell('A3').value = 'Ngày xuất báo cáo:';
+  sheet.getCell('A3').font = { bold: true };
+  sheet.getCell('B3').value = new Date().toLocaleString('vi-VN');
+
+  // Headers
+  const headers = ['Mã Đơn Hàng', 'Ngày Đặt', 'Khách Hàng', 'Hình Thức TT', 'Tổng Tiền', 'Trạng Thái', 'Sản Phẩm'];
+  const headerRow = sheet.getRow(5);
+  headerRow.height = 24;
+  headers.forEach((h, i) => {
+    const cell = headerRow.getCell(i + 1);
+    cell.value = h;
+    cell.font = { bold: true, color: { argb: 'FFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '3730A3' } };
+    cell.alignment = { horizontal: 'left', vertical: 'middle' };
+  });
+
+  let currentRow = 6;
+  orders.forEach((o: any) => {
+    const r = sheet.getRow(currentRow);
+    r.height = 20;
+    r.getCell(1).value = o._id;
+    r.getCell(2).value = new Date(o.createdAt).toLocaleDateString('vi-VN');
+    r.getCell(3).value = o.customer?.name || 'N/A';
+    r.getCell(4).value = o.paymentMethod || 'N/A';
+    r.getCell(5).value = o.totalAmount || 0;
+    r.getCell(6).value = o.orderStatus || 'N/A';
+
+    const prodNames = o.products?.map((p: any) => `${p.product?.name || 'SP'} (${p.variantName || 'Default'} - x${p.quantity})`).join(', ') || '';
+    r.getCell(7).value = prodNames;
+
+    r.getCell(5).numFmt = '#,##0" ₫"';
+    r.getCell(5).alignment = { horizontal: 'left', vertical: 'middle' };
+
+    currentRow++;
+  });
+
+  applyZebraAndBorders(sheet, 5, currentRow, 7, 'EEF2F6');
+
+  // Summary row
+  const summaryRow = sheet.getRow(currentRow);
+  summaryRow.height = 22;
+  summaryRow.getCell(1).value = 'TỔNG CỘNG';
+  summaryRow.getCell(1).font = { bold: true, color: { argb: '1E1B4B' } };
+  
+  const totalAmount = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  summaryRow.getCell(5).value = totalAmount;
+  summaryRow.getCell(5).font = { bold: true, color: { argb: '1E1B4B' } };
+  summaryRow.getCell(5).numFmt = '#,##0" ₫"';
+
+  for (let c = 1; c <= 7; c++) {
+    summaryRow.getCell(c).border = borderStyle;
+    summaryRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0E7FF' } };
+  }
+
+  autofitColumns(sheet);
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer as BlobPart], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `Bao_cao_nhap_xuat_don_hang_${new Date().toISOString().split('T')[0]}.xlsx`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  window.URL.revokeObjectURL(url);
 }

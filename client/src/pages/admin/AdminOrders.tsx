@@ -3,11 +3,9 @@ import { DashboardLayout } from "../../components/DashboardLayout";
 import { StatusBadge } from "../../components/StatusBadge";
 import {
   UsersIcon,
-  PackageIcon,
   SearchIcon,
   FilterIcon,
   EyeIcon,
-  DownloadIcon,
   MapPinIcon,
   PhoneIcon,
   XIcon,
@@ -265,9 +263,14 @@ export function AdminOrders() {
                 <h3 className="text-xl font-bold text-gray-900">
                   Chi tiết đơn hàng
                 </h3>
-                <p className="text-sm text-gray-500 font-mono">
-                  #{selectedOrderDetails._id.slice(-8).toUpperCase()}
-                </p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-gray-500 font-medium">
+                  <p>
+                    Mã đơn: <span className="font-mono">{selectedOrderDetails._id}</span>
+                  </p>
+                  <p>
+                    Thời gian đặt: {new Date(selectedOrderDetails.createdAt).toLocaleString("vi-VN")}
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => setSelectedOrderDetails(null)}
@@ -364,9 +367,16 @@ export function AdminOrders() {
                         <p className="text-sm font-bold text-gray-900 truncate">
                           {p.product?.name}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          Sl: {p.quantity}
-                        </p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="text-xs text-gray-500 font-medium">
+                            Sl: {p.quantity}
+                          </span>
+                          {p.variantName && p.variantName !== "Default" && (
+                            <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-bold">
+                              Biến thể: {p.variantName}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <p className="text-sm font-bold text-gray-900">
                         {formatVND(p.price * p.quantity)}
@@ -377,30 +387,51 @@ export function AdminOrders() {
               </div>
 
               {/* Summary */}
-              <div className="bg-indigo-50/50 rounded-xl p-5 space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Hình thức thanh toán</span>
-                  <span className="font-bold text-gray-900 uppercase">
-                    {selectedOrderDetails.paymentMethod}
-                  </span>
-                </div>
-                {selectedOrderDetails.coupon && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Mã giảm giá</span>
-                    <span className="font-bold text-green-600">
-                      {selectedOrderDetails.coupon}
-                    </span>
+              {(() => {
+                const subtotal = selectedOrderDetails.products.reduce(
+                  (sum: number, p: any) => sum + p.price * p.quantity,
+                  0
+                );
+                const discount = subtotal - selectedOrderDetails.totalAmount;
+                return (
+                  <div className="bg-indigo-50/50 rounded-xl p-5 space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Tạm tính</span>
+                      <span className="font-bold text-gray-900">
+                        {formatVND(subtotal)}
+                      </span>
+                    </div>
+                    {selectedOrderDetails.coupon && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Mã giảm giá đã áp</span>
+                        <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 font-mono text-xs">
+                          {selectedOrderDetails.coupon}
+                        </span>
+                      </div>
+                    )}
+                    {discount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600 font-medium">
+                        <span>Số tiền giảm</span>
+                        <span>-{formatVND(discount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Hình thức thanh toán</span>
+                      <span className="font-bold text-gray-900 uppercase">
+                        {selectedOrderDetails.paymentMethod}
+                      </span>
+                    </div>
+                    <div className="pt-3 border-t border-indigo-100 border-dashed flex justify-between">
+                      <span className="font-bold text-gray-900">
+                        Tổng thanh toán
+                      </span>
+                      <span className="text-xl font-black text-red-600">
+                        {formatVND(selectedOrderDetails.totalAmount)}
+                      </span>
+                    </div>
                   </div>
-                )}
-                <div className="pt-3 border-t border-indigo-100 border-dashed flex justify-between">
-                  <span className="font-bold text-gray-900">
-                    Tổng thanh toán
-                  </span>
-                  <span className="text-xl font-black text-red-600">
-                    {formatVND(selectedOrderDetails.totalAmount)}
-                  </span>
-                </div>
-              </div>
+                );
+              })()}
             </div>
 
             <div className="p-4 border-t border-gray-100 flex justify-end bg-gray-50 rounded-b-2xl">

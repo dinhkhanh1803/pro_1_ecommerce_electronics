@@ -2,17 +2,127 @@ import React, { useState } from "react";
 import { DashboardLayout } from "../../components/DashboardLayout";
 import { StatusBadge } from "../../components/StatusBadge";
 import { SearchIcon, FilterIcon, EyeIcon, ChevronDownIcon } from "lucide-react";
-import { SELLER_SIDEBAR } from "../../constants/sidebar";
+import { SELLER_SIDEBAR, WAREHOUSE_SIDEBAR } from "../../constants/sidebar";
+import { useAuth } from "../../context/AuthContext";
+import { useSiteSettings } from "../../context/SiteSettingsContext";
 
 // Replaced mock data with real data fetch
 
 export function SellerOrders() {
+  const { settings } = useSiteSettings();
+  const { user } = useAuth();
+  const isWarehouse = user?.role === "warehouse";
+  const sidebarItems = isWarehouse ? WAREHOUSE_SIDEBAR : SELLER_SIDEBAR;
+  const roleName = isWarehouse ? "Warehouse" : "Seller";
+
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+
+  const handleExportOrders = async () => {
+    try {
+      const { exportOrdersToExcel } = await import("../../utils/excelExport");
+      await exportOrdersToExcel(orders);
+    } catch (error) {
+      console.error("Error exporting orders", error);
+    }
+  };
+
+  const printInvoice = (order: any) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const productsHtml = order.products?.map((item: any) => `
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.product?.name || 'Sản phẩm'} - ${item.variantName || 'Default'}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price * item.quantity)}</td>
+      </tr>
+    `).join("");
+
+    const htmlContent = `
+      <html>
+        <head>
+          <title>Hóa đơn ${order._id}</title>
+          <style>
+            body { font-family: Arial, sans-serif; color: #333; margin: 20px; }
+            .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; box-shadow: 0 0 10px rgba(0, 0, 0, .15); font-size: 16px; line-height: 24px; }
+            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
+            .title { font-size: 28px; font-weight: bold; color: #4F46E5; }
+            .info-sec { display: grid; grid-template-cols: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+            .info-box h4 { margin: 0 0 10px 0; color: #666; font-size: 14px; text-transform: uppercase; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            th { background: #f9fafb; padding: 10px; text-align: left; font-weight: bold; border-bottom: 2px solid #ddd; }
+            .total { text-align: right; font-size: 20px; font-weight: bold; color: #4F46E5; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-box">
+            <div class="header">
+              <div>
+                <div class="title">${settings.siteName}</div>
+                <div style="font-size: 14px; color: #666; margin-top: 5px;">Hệ thống bán lẻ thiết bị điện tử</div>
+              </div>
+              <div style="text-align: right;">
+                <h2 style="margin: 0; font-size: 20px;">HÓA ĐƠN BÁN HÀNG</h2>
+                <div style="font-size: 14px; color: #666; margin-top: 5px;">Mã đơn: #${order._id}</div>
+                <div style="font-size: 14px; color: #666;">Ngày: ${new Date(order.createdAt).toLocaleString('vi-VN')}</div>
+              </div>
+            </div>
+            
+            <div class="info-sec">
+              <div class="info-box">
+                <h4>Thông tin khách hàng</h4>
+                <strong>${order.customer?.name || 'N/A'}</strong><br/>
+                SĐT: ${order.customer?.phone || 'N/A'}<br/>
+                Email: ${order.customer?.email || 'N/A'}<br/>
+                Địa chỉ: ${order.shippingAddress || 'N/A'}
+              </div>
+              <div class="info-box" style="text-align: right;">
+                <h4>Hình thức thanh toán</h4>
+                <strong>${order.paymentMethod}</strong><br/>
+                Trạng thái: ${order.paymentStatus || 'pending'}<br/>
+                Vận chuyển: ${order.orderStatus}
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Sản phẩm</th>
+                  <th style="text-align: center;">Số lượng</th>
+                  <th style="text-align: right;">Đơn giá</th>
+                  <th style="text-align: right;">Thành tiền</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${productsHtml}
+              </tbody>
+            </table>
+
+            <div class="total">
+              Tổng cộng: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount || 0)}
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() {
+                window.close();
+              }
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -109,9 +219,9 @@ export function SellerOrders() {
   };
   return (
     <DashboardLayout
-      sidebarItems={SELLER_SIDEBAR}
+      sidebarItems={sidebarItems}
       title="Đơn hàng"
-      role="Seller"
+      role={roleName}
     >
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -131,9 +241,12 @@ export function SellerOrders() {
           </button>
         </div>
 
-        {/* <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium w-full sm:w-auto">
-          Export Orders
-        </button> */}
+        <button
+          onClick={handleExportOrders}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-medium w-full sm:w-auto"
+        >
+          Xuất báo cáo
+        </button>
       </div>
 
       {/* Tabs */}
@@ -456,9 +569,16 @@ export function SellerOrders() {
                               alt="product"
                               className="w-10 h-10 rounded-lg object-cover border border-gray-200"
                             />
-                            <span className="font-medium text-gray-900 line-clamp-1">
-                              {item.product?.name || "Sản phẩm"}
-                            </span>
+                            <div>
+                              <span className="font-medium text-gray-900 line-clamp-1">
+                                {item.product?.name || "Sản phẩm"}
+                              </span>
+                              {item.variantName && item.variantName !== "Default" && (
+                                <span className="inline-block mt-0.5 px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-bold">
+                                  Biến thể: {item.variantName}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-center text-gray-600">
                             {item.quantity}
@@ -481,18 +601,65 @@ export function SellerOrders() {
                   </table>
                 </div>
               </div>
+
+              {/* Summary */}
+              {(() => {
+                const subtotal = selectedOrder.products?.reduce(
+                  (sum: number, p: any) => sum + p.price * p.quantity,
+                  0
+                ) || 0;
+                const discount = subtotal - (selectedOrder.totalAmount || 0);
+                return (
+                  <div className="bg-indigo-50/50 rounded-xl p-5 space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Tạm tính</span>
+                      <span className="font-bold text-gray-900">
+                        {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(subtotal)}
+                      </span>
+                    </div>
+                    {selectedOrder.coupon && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Mã giảm giá đã áp</span>
+                        <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 font-mono text-xs">
+                          {selectedOrder.coupon}
+                        </span>
+                      </div>
+                    )}
+                    {discount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600 font-medium">
+                        <span>Số tiền giảm</span>
+                        <span>-{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(discount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Hình thức thanh toán</span>
+                      <span className="font-bold text-gray-900 uppercase">
+                        {selectedOrder.paymentMethod}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="p-6 border-t border-gray-100 bg-gray-50 shrink-0 flex justify-between items-center rounded-b-2xl">
-              <span className="font-medium text-gray-500 uppercase tracking-wider text-sm">
-                Tổng tiền
-              </span>
-              <span className="text-2xl font-bold text-indigo-600">
-                {new Intl.NumberFormat("vi-VN", {
-                  style: "currency",
-                  currency: "VND",
-                }).format(selectedOrder.totalAmount || 0)}
-              </span>
+              <button
+                onClick={() => printInvoice(selectedOrder)}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
+              >
+                In hóa đơn
+              </button>
+              <div className="flex items-center space-x-4">
+                <span className="font-medium text-gray-500 uppercase tracking-wider text-sm">
+                  Tổng tiền
+                </span>
+                <span className="text-2xl font-bold text-indigo-600">
+                  {new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(selectedOrder.totalAmount || 0)}
+                </span>
+              </div>
             </div>
           </div>
         </div>

@@ -27,6 +27,7 @@ import {
 import { ADMIN_SIDEBAR } from '../../constants/sidebar';
 import { formatVND } from '../../utils/format';
 import { exportAdminDashboardToExcel } from '../../utils/excelExport';
+import { useSiteSettings } from '../../context/SiteSettingsContext';
 
 const STATUS_COLORS: { [key: string]: string } = {
   "Hoàn thành": "#10b981", // Green
@@ -61,6 +62,7 @@ const getIconForActivity = (type: string) => {
 };
 
 export function AdminDashboard() {
+  const { settings } = useSiteSettings();
   const [stats, setStats] = useState<any>({});
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
@@ -109,7 +111,7 @@ export function AdminDashboard() {
         headers: { Authorization: `Bearer ${token}` }
       });
       const fullStats = await res.json();
-      await exportAdminDashboardToExcel(fullStats);
+      await exportAdminDashboardToExcel(fullStats, settings.siteName);
     } catch (error) {
       console.error('Lỗi khi xuất excel:', error);
     } finally {
@@ -137,7 +139,7 @@ export function AdminDashboard() {
 
       const opt = {
         margin: 10,
-        filename: `Bao_cao_tong_quan_ShopHub_${new Date().toISOString().split('T')[0]}.pdf`,
+        filename: `Bao_cao_tong_quan_${settings.siteName}_${new Date().toISOString().split('T')[0]}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
@@ -147,7 +149,7 @@ export function AdminDashboard() {
       const url = window.URL.createObjectURL(pdfBlob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = `Bao_cao_tong_quan_ShopHub_${new Date().toISOString().split('T')[0]}.pdf`;
+      anchor.download = `Bao_cao_tong_quan_${settings.siteName}_${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
