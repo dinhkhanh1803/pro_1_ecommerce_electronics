@@ -7,8 +7,10 @@ import {
   EyeIcon,
   EyeOffIcon,
 } from "lucide-react";
+import { useSiteSettings } from "../../context/SiteSettingsContext";
 
 export function Register() {
+  const { settings } = useSiteSettings();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -113,9 +115,11 @@ export function Register() {
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex items-center space-x-2">
             <div className="flex items-center justify-center w-12 h-12 bg-indigo-500 rounded-xl">
-              <span className="text-2xl font-bold text-white">S</span>
+              <span className="text-2xl font-bold text-white">
+                {settings.siteName?.charAt(0) || "S"}
+              </span>
             </div>
-            <span className="text-2xl font-bold text-gray-900">ShopHub</span>
+            <span className="text-2xl font-bold text-gray-900">{settings.siteName}</span>
           </Link>
         </div>
 
