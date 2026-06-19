@@ -17,6 +17,7 @@ import {
   XCircleIcon,
 } from 'lucide-react';
 import { formatVND } from '../../utils/format';
+import { useSiteSettings } from '../../context/SiteSettingsContext';
 
 const TEST_CARD = {
   bank: 'NCB',
@@ -96,6 +97,7 @@ function formatTimer(seconds: number) {
 }
 
 export function VNPayDemoPayment() {
+  const { settings } = useSiteSettings();
   const location = useLocation();
   const navigate = useNavigate();
   const [selectedBank, setSelectedBank] = useState(TEST_CARD.bank);
@@ -115,8 +117,8 @@ export function VNPayDemoPayment() {
   const amount = Number(params.get('amount') || 0);
   const selectedBankInfo = BANKS.find((bank) => bank.code === selectedBank) || BANKS[0];
   const qrValue = useMemo(
-    () => `VNPAY|${txnRef || 'DEMO'}|${amount || 0}|${orderInfo}|ShopHub`,
-    [amount, orderInfo, txnRef],
+    () => `VNPAY|${txnRef || 'DEMO'}|${amount || 0}|${orderInfo}|${settings.siteName}`,
+    [amount, orderInfo, txnRef, settings.siteName],
   );
 
   useEffect(() => {
@@ -432,7 +434,7 @@ export function VNPayDemoPayment() {
                         <Building2Icon className="h-4 w-4" />
                         <span className="font-bold">Đơn vị chấp nhận thanh toán</span>
                       </div>
-                      <p className="mt-1 font-black text-slate-900">ShopHub Electronics</p>
+                      <p className="mt-1 font-black text-slate-900">{settings.siteName}</p>
                     </div>
                     <div className="px-5 py-4">
                       <div className="flex items-center gap-2 text-slate-500">

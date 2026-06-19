@@ -13,6 +13,7 @@ import {
   XCircleIcon,
 } from 'lucide-react';
 import { formatVND } from '../../utils/format';
+import { useSiteSettings } from '../../context/SiteSettingsContext';
 
 const QR_SIZE = 29;
 
@@ -76,6 +77,7 @@ function formatTimer(seconds: number) {
 }
 
 export function MomoDemoPayment() {
+  const { settings } = useSiteSettings();
   const location = useLocation();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState<'success' | 'failed' | null>(null);
@@ -222,7 +224,7 @@ export function MomoDemoPayment() {
                   <div className="divide-y divide-slate-100 text-sm">
                     <div className="grid gap-1 px-5 py-4 sm:grid-cols-[150px_1fr]">
                       <span className="font-bold text-slate-500">Nhà cung cấp</span>
-                      <span className="font-black text-slate-900">ShopHub Electronics</span>
+                      <span className="font-black text-slate-900">{settings.siteName}</span>
                     </div>
                     <div className="grid gap-1 px-5 py-4 sm:grid-cols-[150px_1fr]">
                       <span className="font-bold text-slate-500">Nội dung</span>
