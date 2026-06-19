@@ -3,6 +3,7 @@ import { DashboardLayout } from "../../components/DashboardLayout";
 import {
   PlusIcon,
   Trash2Icon,
+  PencilIcon,
 } from "lucide-react";
 
 import { ADMIN_SIDEBAR } from "../../constants/sidebar";
@@ -11,6 +12,7 @@ export function AdminCategories() {
   const [categories, setCategories] = useState<any[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const fetchCategories = async () => {
     try {
@@ -28,23 +30,37 @@ export function AdminCategories() {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/categories`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ name, description }),
+      const url = editingId
+        ? `${import.meta.env.VITE_API_URL}/api/categories/${editingId}`
+        : `${import.meta.env.VITE_API_URL}/api/categories`;
+      const method = editingId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ name, description }),
+      });
       if (res.ok) {
         setName("");
         setDescription("");
+        setEditingId(null);
         fetchCategories();
       }
     } catch (err) {}
+  };
+
+  const handleStartEdit = (cat: any) => {
+    setEditingId(cat._id);
+    setName(cat.name);
+    setDescription(cat.description || "");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setName("");
+    setDescription("");
   };
 
   const handleDeleteCategory = async (id: string) => {
@@ -67,7 +83,9 @@ export function AdminCategories() {
       role="Admin"
     >
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-sm">
-        <h3 className="text-lg font-semibold mb-4">Thêm danh mục mới</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          {editingId ? "Cập nhật danh mục" : "Thêm danh mục mới"}
+        </h3>
         <form onSubmit={handleAddCategory} className="flex gap-4 items-end">
           <div className="flex-1">
             <label className="block text-sm font-medium mb-1">Tên</label>
@@ -90,13 +108,33 @@ export function AdminCategories() {
               className="w-full border border-gray-300 rounded-lg p-2"
             />
           </div>
-          <button
-            type="submit"
-            className="bg-indigo-600 hover:bg-indigo-700 transition-colors text-white px-4 py-2 rounded-lg flex items-center h-[42px]"
-          >
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Thêm
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="bg-indigo-600 hover:bg-indigo-700 transition-colors text-white px-4 py-2 rounded-lg flex items-center h-[42px] whitespace-nowrap"
+            >
+              {editingId ? (
+                <>
+                  <PencilIcon className="w-4 h-4 mr-2" />
+                  Cập nhật
+                </>
+              ) : (
+                <>
+                  <PlusIcon className="w-4 h-4 mr-2" />
+                  Thêm
+                </>
+              )}
+            </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="bg-gray-100 hover:bg-gray-200 transition-colors text-gray-700 px-4 py-2 rounded-lg flex items-center h-[42px] whitespace-nowrap"
+              >
+                Hủy
+              </button>
+            )}
+          </div>
         </form>
       </div>
 
@@ -121,12 +159,22 @@ export function AdminCategories() {
                 <td className="p-4 font-medium text-gray-900">{cat.name}</td>
                 <td className="p-4 text-sm text-gray-500">{cat.description}</td>
                 <td className="p-4 text-right">
-                  <button
-                    onClick={() => handleDeleteCategory(cat._id)}
-                    className="text-gray-400 hover:text-red-600 bg-gray-50 hover:bg-red-50 p-2 rounded-lg transition-colors"
-                  >
-                    <Trash2Icon className="w-4 h-4" />
-                  </button>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => handleStartEdit(cat)}
+                      className="text-gray-400 hover:text-indigo-600 bg-gray-50 hover:bg-indigo-50 p-2 rounded-lg transition-colors"
+                      title="Sửa danh mục"
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteCategory(cat._id)}
+                      className="text-gray-400 hover:text-red-600 bg-gray-50 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                      title="Xóa danh mục"
+                    >
+                      <Trash2Icon className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
