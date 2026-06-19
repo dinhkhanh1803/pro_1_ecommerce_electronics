@@ -95,7 +95,7 @@ export function ProductCard({
             <span className="text-base font-bold text-red-600">
               {formatVND(price)}
             </span>
-            {oldPrice && oldPrice > price && (
+            {!!oldPrice && oldPrice > price && (
               <>
                 <span className="text-xs text-gray-400 line-through">
                   {formatVND(oldPrice)}
