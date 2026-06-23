@@ -502,7 +502,7 @@ export function Checkout() {
 
               <div className="flex justify-between text-xl font-bold text-gray-900 mb-6">
                 <span>Tổng cộng</span>
-                <span className="text-red-600">{formatVND(total)}</span>
+                <span className="text-indigo-600">{formatVND(total)}</span>
               </div>
 
               <button
