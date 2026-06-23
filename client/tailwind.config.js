@@ -7,22 +7,22 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#e11d48', // rose-600 (Coral Red)
-          dark: '#be123c',    // rose-700
-          light: '#fb7185'    // rose-400
+          DEFAULT: '#2563eb', // blue-600
+          dark: '#1d4ed8',    // blue-700
+          light: '#60a5fa'    // blue-400
         },
         indigo: {
-          50: '#fff1f2',
-          100: '#ffe4e6',
-          200: '#fecdd3',
-          300: '#fda4af',
-          400: '#fb7185',
-          500: '#f43f5e',
-          600: '#e11d48', // rose-600
-          700: '#be123c', // rose-700
-          800: '#9f1239', // rose-800
-          900: '#881337', // rose-900
-          950: '#4c0519'  // rose-950
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+          950: '#172554'
         }
       },
       fontFamily: {
