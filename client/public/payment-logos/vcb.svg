@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="132" height="54" viewBox="0 0 132 54" role="img" aria-label="Vietcombank">
-  <rect width="132" height="54" rx="8" fill="#ffffff"/>
-  <path d="M22 12 38 27 22 42 8 27 22 12Z" fill="#008A3D"/>
-  <path d="M22 20 30 27 22 34 15 27 22 20Z" fill="#ffffff"/>
-  <text x="45" y="28" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900" fill="#008A3D">VCB</text>
-  <text x="45" y="42" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="800" fill="#008A3D">Vietcombank</text>
-</svg>
