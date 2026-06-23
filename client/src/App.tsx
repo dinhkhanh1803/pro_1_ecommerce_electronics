@@ -7,6 +7,8 @@ import { ProductListing } from "./pages/public/ProductListing";
 import { ProductDetail } from "./pages/public/ProductDetail";
 import { Cart } from "./pages/public/Cart";
 import { Checkout } from "./pages/public/Checkout";
+import { MomoDemoPayment } from "./pages/public/MomoDemoPayment";
+import { VNPayDemoPayment } from "./pages/public/VNPayDemoPayment";
 import { PaymentReturn } from "./pages/public/PaymentReturn";
 import { SearchResults } from "./pages/public/SearchResults";
 // Auth Pages
@@ -63,6 +65,8 @@ export function App() {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/momo-demo-pay" element={<MomoDemoPayment />} />
+            <Route path="/vnpay-demo-pay" element={<VNPayDemoPayment />} />
             <Route path="/payment-return" element={<PaymentReturn />} />
 
             {/* Customer Pages */}
