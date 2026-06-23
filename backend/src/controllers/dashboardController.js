@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import Product from "../models/Product.js";
 import Order from "../models/Order.js";
+import Message from "../models/Message.js";
 
 export const getDashboardStats = async (req, res, next) => {
   try {
@@ -378,6 +379,41 @@ export const getTopProducts = async (req, res, next) => {
     }));
 
     res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getNotifications = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+
+    // Count unread messages
+    const unreadMessagesCount = await Message.countDocuments({
+      receiver: userId,
+      read: false
+    });
+
+    // Get latest 5 orders
+    const latestOrders = await Order.find({})
+      .populate("customer", "name")
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    // Get latest 5 unread messages populated with sender
+    const latestMessages = await Message.find({
+      receiver: userId,
+      read: false
+    })
+      .populate("sender", "name")
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    res.json({
+      unreadMessagesCount,
+      latestOrders,
+      latestMessages
+    });
   } catch (error) {
     next(error);
   }

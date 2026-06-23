@@ -504,7 +504,7 @@ export function AdminDashboard() {
       {/* Bottom Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Top Selling Products Chart */}
-        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col">
+        <div className="lg:col-span-3 bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
@@ -567,48 +567,6 @@ export function AdminDashboard() {
                 </BarChart>
               </ResponsiveContainer>
             )}
-          </div>
-        </div>
-
-        {/* Recent Activity Feed */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Hoạt động gần đây
-            </h3>
-            <button className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
-              Xem tất cả
-            </button>
-          </div>
-
-          <div className="relative flex-grow">
-            {/* Timeline Line */}
-            <div className="absolute top-0 bottom-0 left-6 w-px bg-gray-200" />
-
-            <div className="space-y-6 relative">
-              {stats.activities?.slice(0, 5).map((activity: any) => {
-                const style = getIconForActivity(activity.type);
-                return (
-                  <div key={activity.id} className="flex items-start">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 z-10 border-4 border-white ${style.bg} ${style.color}`}>
-                      <style.icon className="h-5 w-5" />
-                    </div>
-                    <div className="ml-4 mt-1">
-                      <p className="text-sm text-gray-900 line-clamp-2">
-                        <span className="font-semibold">{activity.user}</span>{' '}
-                        {activity.action}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {getTimeAgo(activity.time)}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-              {(!stats.activities || stats.activities.length === 0) && (
-                <p className="text-center text-gray-500 py-4">Chưa có hoạt động nào gần đây.</p>
-              )}
-            </div>
           </div>
         </div>
       </div>
