@@ -116,3 +116,11 @@ export const updateProfile = async (req, res, next) => {
     res.json({ message: "Profile updated successfully", user: { id: user._id, name: user.name, phone: user.phone, address: user.address, dob: user.dob } });
   } catch (err) { next(err); }
 };
+
+// GET /api/users/shippers - Lấy danh sách shippers hoạt động
+export const getShippersList = async (req, res, next) => {
+  try {
+    const shippers = await User.find({ role: "shipper", status: "active" }).select("name email phone status");
+    res.json(shippers);
+  } catch (err) { next(err); }
+};

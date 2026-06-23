@@ -77,7 +77,7 @@ export function App() {
             <Route path="/chat" element={<Chat />} />
 
             {/* Seller Pages */}
-            <Route element={<ProtectedRoute allowedRoles={["seller", "admin"]} />}>
+            <Route element={<ProtectedRoute allowedRoles={["seller", "admin", "warehouse"]} />}>
               <Route path="/seller/orders" element={<SellerOrders />} />
               <Route path="/seller/messages" element={<Chat />} />
             </Route>
@@ -115,6 +115,7 @@ export function App() {
               />
               <Route path="/shipper/cod" element={<ShipperCOD />} />
               <Route path="/shipper/profile" element={<ShipperProfile />} />
+              <Route path="/shipper/messages" element={<Chat />} />
             </Route>
 
           </Route>

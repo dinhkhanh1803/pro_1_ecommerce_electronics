@@ -79,6 +79,11 @@ export const SHIPPER_SIDEBAR = [
     path: "/shipper/cod",
   },
   {
+    icon: MessageSquareIcon,
+    label: "Tin nhắn",
+    path: "/shipper/messages",
+  },
+  {
     icon: UserIcon,
     label: "Hồ sơ",
     path: "/shipper/profile",
@@ -97,8 +102,18 @@ export const WAREHOUSE_SIDEBAR = [
     path: "/warehouse/products",
   },
   {
+    icon: ShoppingBagIcon,
+    label: "Đơn hàng",
+    path: "/seller/orders",
+  },
+  {
     icon: TagIcon,
     label: "Khuyến mãi",
     path: "/warehouse/promotions",
+  },
+  {
+    icon: MessageSquareIcon,
+    label: "Tin nhắn",
+    path: "/seller/messages",
   },
 ];

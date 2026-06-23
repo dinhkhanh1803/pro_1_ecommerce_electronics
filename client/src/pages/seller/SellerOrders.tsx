@@ -1,10 +1,25 @@
 import React, { useState } from "react";
 import { DashboardLayout } from "../../components/DashboardLayout";
 import { StatusBadge } from "../../components/StatusBadge";
-import { SearchIcon, FilterIcon, EyeIcon, ChevronDownIcon } from "lucide-react";
+import {
+  SearchIcon,
+  FilterIcon,
+  EyeIcon,
+  ChevronDownIcon,
+  PrinterIcon,
+} from "lucide-react";
 import { SELLER_SIDEBAR, WAREHOUSE_SIDEBAR } from "../../constants/sidebar";
 import { useAuth } from "../../context/AuthContext";
 import { useSiteSettings } from "../../context/SiteSettingsContext";
+
+const orderStatusLabels: Record<string, string> = {
+  pending: "Chờ xử lý",
+  processing: "Đang xử lý",
+  shipped: "Đang giao hàng",
+  delivered: "Đã giao",
+  cancelled: "Đã hủy",
+  returned: "Trả hàng",
+};
 
 // Replaced mock data with real data fetch
 
@@ -35,14 +50,18 @@ export function SellerOrders() {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    const productsHtml = order.products?.map((item: any) => `
+    const productsHtml = order.products
+      ?.map(
+        (item: any) => `
       <tr>
-        <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.product?.name || 'Sản phẩm'} - ${item.variantName || 'Default'}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.product?.name || "Sản phẩm"} - ${item.variantName || "Default"}</td>
         <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price * item.quantity)}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(item.price)}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(item.price * item.quantity)}</td>
       </tr>
-    `).join("");
+    `,
+      )
+      .join("");
 
     const htmlContent = `
       <html>
@@ -70,23 +89,23 @@ export function SellerOrders() {
               <div style="text-align: right;">
                 <h2 style="margin: 0; font-size: 20px;">HÓA ĐƠN BÁN HÀNG</h2>
                 <div style="font-size: 14px; color: #666; margin-top: 5px;">Mã đơn: #${order._id}</div>
-                <div style="font-size: 14px; color: #666;">Ngày: ${new Date(order.createdAt).toLocaleString('vi-VN')}</div>
+                <div style="font-size: 14px; color: #666;">Ngày: ${new Date(order.createdAt).toLocaleString("vi-VN")}</div>
               </div>
             </div>
             
             <div class="info-sec">
               <div class="info-box">
                 <h4>Thông tin khách hàng</h4>
-                <strong>${order.customer?.name || 'N/A'}</strong><br/>
-                SĐT: ${order.customer?.phone || 'N/A'}<br/>
-                Email: ${order.customer?.email || 'N/A'}<br/>
-                Địa chỉ: ${order.shippingAddress || 'N/A'}
+                <strong>${order.customer?.name || "N/A"}</strong><br/>
+                SĐT: ${order.customer?.phone || "N/A"}<br/>
+                Email: ${order.customer?.email || "N/A"}<br/>
+                Địa chỉ: ${order.shippingAddress || "N/A"}
               </div>
               <div class="info-box" style="text-align: right;">
                 <h4>Hình thức thanh toán</h4>
                 <strong>${order.paymentMethod}</strong><br/>
-                Trạng thái: ${order.paymentStatus || 'pending'}<br/>
-                Vận chuyển: ${order.orderStatus}
+                Trạng thái: ${order.paymentStatus === "completed" ? "Đã thanh toán" : "Chờ thanh toán"}<br/>
+                Vận chuyển: ${orderStatusLabels[order.orderStatus?.toLowerCase()] || order.orderStatus}
               </div>
             </div>
 
@@ -105,7 +124,7 @@ export function SellerOrders() {
             </table>
 
             <div class="total">
-              Tổng cộng: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount || 0)}
+              Tổng cộng: ${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(order.totalAmount || 0)}
             </div>
           </div>
           <script>
@@ -121,7 +140,72 @@ export function SellerOrders() {
     `;
 
     printWindow.document.write(htmlContent);
-    printWindow.document.close();
+  };
+
+  const [shippers, setShippers] = useState<any[]>([]);
+  const [shippingOrderId, setShippingOrderId] = useState<string | null>(null);
+  const [selectedShipperId, setSelectedShipperId] = useState<string>("");
+
+  const fetchShippers = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/users/shippers`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setShippers(data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching shippers", error);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchShippers();
+  }, []);
+
+  const handleAssignShipperAndShip = async () => {
+    if (!shippingOrderId || !selectedShipperId) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/orders/${shippingOrderId}/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            status: "shipped",
+            shipperId: selectedShipperId,
+          }),
+        },
+      );
+
+      if (res.ok) {
+        const updatedOrder = await res.json();
+        setOrders(
+          orders.map((order) =>
+            order._id === shippingOrderId ? updatedOrder : order,
+          ),
+        );
+        alert("Đã chuyển giao đơn hàng cho shipper thành công!");
+      } else {
+        const errorData = await res.json();
+        alert(`Lỗi: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error("Error assigning shipper", error);
+      alert("Lỗi kết nối khi cập nhật shipper");
+    } finally {
+      setShippingOrderId(null);
+      setSelectedShipperId("");
+    }
   };
 
   const [page, setPage] = useState(1);
@@ -188,7 +272,10 @@ export function SellerOrders() {
 
   // Local filtering is removed in favor of backend filtering
 
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
+  const handleStatusChange = async (
+    orderId: string,
+    payload: { status?: string; paymentStatus?: string },
+  ) => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
@@ -199,18 +286,18 @@ export function SellerOrders() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ status: newStatus }),
+          body: JSON.stringify(payload),
         },
       );
 
       if (res.ok) {
+        const updatedOrder = await res.json();
         setOrders(
-          orders.map((order) =>
-            order._id === orderId
-              ? { ...order, orderStatus: newStatus }
-              : order,
-          ),
+          orders.map((order) => (order._id === orderId ? updatedOrder : order)),
         );
+      } else {
+        const errorData = await res.json();
+        alert(`Lỗi: ${errorData.message}`);
       }
     } catch (error) {
       console.error("Error updating status", error);
@@ -241,12 +328,12 @@ export function SellerOrders() {
           </button>
         </div>
 
-        <button
+        {/* <button
           onClick={handleExportOrders}
           className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-medium w-full sm:w-auto"
         >
           Xuất báo cáo
-        </button>
+        </button> */}
       </div>
 
       {/* Tabs */}
@@ -289,6 +376,9 @@ export function SellerOrders() {
                   Tổng tiền
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Thanh toán
+                </th>
+                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Trạng thái
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
@@ -299,7 +389,7 @@ export function SellerOrders() {
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-gray-500">
+                  <td colSpan={8} className="p-8 text-center text-gray-500">
                     Đang tải đơn hàng...
                   </td>
                 </tr>
@@ -312,9 +402,9 @@ export function SellerOrders() {
                     <td className="p-4">
                       <button
                         onClick={() => setSelectedOrder(order)}
-                        className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                        className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 font-mono"
                       >
-                        {order._id.substring(0, 10)}...
+                        #{order._id.slice(-8).toUpperCase()}
                       </button>
                     </td>
                     <td className="p-4 text-sm text-gray-600">
@@ -342,16 +432,37 @@ export function SellerOrders() {
                       }).format(order.totalAmount || 0)}
                     </td>
                     <td className="p-4">
-                      <StatusBadge status={order.orderStatus as any} />
+                      <span
+                        className={`px-2.5 py-1.5 rounded-full text-xs font-bold ${
+                          order.paymentStatus === "completed"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {order.paymentStatus === "completed"
+                          ? "Đã thanh toán"
+                          : "Chưa thanh toán"}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex flex-col space-y-1 items-start">
+                        <StatusBadge status={order.orderStatus as any} />
+                        {order.shipper && (
+                          <span className="text-[10px] text-gray-500 font-semibold bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-md mt-1 shrink-0 whitespace-nowrap">
+                            Shipper: {order.shipper.name}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        {/* Status Update Dropdown */}
-                        {!(
-                          order.orderStatus === "delivered" ||
-                          order.orderStatus === "cancelled" ||
-                          order.orderStatus === "returned"
-                        ) && (
+                        {(user?.role === "seller"
+                          ? order.orderStatus !== "cancelled"
+                          : !(
+                              order.orderStatus === "delivered" ||
+                              order.orderStatus === "cancelled" ||
+                              order.orderStatus === "returned"
+                            )) && (
                           <div className="relative">
                             <button
                               onClick={() =>
@@ -363,33 +474,88 @@ export function SellerOrders() {
                               }
                               className="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                             >
-                               <span>Cập nhật</span>
+                              <span>Cập nhật</span>
                               <ChevronDownIcon className="h-4 w-4" />
                             </button>
 
                             {openDropdownId === order._id && (
-                              <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg py-1 border border-gray-100 z-10">
-                                {[
-                                  "pending",
-                                  "processing",
-                                  "shipped",
-                                  "cancelled",
-                                ].map((status) => (
-                                  <button
-                                    key={status}
-                                    onClick={() =>
-                                      handleStatusChange(order._id, status)
-                                    }
-                                    className={`block w-full text-left px-4 py-2 text-sm capitalize hover:bg-gray-50 ${order.orderStatus === status ? "text-indigo-600 font-medium bg-indigo-50/50" : "text-gray-700"}`}
-                                  >
-                                    {status}
-                                  </button>
-                                ))}
+                              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 border border-gray-100 z-10">
+                                {user?.role === "seller" ? (
+                                  <>
+                                    <button
+                                      onClick={() =>
+                                        handleStatusChange(order._id, {
+                                          paymentStatus: "completed",
+                                        })
+                                      }
+                                      className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${order.paymentStatus === "completed" ? "text-indigo-600 font-medium bg-indigo-50/50" : "text-gray-700"}`}
+                                    >
+                                      Đã thanh toán
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleStatusChange(order._id, {
+                                          paymentStatus: "pending",
+                                        })
+                                      }
+                                      className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${order.paymentStatus === "pending" ? "text-indigo-600 font-medium bg-indigo-50/50" : "text-gray-700"}`}
+                                    >
+                                      Chờ thanh toán
+                                    </button>
+                                    {order.orderStatus !== "cancelled" && (
+                                      <button
+                                        onClick={() =>
+                                          handleStatusChange(order._id, {
+                                            status: "cancelled",
+                                          })
+                                        }
+                                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                      >
+                                        Hủy đơn hàng
+                                      </button>
+                                    )}
+                                  </>
+                                ) : (
+                                  (user?.role === "warehouse"
+                                    ? ["pending", "processing", "shipped"]
+                                    : [
+                                        "pending",
+                                        "processing",
+                                        "shipped",
+                                        "cancelled",
+                                      ]
+                                  ).map((status) => (
+                                    <button
+                                      key={status}
+                                      onClick={() => {
+                                        if (status === "shipped") {
+                                          setShippingOrderId(order._id);
+                                          setOpenDropdownId(null);
+                                        } else {
+                                          handleStatusChange(order._id, {
+                                            status,
+                                          });
+                                        }
+                                      }}
+                                      className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${order.orderStatus === status ? "text-indigo-600 font-medium bg-indigo-50/50" : "text-gray-700"}`}
+                                    >
+                                      {orderStatusLabels[
+                                        status?.toLowerCase()
+                                      ] || status}
+                                    </button>
+                                  ))
+                                )}
                               </div>
                             )}
                           </div>
                         )}
-
+                        <button
+                          onClick={() => printInvoice(order)}
+                          className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
+                          title="In hóa đơn"
+                        >
+                          <PrinterIcon className="h-5 w-5" />
+                        </button>
                         <button
                           onClick={() => setSelectedOrder(order)}
                           className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
@@ -403,7 +569,7 @@ export function SellerOrders() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-gray-500">
+                  <td colSpan={8} className="p-8 text-center text-gray-500">
                     Không tìm thấy đơn hàng nào phù hợp với tiêu chí đã chọn.
                   </td>
                 </tr>
@@ -495,21 +661,34 @@ export function SellerOrders() {
                     <p className="text-sm">
                       <span className="text-gray-500">Ngày đặt:</span>{" "}
                       <span className="font-medium">
-                        {new Date(selectedOrder.createdAt).toLocaleString("vi-VN")}
+                        {new Date(selectedOrder.createdAt).toLocaleString(
+                          "vi-VN",
+                        )}
                       </span>
                     </p>
-                    <p className="text-sm">
+                    <div className="text-sm flex items-center space-x-1.5">
                       <span className="text-gray-500">Trạng thái:</span>{" "}
-                      <span className="font-medium capitalize text-indigo-600">
-                        {selectedOrder.orderStatus}
-                      </span>
-                    </p>
+                      <StatusBadge status={selectedOrder.orderStatus as any} />
+                    </div>
                     <p className="text-sm">
                       <span className="text-gray-500">Thanh toán:</span>{" "}
                       <span className="font-medium">
-                        {selectedOrder.paymentMethod}
+                        {selectedOrder.paymentMethod} (
+                        {selectedOrder.paymentStatus === "completed"
+                          ? "Đã thanh toán"
+                          : "Chưa thanh toán"}
+                        )
                       </span>
                     </p>
+                    {selectedOrder.shipper && (
+                      <p className="text-sm">
+                        <span className="text-gray-500">Shipper:</span>{" "}
+                        <span className="font-medium">
+                          {selectedOrder.shipper.name} (
+                          {selectedOrder.shipper.phone || "Chưa cập nhật SĐT"})
+                        </span>
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div>
@@ -573,11 +752,12 @@ export function SellerOrders() {
                               <span className="font-medium text-gray-900 line-clamp-1">
                                 {item.product?.name || "Sản phẩm"}
                               </span>
-                              {item.variantName && item.variantName !== "Default" && (
-                                <span className="inline-block mt-0.5 px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-bold">
-                                  Biến thể: {item.variantName}
-                                </span>
-                              )}
+                              {item.variantName &&
+                                item.variantName !== "Default" && (
+                                  <span className="inline-block mt-0.5 px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-bold">
+                                    Biến thể: {item.variantName}
+                                  </span>
+                                )}
                             </div>
                           </td>
                           <td className="px-4 py-3 text-center text-gray-600">
@@ -604,17 +784,21 @@ export function SellerOrders() {
 
               {/* Summary */}
               {(() => {
-                const subtotal = selectedOrder.products?.reduce(
-                  (sum: number, p: any) => sum + p.price * p.quantity,
-                  0
-                ) || 0;
+                const subtotal =
+                  selectedOrder.products?.reduce(
+                    (sum: number, p: any) => sum + p.price * p.quantity,
+                    0,
+                  ) || 0;
                 const discount = subtotal - (selectedOrder.totalAmount || 0);
                 return (
                   <div className="bg-indigo-50/50 rounded-xl p-5 space-y-3">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Tạm tính</span>
                       <span className="font-bold text-gray-900">
-                        {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(subtotal)}
+                        {new Intl.NumberFormat("vi-VN", {
+                          style: "currency",
+                          currency: "VND",
+                        }).format(subtotal)}
                       </span>
                     </div>
                     {selectedOrder.coupon && (
@@ -628,11 +812,19 @@ export function SellerOrders() {
                     {discount > 0 && (
                       <div className="flex justify-between text-sm text-green-600 font-medium">
                         <span>Số tiền giảm</span>
-                        <span>-{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(discount)}</span>
+                        <span>
+                          -
+                          {new Intl.NumberFormat("vi-VN", {
+                            style: "currency",
+                            currency: "VND",
+                          }).format(discount)}
+                        </span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Hình thức thanh toán</span>
+                      <span className="text-gray-600">
+                        Hình thức thanh toán
+                      </span>
                       <span className="font-bold text-gray-900 uppercase">
                         {selectedOrder.paymentMethod}
                       </span>
@@ -660,6 +852,57 @@ export function SellerOrders() {
                   }).format(selectedOrder.totalAmount || 0)}
                 </span>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {shippingOrderId && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in zoom-in-95">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Chọn nhân viên giao hàng (Shipper)
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Vui lòng chọn một shipper hoạt động để bàn giao đơn hàng #
+              {shippingOrderId.substring(0, 8).toUpperCase()}.
+            </p>
+
+            <div className="space-y-4 mb-6">
+              <label className="block text-sm font-semibold text-gray-700">
+                Nhân viên giao hàng
+              </label>
+              <select
+                value={selectedShipperId}
+                onChange={(e) => setSelectedShipperId(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+              >
+                <option value="">-- Chọn Shipper --</option>
+                {shippers.map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {s.name} ({s.phone || "Không có SĐT"})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShippingOrderId(null);
+                  setSelectedShipperId("");
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 text-sm transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleAssignShipperAndShip}
+                disabled={!selectedShipperId}
+                className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 disabled:opacity-50 text-sm transition-all shadow-md active:scale-95"
+              >
+                Xác nhận & Giao hàng
+              </button>
             </div>
           </div>
         </div>
