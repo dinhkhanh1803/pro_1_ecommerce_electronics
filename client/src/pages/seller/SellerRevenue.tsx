@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { DashboardLayout } from '../../components/DashboardLayout';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { DashboardLayout } from "../../components/DashboardLayout";
 import {
   ShoppingBagIcon,
   TrendingUpIcon,
@@ -8,10 +8,10 @@ import {
   CreditCardIcon,
   UsersIcon,
   CalendarIcon,
-  DownloadIcon 
-} from 'lucide-react';
+  DownloadIcon,
+} from "lucide-react";
 
-import { formatVND } from '../../utils/format';
+import { formatVND } from "../../utils/format";
 
 import {
   XAxis,
@@ -20,35 +20,34 @@ import {
   Tooltip,
   ResponsiveContainer,
   AreaChart,
-  Area } from
-'recharts';
-import { SELLER_SIDEBAR } from '../../constants/sidebar';
-
+  Area,
+} from "recharts";
+import { SELLER_SIDEBAR } from "../../constants/sidebar";
 
 export function SellerRevenue() {
   const navigate = useNavigate();
-  const [dateRange, setDateRange] = useState('last30');
+  const [dateRange, setDateRange] = useState("last30");
   const [stats, setStats] = useState<any>({
     totalRevenue: 0,
     totalOrders: 0,
     avgOrderValue: 0,
     uniqueCustomers: 0,
-    revenueTrend: '0%',
-    ordersTrend: '0%',
-    avgOrderValueTrend: '0%',
-    uniqueCustomersTrend: '0%',
+    revenueTrend: "0%",
+    ordersTrend: "0%",
+    avgOrderValueTrend: "0%",
+    uniqueCustomersTrend: "0%",
     revenueData: [],
-    recentTransactions: []
+    recentTransactions: [],
   });
 
   const renderTrendBadge = (trendString: string) => {
     if (!trendString) return null;
-    const isNegative = trendString.startsWith('-');
-    const isZero = trendString === '0%' || trendString === '0.0%';
-    
+    const isNegative = trendString.startsWith("-");
+    const isZero = trendString === "0%" || trendString === "0.0%";
+
     let badgeClass = "text-green-600 bg-green-50";
     let iconClass = "h-4 w-4 mr-1";
-    
+
     if (isNegative) {
       badgeClass = "text-red-600 bg-red-50";
       iconClass = "h-4 w-4 mr-1 rotate-180";
@@ -58,7 +57,9 @@ export function SellerRevenue() {
     }
 
     return (
-      <span className={`flex items-center text-sm font-medium px-2 py-1 rounded-lg ${badgeClass}`}>
+      <span
+        className={`flex items-center text-sm font-medium px-2 py-1 rounded-lg ${badgeClass}`}
+      >
         {!isZero && <TrendingUpIcon className={iconClass} />}
         {trendString}
       </span>
@@ -69,9 +70,12 @@ export function SellerRevenue() {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/seller?dateRange=${dateRange}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/dashboard/seller?dateRange=${dateRange}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
         if (res.ok) {
           const data = await res.json();
           setStats(data);
@@ -87,8 +91,8 @@ export function SellerRevenue() {
     <DashboardLayout
       sidebarItems={SELLER_SIDEBAR}
       title="Bảng điều khiển doanh thu"
-      role="Seller">
-      
+      role="Seller"
+    >
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div className="flex items-center space-x-2">
@@ -96,8 +100,8 @@ export function SellerRevenue() {
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="appearance-none bg-white border border-gray-300 text-gray-700 py-2 pl-10 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
-              
+              className="appearance-none bg-white border border-gray-300 text-gray-700 py-2 pl-10 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
+            >
               <option value="today">Hôm nay</option>
               <option value="last7">7 ngày qua</option>
               <option value="last30">30 ngày qua</option>
@@ -127,7 +131,9 @@ export function SellerRevenue() {
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Tổng doanh thu
           </h3>
-          <p className="text-2xl font-bold text-gray-900">{formatVND(stats.totalRevenue)}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {formatVND(stats.totalRevenue)}
+          </p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -140,7 +146,9 @@ export function SellerRevenue() {
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Tổng đơn hàng
           </h3>
-          <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {stats.totalOrders}
+          </p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -153,7 +161,9 @@ export function SellerRevenue() {
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Giá trị đơn hàng TB
           </h3>
-          <p className="text-2xl font-bold text-gray-900">{formatVND(stats.avgOrderValue)}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {formatVND(stats.avgOrderValue)}
+          </p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -166,7 +176,9 @@ export function SellerRevenue() {
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Số khách hàng độc nhất
           </h3>
-          <p className="text-2xl font-bold text-gray-900">{stats.uniqueCustomers}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {stats.uniqueCustomers}
+          </p>
         </div>
       </div>
 
@@ -193,9 +205,9 @@ export function SellerRevenue() {
                   top: 10,
                   right: 10,
                   left: 0,
-                  bottom: 0
-                }}>
-                
+                  bottom: 0,
+                }}
+              >
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
@@ -205,43 +217,47 @@ export function SellerRevenue() {
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
-                  stroke="#e5e7eb" />
-                
+                  stroke="#e5e7eb"
+                />
+
                 <XAxis
                   dataKey="date"
                   axisLine={false}
                   tickLine={false}
                   tick={{
-                    fill: '#6b7280',
-                    fontSize: 12
+                    fill: "#6b7280",
+                    fontSize: 12,
                   }}
-                  dy={10} />
-                
+                  dy={10}
+                />
+
                 <YAxis
                   axisLine={false}
                   tickLine={false}
                   tick={{
-                    fill: '#6b7280',
-                    fontSize: 12
+                    fill: "#6b7280",
+                    fontSize: 12,
                   }}
-                  tickFormatter={(value) => formatVND(value)} />
-                
+                  tickFormatter={(value) => formatVND(value)}
+                />
+
                 <Tooltip
                   contentStyle={{
-                    borderRadius: '12px',
-                    border: 'none',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    borderRadius: "12px",
+                    border: "none",
+                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                   }}
-                  formatter={(value: number) => [formatVND(value), 'Doanh thu']} />
-                
+                  formatter={(value: number) => [formatVND(value), "Doanh thu"]}
+                />
+
                 <Area
                   type="monotone"
                   dataKey="revenue"
                   stroke="#6366f1"
                   strokeWidth={3}
                   fillOpacity={1}
-                  fill="url(#colorRevenue)" />
-                
+                  fill="url(#colorRevenue)"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -253,26 +269,29 @@ export function SellerRevenue() {
             <h3 className="text-lg font-semibold text-gray-900">
               Giao dịch gần đây
             </h3>
-            <button 
-              onClick={() => navigate('/seller/orders')}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
+            <button
+              onClick={() => navigate("/seller/orders")}
+              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+            >
               Xem tất cả
             </button>
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2 space-y-4">
             {stats.recentTransactions.length === 0 && (
-               <p className="text-sm text-gray-500 text-center py-4">Không có giao dịch gần đây nào.</p>
+              <p className="text-sm text-gray-500 text-center py-4">
+                Không có giao dịch gần đây nào.
+              </p>
             )}
-            {stats.recentTransactions.map((trx: any) =>
-            <div
-              key={trx.id}
-              className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-indigo-100 transition-colors">
-              
+            {stats.recentTransactions.map((trx: any) => (
+              <div
+                key={trx.id}
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-indigo-100 transition-colors"
+              >
                 <div className="flex items-center space-x-3">
                   <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${trx.status === 'completed' ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'}`}>
-                  
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${trx.status === "completed" ? "bg-green-100 text-green-600" : "bg-yellow-100 text-yellow-600"}`}
+                  >
                     <DollarSignIcon className="h-5 w-5" />
                   </div>
                   <div>
@@ -287,16 +306,16 @@ export function SellerRevenue() {
                     {formatVND(trx.amount || 0)}
                   </p>
                   <p
-                  className={`text-xs font-medium capitalize ${trx.status === 'completed' ? 'text-green-600' : 'text-yellow-600'}`}>
-                  
-                    {trx.status === 'completed' ? 'Hoàn thành' : 'Chờ xử lý'}
+                    className={`text-xs font-medium capitalize ${trx.status === "completed" ? "text-green-600" : "text-yellow-600"}`}
+                  >
+                    {trx.status === "completed" ? "Hoàn thành" : "Chờ xử lý"}
                   </p>
                 </div>
               </div>
-            )}
+            ))}
           </div>
         </div>
       </div>
-    </DashboardLayout>);
-
+    </DashboardLayout>
+  );
 }

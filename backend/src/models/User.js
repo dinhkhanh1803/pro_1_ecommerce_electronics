@@ -26,9 +26,6 @@ const userSchema = new mongoose.Schema(
     address: { type: String },
     dob: { type: Date },
 
-    otp: { type: String },
-    otpExpire: { type: Date },
-
     resetPasswordToken: String,
     resetPasswordExpire: Date,
 

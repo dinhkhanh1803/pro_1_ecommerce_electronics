@@ -33,7 +33,7 @@ const autofitColumns = (sheet: any) => {
 
 export async function exportAdminDashboardToExcel(stats: any, siteName: string = 'ShopHub') {
   const workbook = new ExcelJS.Workbook();
-  
+
   // ==========================================
   // SHEET 1: BÁO CÁO TỔNG QUAN
   // ==========================================
@@ -70,7 +70,7 @@ export async function exportAdminDashboardToExcel(stats: any, siteName: string =
   const metricsData = [
     ['Tổng người dùng', stats.totalUsers || 0, `${stats.totalSellers || 0} Người bán • ${(stats.totalUsers || 0) - (stats.totalSellers || 0)} Khách hàng`],
     ['Tổng sản phẩm', (stats.activeProducts || 0) + (stats.pendingProducts || 0), `${stats.activeProducts || 0} Đang hoạt động • ${stats.pendingProducts || 0} Chờ duyệt`],
-    ['Doanh thu hệ thống', stats.revenue || 0, 'Hoa hồng hệ thống (5% đơn hàng delivered)'],
+    ['Doanh thu hệ thống', stats.revenue || 0, 'Tổng giá trị đơn hàng delivered'],
     ['Tổng đơn hàng', stats.totalOrders || 0, `${stats.totalOrders || 0} Đơn hàng trong chu kỳ lọc`]
   ];
 
@@ -117,7 +117,7 @@ export async function exportAdminDashboardToExcel(stats: any, siteName: string =
     r.getCell(3).numFmt = '#,##0';
     r.getCell(2).alignment = { horizontal: 'left' };
     r.getCell(3).alignment = { horizontal: 'left' };
-    
+
     // Zebra striping
     if (idx % 2 === 1) {
       r.eachCell((cell: any) => {
@@ -156,15 +156,15 @@ export async function exportAdminDashboardToExcel(stats: any, siteName: string =
   autofitColumns(sheetTongQuan);
 
   // ==========================================
-  // SHEET 2: DOANH THU & HOA HỒNG HỆ THỐNG
+  // SHEET 2: DOANH THU DON HANG
   // ==========================================
-  const sheetDoanhThu = workbook.addWorksheet('Doanh thu & Hoa hồng');
+  const sheetDoanhThu = workbook.addWorksheet('Doanh thu đơn hàng');
   sheetDoanhThu.views = [{ showGridLines: true }];
-  
+
   // Sheet Header Title
   sheetDoanhThu.mergeCells('A1:G1');
   const dtTitleCell = sheetDoanhThu.getCell('A1');
-  dtTitleCell.value = 'BÁO CÁO DOANH THU & HOA HỒNG CHI TIẾT (5% ĐƠN DELIVERED)';
+  dtTitleCell.value = 'BÁO CÁO DOANH THU ĐƠN HÀNG DELIVERED';
   dtTitleCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFF' } };
   dtTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '059669' } }; // Emerald-600
   dtTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -176,7 +176,7 @@ export async function exportAdminDashboardToExcel(stats: any, siteName: string =
   sheetDoanhThu.getCell('B3').value = new Date().toLocaleString('vi-VN');
 
   // Headers
-  const dtHeaders = ['Mã Đơn Hàng', 'Khách Hàng', 'Tổng Tiền Đơn', 'Hoa Hồng (5%)', 'Thanh Toán', 'Ngày Đặt'];
+  const dtHeaders = ['Mã Đơn Hàng', 'Khách Hàng', 'Tổng Tiền Đơn', 'Trạng Thái', 'Thanh Toán', 'Ngày Đặt'];
   const dtHeaderRow = sheetDoanhThu.getRow(5);
   dtHeaderRow.height = 24;
   dtHeaders.forEach((h, i) => {
@@ -192,7 +192,7 @@ export async function exportAdminDashboardToExcel(stats: any, siteName: string =
 
   let dtCurrentRow = 6;
   let totalOrderAmount = 0;
-  let totalCommission = 0;
+  let deliveredOrderCount = 0;
 
   deliveredOrders.forEach((o: any) => {
     const r = sheetDoanhThu.getRow(dtCurrentRow);
@@ -200,17 +200,16 @@ export async function exportAdminDashboardToExcel(stats: any, siteName: string =
     r.getCell(1).value = o._id.toString().slice(-8).toUpperCase();
     r.getCell(2).value = o.customer?.name || 'N/A';
     r.getCell(3).value = o.totalAmount || 0;
-    r.getCell(4).value = (o.totalAmount || 0) * 0.05;
+    r.getCell(4).value = o.orderStatus || 'delivered';
     r.getCell(5).value = o.paymentMethod || 'COD';
     r.getCell(6).value = o.createdAt ? new Date(o.createdAt).toLocaleDateString('vi-VN') : 'N/A';
 
     r.getCell(3).numFmt = '#,##0" ₫"';
-    r.getCell(4).numFmt = '#,##0" ₫"';
     r.getCell(3).alignment = { horizontal: 'left', vertical: 'middle' };
     r.getCell(4).alignment = { horizontal: 'left', vertical: 'middle' };
 
     totalOrderAmount += o.totalAmount || 0;
-    totalCommission += (o.totalAmount || 0) * 0.05;
+    deliveredOrderCount += 1;
 
     dtCurrentRow++;
   });
@@ -225,9 +224,8 @@ export async function exportAdminDashboardToExcel(stats: any, siteName: string =
   dtSummaryRow.getCell(3).value = totalOrderAmount;
   dtSummaryRow.getCell(3).font = { bold: true, color: { argb: '065F46' } };
   dtSummaryRow.getCell(3).numFmt = '#,##0" ₫"';
-  dtSummaryRow.getCell(4).value = totalCommission;
+  dtSummaryRow.getCell(4).value = `${deliveredOrderCount} đơn delivered`;
   dtSummaryRow.getCell(4).font = { bold: true, color: { argb: '065F46' } };
-  dtSummaryRow.getCell(4).numFmt = '#,##0" ₫"';
 
   for (let c = 1; c <= 6; c++) {
     dtSummaryRow.getCell(c).border = borderStyle;
@@ -276,7 +274,7 @@ export async function exportAdminDashboardToExcel(stats: any, siteName: string =
     r.height = 20;
     r.getCell(1).value = o._id.toString().slice(-8).toUpperCase();
     r.getCell(2).value = o.customer?.name || 'N/A';
-    
+
     const qty = Array.isArray(o.products) ? o.products.reduce((acc: number, item: any) => acc + (item.quantity || 0), 0) : 0;
     r.getCell(3).value = qty;
     r.getCell(4).value = o.totalAmount || 0;
@@ -358,7 +356,7 @@ export async function exportAdminDashboardToExcel(stats: any, siteName: string =
     r.getCell(4).value = p.brand || 'N/A';
     r.getCell(5).value = p.category?.name || 'N/A';
     r.getCell(6).value = p.price || 0;
-    
+
     const totalVariantStock = Array.isArray(p.variants) && p.variants.length > 0
       ? p.variants.reduce((sum: number, variant: any) => sum + Math.max(0, Number(variant.stock) || 0), 0)
       : (p.stock || 0);
@@ -441,7 +439,7 @@ export async function exportAdminDashboardToExcel(stats: any, siteName: string =
     r.getCell(1).value = u.name || 'N/A';
     r.getCell(2).value = u.email || 'N/A';
     r.getCell(3).value = u.phone || 'N/A';
-    
+
     const roleMap: any = { admin: 'Quản trị viên', seller: 'Người bán', shipper: 'Giao hàng', warehouse: 'Quản lý kho', customer: 'Khách hàng' };
     r.getCell(4).value = roleMap[u.role] || u.role || 'Khách hàng';
     r.getCell(5).value = u.status === 'active' ? 'Đang hoạt động' : 'Đang khóa';
@@ -486,19 +484,19 @@ async function convertSvgToPngBuffer(svgElement: any): Promise<ArrayBuffer> {
     try {
       const svgClone = svgElement.cloneNode(true);
       svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-      
+
       const width = svgElement.clientWidth || svgElement.getBoundingClientRect().width || 800;
       const height = svgElement.clientHeight || svgElement.getBoundingClientRect().height || 400;
-      
+
       svgClone.setAttribute('width', width);
       svgClone.setAttribute('height', height);
-      
+
       const svgString = new XMLSerializer().serializeToString(svgClone);
-      
+
       const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
       const URL = window.URL || window.webkitURL || window;
       const blobURL = URL.createObjectURL(svgBlob);
-      
+
       const image = new Image();
       image.onload = () => {
         const canvas = document.createElement('canvas');
@@ -509,7 +507,7 @@ async function convertSvgToPngBuffer(svgElement: any): Promise<ArrayBuffer> {
         if (context) {
           context.fillStyle = '#FFFFFF';
           context.fillRect(0, 0, canvas.width, canvas.height);
-          
+
           context.scale(scale, scale);
           context.drawImage(image, 0, 0, width, height);
           canvas.toBlob((blob) => {
@@ -594,7 +592,7 @@ export async function exportOrdersToExcel(orders: any[]) {
   summaryRow.height = 22;
   summaryRow.getCell(1).value = 'TỔNG CỘNG';
   summaryRow.getCell(1).font = { bold: true, color: { argb: '1E1B4B' } };
-  
+
   const totalAmount = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
   summaryRow.getCell(5).value = totalAmount;
   summaryRow.getCell(5).font = { bold: true, color: { argb: '1E1B4B' } };

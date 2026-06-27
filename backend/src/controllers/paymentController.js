@@ -5,6 +5,7 @@ import {
   applyOrderInventory,
   restoreOrderInventory,
 } from "../utils/orderInventory.js";
+import { recordOrderPaymentTransaction } from "../utils/finance.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -69,6 +70,9 @@ const updateOrdersFromMomoResult = async (params) => {
       order.orderStatus = "cancelled";
     }
     await order.save();
+    if (success) {
+      await recordOrderPaymentTransaction(order);
+    }
   }
 
   return { success, orders };
@@ -244,6 +248,9 @@ export const completeVNPayDemoPayment = async (req, res, next) => {
         order.orderStatus = "cancelled";
       }
       await order.save();
+      if (isSuccess) {
+        await recordOrderPaymentTransaction(order);
+      }
     }
 
     const message = isSuccess
@@ -277,6 +284,9 @@ export const vnpayReturn = async (req, res, next) => {
           order.orderStatus = "cancelled";
         }
         await order.save();
+        if (demoSuccess) {
+          await recordOrderPaymentTransaction(order);
+        }
       }
     }
 
@@ -317,6 +327,7 @@ export const vnpayReturn = async (req, res, next) => {
           await applyOrderInventory(order);
           order.paymentStatus = "completed";
           await order.save();
+          await recordOrderPaymentTransaction(order);
         }
         return res.redirect(
           `${frontendUrl}/payment-return?success=true&message=${encodeURIComponent("Giao dịch thành công")}`,

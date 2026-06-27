@@ -7,8 +7,6 @@ const settingSchema = new mongoose.Schema(
     siteDescription: { type: String },
     primaryLogo: { type: String },
     favicon: { type: String },
-    commissionRate: { type: Number, default: 5 },
-    currency: { type: String, default: "USD" },
   },
   { timestamps: true }
 );

@@ -14,4 +14,9 @@ const transactionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+transactionSchema.index(
+  { order: 1, type: 1 },
+  { unique: true, partialFilterExpression: { order: { $exists: true } } }
+);
+
 export default mongoose.model("Transaction", transactionSchema);

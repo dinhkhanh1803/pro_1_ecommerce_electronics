@@ -26,6 +26,7 @@ export function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [deliveryMethod, setDeliveryMethod] = useState('standard');
   const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
   
   // User Profile State
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -56,7 +57,7 @@ export function Checkout() {
       .then(res => res.json())
       .then(data => {
         setUserProfile(data);
-        setUserProfile(data);
+        setIsLoaded(true);
         if (data.address) {
           setIsEditingAddress(false);
           // Pre-fill form in case they click edit
@@ -78,8 +79,17 @@ export function Checkout() {
           }));
         }
       })
-      .catch(console.error);
+      .catch(err => {
+        console.error(err);
+        setIsLoaded(true);
+      });
   }, [token, navigate]);
+
+  useEffect(() => {
+    if (isLoaded && cartItems.length === 0) {
+      navigate('/cart');
+    }
+  }, [isLoaded, cartItems, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

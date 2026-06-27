@@ -154,6 +154,9 @@ export function AdminOrders() {
                   Tổng cộng
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Thanh toán
+                </th>
+                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Trạng thái
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
@@ -188,6 +191,15 @@ export function AdminOrders() {
                       {formatVND(order.totalAmount)}
                     </td>
                     <td className="p-4">
+                      <span className={`px-2.5 py-1.5 rounded-full text-xs font-bold ${
+                        order.paymentStatus === 'completed' 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {order.paymentStatus === 'completed' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                      </span>
+                    </td>
+                    <td className="p-4">
                       <StatusBadge status={order.orderStatus as any} />
                     </td>
                     <td className="p-4 text-right">
@@ -205,7 +217,7 @@ export function AdminOrders() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-gray-500">
+                  <td colSpan={8} className="p-8 text-center text-gray-500">
                     Không tìm thấy đơn hàng nào phù hợp với tiêu chí đã chọn.
                   </td>
                 </tr>
@@ -290,6 +302,11 @@ export function AdminOrders() {
                   <StatusBadge
                     status={selectedOrderDetails.orderStatus as any}
                   />
+                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                    selectedOrderDetails.paymentStatus === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {selectedOrderDetails.paymentStatus === 'completed' ? 'Đã Thanh Toán' : 'Chưa Thanh Toán'}
+                  </span>
                   <span className="text-sm text-gray-500">
                     Cập nhật lúc:{" "}
                     {new Date(selectedOrderDetails.updatedAt).toLocaleString(
@@ -343,6 +360,27 @@ export function AdminOrders() {
                     </div>
                   </div>
                 </div>
+                {selectedOrderDetails.shipper && (
+                  <div className="md:col-span-2">
+                    <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">
+                      Thông tin vận chuyển (Shipper)
+                    </h4>
+                    <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-2">
+                      <div className="flex items-center text-sm">
+                        <UsersIcon className="h-4 w-4 text-gray-400 mr-2" />
+                        <span className="text-gray-700">
+                          Shipper: <span className="font-bold text-gray-900">{selectedOrderDetails.shipper.name}</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <PhoneIcon className="h-4 w-4 text-gray-400 mr-2" />
+                        <span className="text-gray-700">
+                          Số điện thoại: {selectedOrderDetails.shipper.phone || 'Chưa cập nhật'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Product List */}

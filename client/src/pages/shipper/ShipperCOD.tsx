@@ -24,7 +24,7 @@ export function ShipperCOD() {
 
   const fetchShipperOrders = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/shipper/cod-balance`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/shipper`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {

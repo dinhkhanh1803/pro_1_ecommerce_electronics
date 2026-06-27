@@ -41,6 +41,8 @@ const orderSchema = new mongoose.Schema(
       default: "pending",
     },
     codRemitted: { type: Boolean, default: false },
+    seller: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    shipper: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     inventoryApplied: { type: Boolean, default: false },
     coupon: { type: String },
     vnpTxnRef: { type: String, index: true }, // Mã giao dịch VNPay để tra cứu khi callback

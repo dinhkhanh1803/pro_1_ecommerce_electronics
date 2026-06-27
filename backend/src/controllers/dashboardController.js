@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import Product from "../models/Product.js";
 import Order from "../models/Order.js";
+import Message from "../models/Message.js";
 
 export const getDashboardStats = async (req, res, next) => {
   try {
@@ -29,10 +30,8 @@ export const getDashboardStats = async (req, res, next) => {
     const pendingProducts = await Product.countDocuments({ status: "pending", ...productFilter });
     const activeProducts = await Product.countDocuments({ status: "active", ...productFilter });
     const totalOrders = await Order.countDocuments(orderFilter);
-    
-    // Revenue logic: 5% of all delivered orders in the range
     const deliveredOrders = await Order.find({ orderStatus: "delivered", ...orderFilter });
-    const revenue = deliveredOrders.reduce((sum, order) => sum + (order.totalAmount * 0.05), 0);
+    const revenue = deliveredOrders.reduce((sum, order) => sum + (Number(order.totalAmount) || 0), 0);
 
     // Trend mapping based on filter dates
     let trendStart = new Date();
@@ -49,7 +48,7 @@ export const getDashboardStats = async (req, res, next) => {
     }
 
     const ordersInTrend = await Order.find({ createdAt: { $gte: trendStart, $lte: trendEnd } });
-    
+
     const revenueDataMap = {};
     const ordersDataMap = {};
 
@@ -69,7 +68,7 @@ export const getDashboardStats = async (req, res, next) => {
       if (ordersDataMap[label] !== undefined) {
         ordersDataMap[label] += 1;
         if (o.orderStatus === 'delivered') {
-          revenueDataMap[label] += (o.totalAmount * 0.05);
+          revenueDataMap[label] += Number(o.totalAmount) || 0;
         }
       }
     });
@@ -383,4 +382,37 @@ export const getTopProducts = async (req, res, next) => {
   }
 };
 
+export const getNotifications = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
 
+    // Count unread messages
+    const unreadMessagesCount = await Message.countDocuments({
+      receiver: userId,
+      read: false
+    });
+
+    // Get latest 5 orders
+    const latestOrders = await Order.find({})
+      .populate("customer", "name")
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    // Get latest 5 unread messages populated with sender
+    const latestMessages = await Message.find({
+      receiver: userId,
+      read: false
+    })
+      .populate("sender", "name")
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    res.json({
+      unreadMessagesCount,
+      latestOrders,
+      latestMessages
+    });
+  } catch (error) {
+    next(error);
+  }
+};

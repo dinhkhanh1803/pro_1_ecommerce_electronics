@@ -3,6 +3,10 @@ import Order from "../models/Order.js";
 import Coupon from "../models/Coupon.js";
 import Product from "../models/Product.js";
 import { applyOrderInventory, restoreOrderInventory } from "../utils/orderInventory.js";
+import {
+  recordOrderPaymentTransaction,
+  recordOrderRefundTransaction,
+} from "../utils/finance.js";
 
 const getErrorStatusCode = (err) => {
   if (err?.statusCode || err?.status) return err.statusCode || err.status;
@@ -27,6 +31,8 @@ export const getMyOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ customer: req.user._id })
       .populate("products.product", "name images")
+      .populate("seller", "name email role")
+      .populate("shipper", "name email phone role")
       .sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) { next(err); }
@@ -38,6 +44,8 @@ export const getAllOrders = async (req, res, next) => {
     const orders = await Order.find({})
       .populate("customer", "name email phone")
       .populate("products.product", "name images")
+      .populate("seller", "name email role")
+      .populate("shipper", "name email phone role")
       .sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) { next(err); }
@@ -65,7 +73,7 @@ export const getSellerOrders = async (req, res, next) => {
         const customers = await mongoose.model("User").find({
           name: { $regex: search, $options: "i" }
         }).select("_id");
-        
+
         const customerIds = customers.map(c => c._id);
         query.customer = { $in: customerIds };
       }
@@ -75,6 +83,8 @@ export const getSellerOrders = async (req, res, next) => {
     const orders = await Order.find(query)
       .populate("customer", "name email phone")
       .populate("products.product", "name images")
+      .populate("seller", "name email role")
+      .populate("shipper", "name email phone role")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -94,8 +104,10 @@ export const getOrderById = async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate("customer", "name email phone")
-      .populate("products.product", "name images");
-      
+      .populate("products.product", "name images")
+      .populate("seller", "name email role")
+      .populate("shipper", "name email phone role");
+
     if (!order) return res.status(404).json({ message: "Order not found" });
 
     // Ensure customer, admin, shipper, seller or warehouse
@@ -104,7 +116,7 @@ export const getOrderById = async (req, res, next) => {
         req.user.role !== 'warehouse' && req.user.role !== 'seller') {
       return res.status(403).json({ message: "Not authorized to view this order" });
     }
-    
+
     res.json(order);
   } catch (err) { next(err); }
 };
@@ -153,7 +165,14 @@ export const createOrder = async (req, res, next) => {
         price: Number(item.price) || dbProduct.price + (Number(dbProduct.variants[variantIndex].priceAdd) || 0),
       });
     }
-    
+
+    // Find active user with role "seller", fallback to any seller
+    const User = mongoose.model("User");
+    let sellerUser = await User.findOne({ role: "seller", status: "active" });
+    if (!sellerUser) {
+      sellerUser = await User.findOne({ role: "seller" });
+    }
+
     // In a real app, products should be validated with DB prices
     const orderData = {
       customer: req.user._id,
@@ -161,6 +180,7 @@ export const createOrder = async (req, res, next) => {
       totalAmount: Number(totalAmount) || 0,
       shippingAddress,
       paymentMethod: paymentMethod || "COD",
+      seller: sellerUser ? sellerUser._id : null,
     };
 
     if (couponCode) {
@@ -191,62 +211,106 @@ export const createOrder = async (req, res, next) => {
 // PUT /api/orders/:id/status - Cập nhật trạng thái đơn hàng (Dành cho Seller/Admin)
 export const updateOrderStatus = async (req, res, next) => {
   try {
-    const { status } = req.body;
+    const { status, paymentStatus } = req.body;
     const order = await Order.findById(req.params.id);
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    // Role-based status transition logic
-    if (req.user.role === 'seller' || req.user.role === 'warehouse') {
-       // Trạng thái đã giao và trả hàng phải do Shipper cập nhật
-       if (['delivered', 'returned'].includes(status)) {
-         return res.status(403).json({ message: "Quyền này thuộc về Shipper. Không thể cập nhật trạng thái đã giao hoặc trả hàng." });
-       }
-    } else if (req.user.role === 'shipper') {
-       if (!['shipped', 'delivered', 'returned'].includes(status)) {
-         return res.status(403).json({ message: "Shipper can only update to delivered or returned." });
-       }
-       if (order.orderStatus !== 'shipped' && order.orderStatus !== 'delivered' && order.orderStatus !== 'returned') {
-         return res.status(403).json({ message: "Order is not ready for shipping." });
-       }
-    } else if (req.user.role !== 'admin') {
-       return res.status(403).json({ message: "Not authorized" });
-    }
+    const previousPaymentStatus = order.paymentStatus;
 
-    order.orderStatus = status;
+    // Handle orderStatus changes
+    if (status) {
+      // Role-based status transition logic
+      if (req.user.role === 'warehouse') {
+         if (['delivered', 'returned', 'cancelled'].includes(status)) {
+           return res.status(403).json({ message: "Quản lý kho không có quyền cập nhật trạng thái đã giao, trả hàng hoặc hủy đơn." });
+         }
+      } else if (req.user.role === 'seller') {
+         if (['delivered', 'returned'].includes(status)) {
+           return res.status(403).json({ message: "Quyền này thuộc về Shipper. Không thể cập nhật trạng thái đã giao hoặc trả hàng." });
+         }
+      } else if (req.user.role === 'shipper') {
+         if (!['shipped', 'delivered', 'returned'].includes(status)) {
+           return res.status(403).json({ message: "Shipper can only update to delivered or returned." });
+         }
+         if (order.orderStatus !== 'shipped' && order.orderStatus !== 'delivered' && order.orderStatus !== 'returned') {
+           return res.status(403).json({ message: "Order is not ready for shipping." });
+         }
+      } else if (req.user.role !== 'admin') {
+         return res.status(403).json({ message: "Not authorized" });
+      }
 
-    if (status === 'delivered' && order.paymentMethod === 'COD') {
-       order.paymentStatus = 'completed';
-    }
+      if (status === 'shipped') {
+        const shipperId = req.body.shipperId || req.body.shipper;
+        if (!shipperId) {
+          return res.status(400).json({ message: "Vui lòng chọn shipper cho đơn hàng" });
+        }
+        const User = mongoose.model("User");
+        const shipperUser = await User.findOne({ _id: shipperId, role: 'shipper' });
+        if (!shipperUser) {
+          return res.status(400).json({ message: "Shipper không hợp lệ" });
+        }
+        order.shipper = shipperId;
+      }
 
-    if (status === 'cancelled') {
-      await restoreOrderInventory(order);
-      if (order.coupon) {
-        const coupon = await Coupon.findOne({ code: order.coupon });
-        if (coupon) {
-          coupon.usageCount = Math.max(0, coupon.usageCount - 1);
-          if (coupon.usedBy) {
-            coupon.usedBy = coupon.usedBy.filter(
-              (id) => id.toString() !== order.customer.toString()
-            );
+      order.orderStatus = status;
+
+      if (status === 'cancelled') {
+        await restoreOrderInventory(order);
+        if (order.coupon) {
+          const coupon = await Coupon.findOne({ code: order.coupon });
+          if (coupon) {
+            coupon.usageCount = Math.max(0, coupon.usageCount - 1);
+            if (coupon.usedBy) {
+              coupon.usedBy = coupon.usedBy.filter(
+                (id) => id.toString() !== order.customer.toString()
+              );
+            }
+            await coupon.save();
           }
-          await coupon.save();
         }
       }
     }
 
+    // Handle paymentStatus changes
+    if (paymentStatus) {
+      if (req.user.role !== 'seller' && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Chỉ người bán hàng hoặc quản trị viên mới có quyền cập nhật trạng thái thanh toán." });
+      }
+      if (!["pending", "completed", "failed", "refunded"].includes(paymentStatus)) {
+        return res.status(400).json({ message: "Trạng thái thanh toán không hợp lệ" });
+      }
+      order.paymentStatus = paymentStatus;
+    }
+
     await order.save();
-    
-    res.json(order);
+    if (order.paymentStatus === "completed") {
+      await recordOrderPaymentTransaction(order);
+    }
+    if (order.paymentStatus === "refunded" || (previousPaymentStatus === "completed" && ["cancelled", "returned"].includes(order.orderStatus))) {
+      await recordOrderRefundTransaction(order);
+    }
+
+    const populatedOrder = await Order.findById(order._id)
+      .populate("customer", "name email phone")
+      .populate("products.product", "name images")
+      .populate("seller", "name email role")
+      .populate("shipper", "name email phone role");
+
+    res.json(populatedOrder);
   } catch (err) { next(err); }
 };
 
 // GET /api/orders/shipper
 export const getShipperOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find({ orderStatus: { $in: ['shipped', 'delivered', 'returned'] } })
+    const filter = { orderStatus: { $in: ['shipped', 'delivered', 'returned'] } };
+    if (req.user.role === 'shipper') {
+      filter.shipper = req.user._id;
+    }
+    const orders = await Order.find(filter)
       .populate("customer", "name email phone")
       .populate("products.product", "name images")
       .sort({ updatedAt: -1 });
@@ -267,6 +331,7 @@ export const cancelOrder = async (req, res, next) => {
        return res.status(400).json({ message: "Cannot cancel order at this stage" });
     }
 
+    const previousPaymentStatus = order.paymentStatus;
     order.orderStatus = 'cancelled';
     await restoreOrderInventory(order);
     if (order.coupon) {
@@ -282,6 +347,9 @@ export const cancelOrder = async (req, res, next) => {
       }
     }
     await order.save();
+    if (previousPaymentStatus === 'completed') {
+      await recordOrderRefundTransaction(order);
+    }
     res.json(order);
   } catch (err) { next(err); }
 };
@@ -293,10 +361,19 @@ export const remitCodOrders = async (req, res, next) => {
     if (!orderIds || !Array.isArray(orderIds)) {
        return res.status(400).json({ message: "Invalid orderIds array" });
     }
-    await Order.updateMany(
-      { _id: { $in: orderIds }, paymentMethod: 'COD', orderStatus: 'delivered' },
-      { $set: { codRemitted: true } }
-    );
-    res.json({ message: "COD orders remitted successfully" });
+    const orders = await Order.find({
+      _id: { $in: orderIds },
+      paymentMethod: 'COD',
+      orderStatus: 'delivered',
+    });
+
+    for (const order of orders) {
+      order.codRemitted = true;
+      order.paymentStatus = 'completed';
+      await order.save();
+      await recordOrderPaymentTransaction(order);
+    }
+
+    res.json({ message: "COD orders remitted successfully", updatedCount: orders.length });
   } catch(err) { next(err); }
 };

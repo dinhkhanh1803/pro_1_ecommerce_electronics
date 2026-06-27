@@ -23,18 +23,19 @@ import {
   Cell } from
 'recharts';
 import { ADMIN_SIDEBAR } from '../../constants/sidebar';
+import { formatVND } from '../../utils/format';
 
 export function AdminFinance() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  
+
   const [overview, setOverview] = useState<any>({ revenueData: [], metrics: {}, paymentMethods: [] });
   const [transactions, setTransactions] = useState<any[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     const headers = { Authorization: `Bearer ${token}` };
-    
+
     fetch(`${import.meta.env.VITE_API_URL}/api/finance/overview`, { headers })
       .then(res => res.json())
       .then(data => setOverview(data))
@@ -44,7 +45,7 @@ export function AdminFinance() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const headers = { Authorization: `Bearer ${token}` };
-    
+
     fetch(`${import.meta.env.VITE_API_URL}/api/finance/transactions?type=${typeFilter}`, { headers })
       .then(res => res.json())
       .then(data => setTransactions(data))
@@ -68,7 +69,7 @@ export function AdminFinance() {
       sidebarItems={ADMIN_SIDEBAR}
       title="Quản lý tài chính"
       role="Admin">
-      
+
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -84,7 +85,7 @@ export function AdminFinance() {
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Tổng khối lượng giao dịch
           </h3>
-          <p className="text-2xl font-bold text-gray-900">${(metrics.totalVolume || 0).toLocaleString()}</p>
+          <p className="text-2xl font-bold text-gray-900">{formatVND(metrics.totalVolume || 0)}</p>
           <p className="text-xs text-gray-500 mt-2">30 ngày qua</p>
         </div>
 
@@ -99,9 +100,9 @@ export function AdminFinance() {
             </span>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
-            Doanh thu phí nền tảng
+            Giao dịch hoàn tất
           </h3>
-          <p className="text-2xl font-bold text-gray-900">${(metrics.platformRevenue || 0).toLocaleString()}</p>
+          <p className="text-2xl font-bold text-gray-900">{metrics.completedTransactions || 0}</p>
           <p className="text-xs text-gray-500 mt-2">30 ngày qua</p>
         </div>
 
@@ -112,10 +113,10 @@ export function AdminFinance() {
             </div>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
-            Yêu cầu rút tiền chờ duyệt
+            Thanh toán đang chờ
           </h3>
-          <p className="text-2xl font-bold text-gray-900">${(metrics.pendingPayouts || 0).toLocaleString()}</p>
-          <p className="text-xs text-gray-500 mt-2">Đến các người bán</p>
+          <p className="text-2xl font-bold text-gray-900">{metrics.pendingPayments || 0}</p>
+          <p className="text-xs text-gray-500 mt-2">Đơn chưa hoàn tất thanh toán</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -129,7 +130,7 @@ export function AdminFinance() {
             </span>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">Hoàn tiền</h3>
-          <p className="text-2xl font-bold text-gray-900">${(metrics.refunds || 0).toLocaleString()}</p>
+          <p className="text-2xl font-bold text-gray-900">{formatVND(metrics.refunds || 0)}</p>
           <p className="text-xs text-gray-500 mt-2">30 ngày qua</p>
         </div>
       </div>
@@ -149,7 +150,7 @@ export function AdminFinance() {
               </div>
               <div className="flex items-center">
                 <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
-                <span className="text-sm text-gray-600">Phí nền tảng</span>
+                <span className="text-sm text-gray-600">Hoàn tiền</span>
               </div>
             </div>
           </div>
@@ -163,12 +164,12 @@ export function AdminFinance() {
                   left: 0,
                   bottom: 0
                 }}>
-                
+
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
                   stroke="#e5e7eb" />
-                
+
                 <XAxis
                   dataKey="name"
                   axisLine={false}
@@ -178,7 +179,7 @@ export function AdminFinance() {
                     fontSize: 12
                   }}
                   dy={10} />
-                
+
                 <YAxis
                   yAxisId="left"
                   axisLine={false}
@@ -187,8 +188,8 @@ export function AdminFinance() {
                     fill: '#6b7280',
                     fontSize: 12
                   }}
-                  tickFormatter={(value) => `$${value / 1000}k`} />
-                
+                  tickFormatter={(value) => `${Math.round(value / 1000).toLocaleString("vi-VN")}K`} />
+
                 <YAxis
                   yAxisId="right"
                   orientation="right"
@@ -198,8 +199,8 @@ export function AdminFinance() {
                     fill: '#6b7280',
                     fontSize: 12
                   }}
-                  tickFormatter={(value) => `$${value / 1000}k`} />
-                
+                  tickFormatter={(value) => `${Math.round(value / 1000).toLocaleString("vi-VN")}K`} />
+
                 <Tooltip
                   contentStyle={{
                     borderRadius: '12px',
@@ -207,10 +208,10 @@ export function AdminFinance() {
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                   }}
                   formatter={(value: number, name: string) => [
-                  `$${value}`,
-                  name === 'revenue' ? 'Tổng khối lượng' : 'Phí nền tảng']
+                  formatVND(value),
+                  name === 'revenue' ? 'Tổng khối lượng' : 'Hoàn tiền']
                   } />
-                
+
                 <Line
                   yAxisId="left"
                   type="monotone"
@@ -221,18 +222,18 @@ export function AdminFinance() {
                   activeDot={{
                     r: 6
                   }} />
-                
+
                 <Line
                   yAxisId="right"
                   type="monotone"
-                  dataKey="commission"
+                  dataKey="refunds"
                   stroke="#10b981"
                   strokeWidth={3}
                   dot={false}
                   activeDot={{
                     r: 6
                   }} />
-                
+
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -255,7 +256,7 @@ export function AdminFinance() {
                     outerRadius={80}
                     paddingAngle={5}
                     dataKey="value">
-                    
+
                     {paymentMethods.map((entry: any, index: number) =>
                     <Cell key={`cell-${index}`} fill={entry.color} />
                     )}
@@ -267,7 +268,7 @@ export function AdminFinance() {
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                     }}
                     formatter={(value: number) => [`${value}%`, 'Tỷ lệ sử dụng']} />
-                  
+
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -276,7 +277,7 @@ export function AdminFinance() {
               <div
                 key={method.name}
                 className="flex items-center justify-between">
-                
+
                   <div className="flex items-center">
                     <span
                     className="w-3 h-3 rounded-full mr-2"
@@ -311,14 +312,14 @@ export function AdminFinance() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              
+
             </div>
             <div className="relative">
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
                 className="appearance-none bg-white border border-gray-300 text-gray-700 py-2 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-                
+
                 <option value="all">Tất cả loại</option>
                 <option value="payment">Thanh toán</option>
                 <option value="payout">Rút tiền</option>
@@ -349,9 +350,6 @@ export function AdminFinance() {
                   Số tiền
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Phí
-                </th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Thực nhận
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -365,7 +363,7 @@ export function AdminFinance() {
               <tr
                 key={trx._id}
                 className="hover:bg-gray-50 transition-colors">
-                
+
                     <td className="p-4">
                       <div className="text-sm font-medium text-gray-900">
                         {trx._id}
@@ -375,7 +373,7 @@ export function AdminFinance() {
                     <td className="p-4">
                       <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${trx.type === 'payment' ? 'bg-blue-100 text-blue-800' : trx.type === 'payout' ? 'bg-purple-100 text-purple-800' : 'bg-red-100 text-red-800'}`}>
-                    
+
                         {trx.type === 'payment' ? 'Thanh toán' : trx.type === 'payout' ? 'Rút tiền' : 'Hoàn tiền'}
                       </span>
                     </td>
@@ -388,15 +386,10 @@ export function AdminFinance() {
                       </div>
                     </td>
                     <td className="p-4 text-sm font-medium text-gray-900">
-                      ${trx.amount.toFixed(2)}
-                    </td>
-                    <td className="p-4 text-sm text-red-600">
-                      {trx.fee !== 0 ?
-                  `-$${Math.abs(trx.fee).toFixed(2)}` :
-                  '$0.00'}
+                      {formatVND(trx.amount || 0)}
                     </td>
                     <td className="p-4 text-sm font-bold text-gray-900">
-                      ${trx.net.toFixed(2)}
+                      {formatVND(trx.net || 0)}
                     </td>
                     <td className="p-4">
                       <StatusBadge status={trx.status as any} />
@@ -405,7 +398,7 @@ export function AdminFinance() {
               ) :
 
               <tr>
-                  <td colSpan={7} className="p-8 text-center text-gray-500">
+                  <td colSpan={6} className="p-8 text-center text-gray-500">
                     Không tìm thấy giao dịch nào phù hợp với tiêu chí đã chọn.
                   </td>
                 </tr>
@@ -432,13 +425,13 @@ export function AdminFinance() {
               <button
               className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
               disabled>
-              
+
                 Trước
               </button>
               <button
               className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
               disabled>
-              
+
                 Sau
               </button>
             </div>

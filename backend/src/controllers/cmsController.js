@@ -48,11 +48,14 @@ export const getSettings = async (req, res, next) => {
 
 export const updateSettings = async (req, res, next) => {
   try {
+    const payload = { ...req.body };
+    delete payload.currency;
+
     let setting = await Setting.findOne();
     if (!setting) {
-      setting = await Setting.create(req.body);
+      setting = await Setting.create(payload);
     } else {
-      setting = await Setting.findByIdAndUpdate(setting._id, req.body, { new: true });
+      setting = await Setting.findByIdAndUpdate(setting._id, payload, { new: true });
     }
     res.json(setting);
   } catch(err) { next(err); }
