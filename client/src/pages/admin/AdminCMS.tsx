@@ -132,7 +132,7 @@ export function AdminCMS() {
         body: formData
       });
       const data = await res.json();
-      
+
       if (target === 'banner') {
         setBannerForm(prev => ({ ...prev, image: data.url }));
       } else if (target === 'category' && categoryId) {
@@ -155,10 +155,10 @@ export function AdminCMS() {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      const url = editingBanner 
+      const url = editingBanner
         ? `${import.meta.env.VITE_API_URL}/api/cms/banners/${editingBanner._id}`
         : `${import.meta.env.VITE_API_URL}/api/cms/banners`;
-      
+
       const res = await fetch(url, {
         method: editingBanner ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -205,7 +205,7 @@ export function AdminCMS() {
         primaryLogo: settings.primaryLogo || '',
         favicon: settings.favicon || '',
       };
-      
+
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/cms/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -222,7 +222,7 @@ export function AdminCMS() {
       sidebarItems={ADMIN_SIDEBAR}
       title="Quản lý giao diện & cài đặt"
       role="Admin">
-      
+
       {/* Tabs */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-8 shadow-sm">
         <div className="flex overflow-x-auto border-b border-gray-200 scrollbar-hide">
@@ -231,7 +231,7 @@ export function AdminCMS() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`whitespace-nowrap py-4 px-6 font-medium text-sm transition-colors relative ${activeTab === tab.id ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
-            
+
               {tab.label}
               {activeTab === tab.id &&
             <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
@@ -247,7 +247,7 @@ export function AdminCMS() {
             <h3 className="text-lg font-semibold text-gray-900">
               Quản lý Banner
             </h3>
-            <button 
+            <button
               onClick={() => handleOpenBannerModal()}
               className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-medium"
             >
@@ -269,7 +269,7 @@ export function AdminCMS() {
             <div
               key={banner._id}
               className="p-4 flex items-center grid grid-cols-12 gap-4 hover:bg-gray-50 transition-colors group">
-              
+
                   <div className="col-span-1 flex items-center">
                     <button className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing">
                       <GripVerticalIcon className="h-5 w-5" />
@@ -285,7 +285,7 @@ export function AdminCMS() {
                     src={banner.image}
                     alt={banner.title}
                     className="w-full h-full object-cover" />
-                  
+
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-gray-900 truncate">
@@ -301,7 +301,7 @@ export function AdminCMS() {
                   handleToggleStatus(banner._id, banner.status)
                   }
                   className="focus:outline-none">
-                  
+
                       <StatusBadge status={banner.status as any} />
                     </button>
                   </div>
@@ -370,9 +370,9 @@ export function AdminCMS() {
                       <label className="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors shadow-sm">
                         <ImagePlusIcon className="h-3 w-3 mr-2" />
                         Change Image
-                        <input 
-                          type="file" 
-                          className="hidden" 
+                        <input
+                          type="file"
+                          className="hidden"
                           onChange={(e) => handleUploadImage(e, 'category', cat._id)}
                           accept="image/*"
                         />
@@ -404,7 +404,7 @@ export function AdminCMS() {
                   id="siteName"
                   defaultValue={settings.siteName || "ShopHub"}
                   className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
-                
+
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -415,7 +415,7 @@ export function AdminCMS() {
                   id="supportEmail"
                   defaultValue={settings.supportEmail || "support@shophub.com"}
                   className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
-                
+
                 </div>
               </div>
 
@@ -428,7 +428,7 @@ export function AdminCMS() {
                 id="siteDescription"
                 defaultValue={settings.siteDescription || "The premier multi-vendor marketplace for all your shopping needs."}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y" />
-              
+
               </div>
             </div>
 
@@ -484,7 +484,7 @@ export function AdminCMS() {
               <button
               type="submit"
               className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors">
-              
+
                 Lưu cài đặt
               </button>
             </div>
@@ -498,7 +498,7 @@ export function AdminCMS() {
           <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full flex flex-col animate-in fade-in zoom-in duration-200 relative overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <h3 className="text-xl font-bold text-gray-900">{editingBanner ? 'Chỉnh sửa Banner' : 'Thêm Banner mới'}</h3>
-              <button 
+              <button
                 onClick={() => setIsBannerModalOpen(false)}
                 className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
               >
@@ -510,9 +510,9 @@ export function AdminCMS() {
                <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Tiêu đề Banner</label>
-                    <input 
-                      type="text" 
-                      required 
+                    <input
+                      type="text"
+                      required
                       value={bannerForm.title}
                       onChange={(e) => setBannerForm({...bannerForm, title: e.target.value})}
                       className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -520,8 +520,8 @@ export function AdminCMS() {
                   </div>
                   <div className="col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Tiêu đề phụ</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={bannerForm.subtitle}
                       onChange={(e) => setBannerForm({...bannerForm, subtitle: e.target.value})}
                       className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -529,8 +529,8 @@ export function AdminCMS() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Thứ tự hiển thị</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       value={bannerForm.order}
                       onChange={(e) => setBannerForm({...bannerForm, order: Number(e.target.value)})}
                       className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -556,8 +556,8 @@ export function AdminCMS() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Văn bản CTA</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={bannerForm.cta}
                       onChange={(e) => setBannerForm({...bannerForm, cta: e.target.value})}
                       className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -565,8 +565,8 @@ export function AdminCMS() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Đường dẫn liên kết</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={bannerForm.link}
                       onChange={(e) => setBannerForm({...bannerForm, link: e.target.value})}
                       className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -575,15 +575,15 @@ export function AdminCMS() {
                </div>
 
                <div className="pt-4 flex justify-end gap-3 border-t border-gray-100">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setIsBannerModalOpen(false)}
                     className="px-6 py-2 border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50"
                   >
                     Hủy
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     disabled={loading || !bannerForm.image}
                     className="px-8 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                   >

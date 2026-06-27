@@ -327,7 +327,7 @@ export function AdminDashboard() {
           </h3>
           <p className="text-2xl font-bold text-gray-900">{formatVND(stats.revenue || 0)}</p>
           <p className="text-xs text-gray-500 mt-2">
-            Tháng này (5% hoa hồng)
+            Tháng này
           </p>
         </div>
 

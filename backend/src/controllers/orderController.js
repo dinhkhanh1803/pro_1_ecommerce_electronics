@@ -3,6 +3,10 @@ import Order from "../models/Order.js";
 import Coupon from "../models/Coupon.js";
 import Product from "../models/Product.js";
 import { applyOrderInventory, restoreOrderInventory } from "../utils/orderInventory.js";
+import {
+  recordOrderPaymentTransaction,
+  recordOrderRefundTransaction,
+} from "../utils/finance.js";
 
 const getErrorStatusCode = (err) => {
   if (err?.statusCode || err?.status) return err.statusCode || err.status;
@@ -69,7 +73,7 @@ export const getSellerOrders = async (req, res, next) => {
         const customers = await mongoose.model("User").find({
           name: { $regex: search, $options: "i" }
         }).select("_id");
-        
+
         const customerIds = customers.map(c => c._id);
         query.customer = { $in: customerIds };
       }
@@ -103,7 +107,7 @@ export const getOrderById = async (req, res, next) => {
       .populate("products.product", "name images")
       .populate("seller", "name email role")
       .populate("shipper", "name email phone role");
-      
+
     if (!order) return res.status(404).json({ message: "Order not found" });
 
     // Ensure customer, admin, shipper, seller or warehouse
@@ -112,7 +116,7 @@ export const getOrderById = async (req, res, next) => {
         req.user.role !== 'warehouse' && req.user.role !== 'seller') {
       return res.status(403).json({ message: "Not authorized to view this order" });
     }
-    
+
     res.json(order);
   } catch (err) { next(err); }
 };
@@ -161,7 +165,7 @@ export const createOrder = async (req, res, next) => {
         price: Number(item.price) || dbProduct.price + (Number(dbProduct.variants[variantIndex].priceAdd) || 0),
       });
     }
-    
+
     // Find active user with role "seller", fallback to any seller
     const User = mongoose.model("User");
     let sellerUser = await User.findOne({ role: "seller", status: "active" });
@@ -213,6 +217,8 @@ export const updateOrderStatus = async (req, res, next) => {
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
+
+    const previousPaymentStatus = order.paymentStatus;
 
     // Handle orderStatus changes
     if (status) {
@@ -280,13 +286,19 @@ export const updateOrderStatus = async (req, res, next) => {
     }
 
     await order.save();
-    
+    if (order.paymentStatus === "completed") {
+      await recordOrderPaymentTransaction(order);
+    }
+    if (order.paymentStatus === "refunded" || (previousPaymentStatus === "completed" && ["cancelled", "returned"].includes(order.orderStatus))) {
+      await recordOrderRefundTransaction(order);
+    }
+
     const populatedOrder = await Order.findById(order._id)
       .populate("customer", "name email phone")
       .populate("products.product", "name images")
       .populate("seller", "name email role")
       .populate("shipper", "name email phone role");
-      
+
     res.json(populatedOrder);
   } catch (err) { next(err); }
 };
@@ -319,6 +331,7 @@ export const cancelOrder = async (req, res, next) => {
        return res.status(400).json({ message: "Cannot cancel order at this stage" });
     }
 
+    const previousPaymentStatus = order.paymentStatus;
     order.orderStatus = 'cancelled';
     await restoreOrderInventory(order);
     if (order.coupon) {
@@ -334,6 +347,9 @@ export const cancelOrder = async (req, res, next) => {
       }
     }
     await order.save();
+    if (previousPaymentStatus === 'completed') {
+      await recordOrderRefundTransaction(order);
+    }
     res.json(order);
   } catch (err) { next(err); }
 };
@@ -345,10 +361,19 @@ export const remitCodOrders = async (req, res, next) => {
     if (!orderIds || !Array.isArray(orderIds)) {
        return res.status(400).json({ message: "Invalid orderIds array" });
     }
-    await Order.updateMany(
-      { _id: { $in: orderIds }, paymentMethod: 'COD', orderStatus: 'delivered' },
-      { $set: { codRemitted: true, paymentStatus: 'completed' } }
-    );
-    res.json({ message: "COD orders remitted successfully" });
+    const orders = await Order.find({
+      _id: { $in: orderIds },
+      paymentMethod: 'COD',
+      orderStatus: 'delivered',
+    });
+
+    for (const order of orders) {
+      order.codRemitted = true;
+      order.paymentStatus = 'completed';
+      await order.save();
+      await recordOrderPaymentTransaction(order);
+    }
+
+    res.json({ message: "COD orders remitted successfully", updatedCount: orders.length });
   } catch(err) { next(err); }
 };

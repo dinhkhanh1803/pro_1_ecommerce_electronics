@@ -1,42 +1,81 @@
+import Order from "../models/Order.js";
 import Transaction from "../models/Transaction.js";
+
+const paymentMethodColors = ["#6366f1", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4"];
 
 export const getFinanceOverview = async (req, res, next) => {
   try {
-    // Hardcoded mock revenue data tailored for chart format
-    const revenueData = [
-      { name: "Jan", revenue: 40000, commission: 2000 },
-      { name: "Feb", revenue: 30000, commission: 1500 },
-      { name: "Mar", revenue: 20000, commission: 1000 },
-      { name: "Apr", revenue: 27800, commission: 1390 },
-      { name: "May", revenue: 18900, commission: 945 },
-      { name: "Jun", revenue: 23900, commission: 1195 },
-      { name: "Jul", revenue: 34900, commission: 1745 }
-    ];
-    const metrics = {
-      totalVolume: 2400000,
-      platformRevenue: 120000,
-      pendingPayouts: 45200,
-      refunds: 3400
-    };
-    // Mock Payment Methods mapping 
-    const paymentMethods = [
-      { name: "Credit Card", value: 45, color: "#6366f1" },
-      { name: "PayPal", value: 25, color: "#10b981" },
-      { name: "COD", value: 20, color: "#f59e0b" },
-      { name: "Bank Transfer", value: 10, color: "#8b5cf6" }
-    ];
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 29);
+    startDate.setHours(0, 0, 0, 0);
 
-    res.json({ revenueData, metrics, paymentMethods });
+    const transactions = await Transaction.find({ createdAt: { $gte: startDate } });
+    const paymentTransactions = transactions.filter((trx) => trx.type === "payment" && trx.status === "completed");
+    const refundTransactions = transactions.filter((trx) => trx.type === "refund" && trx.status === "completed");
+
+    const dailyMap = {};
+    for (let i = 0; i < 30; i += 1) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      const label = date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+      dailyMap[label] = { name: label, revenue: 0, refunds: 0 };
+    }
+
+    paymentTransactions.forEach((trx) => {
+      const label = new Date(trx.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+      if (dailyMap[label]) dailyMap[label].revenue += trx.amount || 0;
+    });
+
+    refundTransactions.forEach((trx) => {
+      const label = new Date(trx.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+      if (dailyMap[label]) dailyMap[label].refunds += trx.amount || 0;
+    });
+
+    const paymentMethodStats = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate },
+          paymentStatus: "completed",
+        },
+      },
+      { $group: { _id: "$paymentMethod", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]);
+
+    const totalPaymentMethodCount = paymentMethodStats.reduce((sum, item) => sum + item.count, 0);
+    const paymentMethods = paymentMethodStats.map((item, index) => ({
+      name: item._id || "Unknown",
+      value: totalPaymentMethodCount > 0 ? Math.round((item.count / totalPaymentMethodCount) * 100) : 0,
+      color: paymentMethodColors[index % paymentMethodColors.length],
+    }));
+
+    const pendingPayments = await Order.countDocuments({
+      createdAt: { $gte: startDate },
+      paymentStatus: "pending",
+    });
+
+    const totalVolume = paymentTransactions.reduce((sum, trx) => sum + (trx.amount || 0), 0);
+    const refunds = refundTransactions.reduce((sum, trx) => sum + (trx.amount || 0), 0);
+
+    res.json({
+      revenueData: Object.values(dailyMap),
+      metrics: {
+        totalVolume,
+        completedTransactions: paymentTransactions.length,
+        pendingPayments,
+        refunds,
+      },
+      paymentMethods,
+    });
   } catch (err) { next(err); }
 };
 
 export const getTransactions = async (req, res, next) => {
   try {
-    const { type, search } = req.query;
+    const { type } = req.query;
     let filter = {};
     if (type && type !== "all") filter.type = type;
-    
-    // In a real scenario we'd query by populated fromUser/toUser for search, but for now we return all matching types
+
     const transactions = await Transaction.find(filter)
       .populate("fromUser", "name email")
       .populate("toUser", "name email")

@@ -30,10 +30,8 @@ export const getDashboardStats = async (req, res, next) => {
     const pendingProducts = await Product.countDocuments({ status: "pending", ...productFilter });
     const activeProducts = await Product.countDocuments({ status: "active", ...productFilter });
     const totalOrders = await Order.countDocuments(orderFilter);
-    
-    // Revenue logic: 5% of all delivered orders in the range
     const deliveredOrders = await Order.find({ orderStatus: "delivered", ...orderFilter });
-    const revenue = deliveredOrders.reduce((sum, order) => sum + (order.totalAmount * 0.05), 0);
+    const revenue = deliveredOrders.reduce((sum, order) => sum + (Number(order.totalAmount) || 0), 0);
 
     // Trend mapping based on filter dates
     let trendStart = new Date();
@@ -50,7 +48,7 @@ export const getDashboardStats = async (req, res, next) => {
     }
 
     const ordersInTrend = await Order.find({ createdAt: { $gte: trendStart, $lte: trendEnd } });
-    
+
     const revenueDataMap = {};
     const ordersDataMap = {};
 
@@ -70,7 +68,7 @@ export const getDashboardStats = async (req, res, next) => {
       if (ordersDataMap[label] !== undefined) {
         ordersDataMap[label] += 1;
         if (o.orderStatus === 'delivered') {
-          revenueDataMap[label] += (o.totalAmount * 0.05);
+          revenueDataMap[label] += Number(o.totalAmount) || 0;
         }
       }
     });
@@ -418,5 +416,3 @@ export const getNotifications = async (req, res, next) => {
     next(error);
   }
 };
-
-
