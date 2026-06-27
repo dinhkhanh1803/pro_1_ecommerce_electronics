@@ -53,6 +53,7 @@ export function ProductListing() {
         let filtered = Array.isArray(data) ? data : [];
         if (priceMin) filtered = filtered.filter((p: any) => p.price >= Number(priceMin));
         if (priceMax) filtered = filtered.filter((p: any) => p.price <= Number(priceMax));
+        if (selectedRating) filtered = filtered.filter((p: any) => Number(p.rating ?? 5) >= selectedRating);
         if (sortBy === "price-low") filtered.sort((a: any, b: any) => a.price - b.price);
         if (sortBy === "price-high") filtered.sort((a: any, b: any) => b.price - a.price);
         if (sortBy === "newest") filtered.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -62,7 +63,7 @@ export function ProductListing() {
         setCurrentPage(1);
       })
       .catch(() => setLoading(false));
-  }, [selectedCategory, priceMin, priceMax, sortBy]);
+  }, [selectedCategory, priceMin, priceMax, selectedRating, sortBy]);
 
   const handleCategoryClick = (catId: string) => {
     if (catId === selectedCategory) {
