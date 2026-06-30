@@ -1,6 +1,7 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import {
+  clearChatbotHistory,
   getChatbotHistory,
   handoffChatbot,
   replyToChatbot,
@@ -24,6 +25,7 @@ const optionalProtect = async (req, res, next) => {
 };
 
 router.get("/history", optionalProtect, getChatbotHistory);
+router.delete("/history", optionalProtect, clearChatbotHistory);
 router.post("/handoff", optionalProtect, handoffChatbot);
 router.post("/", optionalProtect, replyToChatbot);
 

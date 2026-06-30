@@ -44,6 +44,7 @@ import { WarehouseDashboard } from "./pages/warehouse/WarehouseDashboard";
 import { SalesChatbot } from "./components/SalesChatbot";
 
 const DASHBOARD_PATH_PREFIXES = ["/admin", "/seller", "/warehouse", "/shipper"];
+const AUTH_PATH_PREFIXES = ["/login", "/register", "/forgot-password", "/reset-password", "/oauth-success"];
 
 function CustomerChatbotMount() {
   const { pathname } = useLocation();
@@ -51,7 +52,11 @@ function CustomerChatbotMount() {
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 
-  return isDashboardPath ? null : <SalesChatbot />;
+  const isAuthPath = AUTH_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+
+  return isDashboardPath || isAuthPath ? null : <SalesChatbot />;
 }
 
 export function App() {
