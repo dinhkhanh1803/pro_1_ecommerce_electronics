@@ -21,12 +21,338 @@ const orderStatusLabels: Record<string, string> = {
   returned: "Trả hàng",
 };
 
+type StockSlipForm = {
+  issueNumber: string;
+  issueDate: string;
+  receiverName: string;
+  receiverAddress: string;
+  exportReason: string;
+};
+
+const formatDateForInput = (date = new Date()) => {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 10);
+};
+
+const createStockSlipForm = (order?: any): StockSlipForm => {
+  const orderCode = order?._id ? order._id.slice(-8).toUpperCase() : "";
+
+  return {
+    issueNumber: orderCode
+      ? `PXK-${new Date().getFullYear()}-${orderCode}`
+      : `PXK-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`,
+    issueDate: formatDateForInput(),
+    receiverName: order?.customer?.name || "",
+    receiverAddress: order?.shippingAddress || "",
+    exportReason: orderCode
+      ? `Xuất kho giao hàng theo đơn #${orderCode}`
+      : "Xuất kho giao hàng",
+  };
+};
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+    value || 0,
+  );
+
+const escapeHtml = (value: unknown) =>
+  String(value ?? "").replace(/[&<>"']/g, (char) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
+    };
+    return entities[char] || char;
+  });
+
+const capitalizeFirst = (value: string) =>
+  value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+
+const readVietnameseTriple = (value: number, readFull: boolean) => {
+  const digits = [
+    "không",
+    "một",
+    "hai",
+    "ba",
+    "bốn",
+    "năm",
+    "sáu",
+    "bảy",
+    "tám",
+    "chín",
+  ];
+  const hundred = Math.floor(value / 100);
+  const ten = Math.floor((value % 100) / 10);
+  const unit = value % 10;
+  const parts: string[] = [];
+
+  if (hundred > 0 || readFull) {
+    parts.push(digits[hundred], "trăm");
+    if (ten === 0 && unit > 0) parts.push("lẻ");
+  }
+
+  if (ten > 1) {
+    parts.push(digits[ten], "mươi");
+    if (unit === 1) parts.push("mốt");
+    else if (unit === 5) parts.push("lăm");
+    else if (unit > 0) parts.push(digits[unit]);
+  } else if (ten === 1) {
+    parts.push("mười");
+    if (unit === 5) parts.push("lăm");
+    else if (unit > 0) parts.push(digits[unit]);
+  } else if (unit > 0 && !readFull) {
+    parts.push(digits[unit]);
+  } else if (unit > 0) {
+    parts.push(digits[unit]);
+  }
+
+  return parts.join(" ");
+};
+
+const amountToVietnameseWords = (amount: number) => {
+  const units = ["", "nghìn", "triệu", "tỷ", "nghìn tỷ", "triệu tỷ"];
+  let remaining = Math.round(Math.abs(Number(amount) || 0));
+  if (remaining === 0) return "Không đồng";
+
+  const groups: number[] = [];
+  while (remaining > 0) {
+    groups.push(remaining % 1000);
+    remaining = Math.floor(remaining / 1000);
+  }
+
+  const words: string[] = [];
+  for (let index = groups.length - 1; index >= 0; index -= 1) {
+    const group = groups[index];
+    if (group === 0) continue;
+
+    const hasHigherGroup = index < groups.length - 1;
+    const groupWords = readVietnameseTriple(group, hasHigherGroup && group < 100);
+    words.push(groupWords);
+    if (units[index]) words.push(units[index]);
+  }
+
+  return `${capitalizeFirst(words.join(" ").replace(/\s+/g, " ").trim())} đồng`;
+};
+
+const formatVietnameseDate = (dateValue: string) => {
+  const [year, month, day] = dateValue.split("-");
+  if (!year || !month || !day) return "ngày ... tháng ... năm ...";
+  return `ngày ${day} tháng ${month} năm ${year}`;
+};
+
+const loadHtml2Pdf = () =>
+  new Promise<any>((resolve, reject) => {
+    if ((window as any).html2pdf) {
+      resolve((window as any).html2pdf);
+      return;
+    }
+
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      'script[data-html2pdf="true"]',
+    );
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve((window as any).html2pdf));
+      existingScript.addEventListener("error", reject);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+    script.dataset.html2pdf = "true";
+    script.onload = () => resolve((window as any).html2pdf);
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+
+const buildStockSlipHtml = ({
+  order,
+  form,
+  warehouseName,
+  siteName,
+}: {
+  order: any;
+  form: StockSlipForm;
+  warehouseName: string;
+  siteName: string;
+}) => {
+  const products = Array.isArray(order.products) ? order.products : [];
+  const calculatedTotal = products.reduce(
+    (sum: number, item: any) =>
+      sum + Number(item.price || 0) * Number(item.quantity || 0),
+    0,
+  );
+  const totalAmount = Number(order.totalAmount || calculatedTotal || 0);
+  const productRows =
+    products
+      .map((item: any, index: number) => {
+        const quantity = Number(item.quantity || 0);
+        const price = Number(item.price || 0);
+        const lineTotal = quantity * price;
+        const productName = item.product?.name || "Sản phẩm";
+        const variantName = item.variantName && item.variantName !== "Default"
+          ? item.variantName
+          : "";
+
+        return `
+          <tr>
+            <td>${index + 1}</td>
+            <td style="text-align: left;">${escapeHtml(productName)}</td>
+            <td>${escapeHtml(variantName || "-")}</td>
+            <td>Sản phẩm</td>
+            <td>${quantity}</td>
+            <td style="text-align: right;">${formatCurrency(price)}</td>
+            <td style="text-align: right;">${formatCurrency(lineTotal)}</td>
+          </tr>
+        `;
+      })
+      .join("") ||
+    `<tr><td colspan="7" style="padding: 16px;">Không có dữ liệu sản phẩm</td></tr>`;
+
+  return `
+    <div style="width: 760px; padding: 32px; color: #111827; background: #ffffff; font-family: Arial, 'Times New Roman', sans-serif; font-size: 13px; line-height: 1.45;">
+      <div style="display: flex; justify-content: space-between; gap: 24px; margin-bottom: 18px;">
+        <div>
+          <div style="font-weight: 700; text-transform: uppercase;">${escapeHtml(siteName)}</div>
+          <div>Đơn vị bộ phận: <strong>Quản lý kho</strong></div>
+        </div>
+        <div style="text-align: right;">
+          <div>Số: <strong>${escapeHtml(form.issueNumber)}</strong></div>
+          <div>${formatVietnameseDate(form.issueDate)}</div>
+        </div>
+      </div>
+
+      <h1 style="margin: 18px 0 22px; text-align: center; font-size: 24px; letter-spacing: 0; text-transform: uppercase;">Phiếu xuất kho</h1>
+
+      <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 18px;">
+        <div>Họ và tên người nhận hàng: <strong>${escapeHtml(form.receiverName)}</strong></div>
+        <div>Địa chỉ: <strong>${escapeHtml(form.receiverAddress)}</strong></div>
+        <div>Lý do xuất: <strong>${escapeHtml(form.exportReason)}</strong></div>
+        <div>Mã đơn hàng: <strong>#${escapeHtml(order._id || "")}</strong></div>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; margin-top: 12px;">
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Tên sản phẩm</th>
+            <th>Biến thể</th>
+            <th>ĐVT</th>
+            <th>Số lượng</th>
+            <th>Đơn giá</th>
+            <th>Thành tiền</th>
+          </tr>
+        </thead>
+        <tbody>${productRows}</tbody>
+      </table>
+
+      <div style="margin-top: 16px; display: flex; justify-content: flex-end;">
+        <div style="min-width: 280px; border-top: 1px solid #111827; padding-top: 8px; text-align: right; font-size: 15px; font-weight: 700;">
+          Tổng cộng: ${formatCurrency(totalAmount)}
+        </div>
+      </div>
+      <div style="margin-top: 10px; font-style: italic;">Tổng số tiền bằng chữ: ${escapeHtml(amountToVietnameseWords(totalAmount))}</div>
+
+      <div style="margin-top: 42px; display: grid; grid-template-columns: 1fr 1fr; gap: 36px; text-align: center;">
+        <div>
+          <div style="font-weight: 700;">Người nhận hàng</div>
+          <div style="font-style: italic;">(Ký, họ tên)</div>
+          <div style="height: 72px;"></div>
+          <div style="font-weight: 700;">${escapeHtml(form.receiverName)}</div>
+        </div>
+        <div>
+          <div>${formatVietnameseDate(form.issueDate)}</div>
+          <div style="font-weight: 700; margin-top: 6px;">Người lập phiếu</div>
+          <div style="font-style: italic;">(Ký, họ tên)</div>
+          <div style="height: 72px;"></div>
+          <div style="font-weight: 700;">${escapeHtml(warehouseName)}</div>
+        </div>
+      </div>
+
+      <style>
+        th, td { border: 1px solid #111827; padding: 8px 7px; text-align: center; vertical-align: top; }
+        th { background: #f3f4f6; font-weight: 700; }
+      </style>
+    </div>
+  `;
+};
+
+const downloadStockSlipPdf = async ({
+  order,
+  form,
+  warehouseName,
+  siteName,
+}: {
+  order: any;
+  form: StockSlipForm;
+  warehouseName: string;
+  siteName: string;
+}) => {
+  const html2pdf = await loadHtml2Pdf();
+  const wrapper = document.createElement("div");
+  wrapper.setAttribute("aria-hidden", "true");
+  wrapper.style.position = "fixed";
+  wrapper.style.left = "0";
+  wrapper.style.top = "0";
+  wrapper.style.width = "824px";
+  wrapper.style.maxWidth = "824px";
+  wrapper.style.background = "#ffffff";
+  wrapper.style.pointerEvents = "none";
+  wrapper.style.zIndex = "2147483647";
+  wrapper.style.opacity = "1";
+  wrapper.innerHTML = buildStockSlipHtml({ order, form, warehouseName, siteName });
+  document.body.appendChild(wrapper);
+
+  try {
+    const slipElement = wrapper.firstElementChild as HTMLElement | null;
+    if (!slipElement) {
+      throw new Error("Không thể tạo nội dung phiếu xuất kho.");
+    }
+
+    await new Promise<void>((resolve) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => resolve());
+      });
+    });
+
+    const safeIssueNumber = (form.issueNumber || order._id || "phieu-xuat-kho")
+      .replace(/[\\/:*?"<>|]/g, "_")
+      .replace(/\s+/g, "_");
+    const filename = `Phieu_xuat_kho_${safeIssueNumber}.pdf`;
+    const pdfBlob = await html2pdf()
+      .from(slipElement)
+      .set({
+        margin: 8,
+        filename,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      })
+      .outputPdf("blob");
+    const url = window.URL.createObjectURL(pdfBlob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    window.URL.revokeObjectURL(url);
+  } finally {
+    document.body.removeChild(wrapper);
+  }
+};
 // Replaced mock data with real data fetch
 
 export function SellerOrders() {
   const { settings } = useSiteSettings();
   const { user } = useAuth();
   const isWarehouse = user?.role === "warehouse";
+  const canPrintInvoice = user?.role === "seller";
   const sidebarItems = isWarehouse ? WAREHOUSE_SIDEBAR : SELLER_SIDEBAR;
   const roleName = isWarehouse ? "Warehouse" : "Seller";
 
@@ -145,7 +471,46 @@ export function SellerOrders() {
   const [shippers, setShippers] = useState<any[]>([]);
   const [shippingOrderId, setShippingOrderId] = useState<string | null>(null);
   const [selectedShipperId, setSelectedShipperId] = useState<string>("");
+  const [stockSlipForm, setStockSlipForm] = useState<StockSlipForm>(() =>
+    createStockSlipForm(),
+  );
+  const [isExportingStockSlip, setIsExportingStockSlip] = useState(false);
 
+  const shippingOrder = orders.find((order) => order._id === shippingOrderId);
+  const stockSlipTotal =
+    Number(shippingOrder?.totalAmount) ||
+    shippingOrder?.products?.reduce(
+      (sum: number, item: any) =>
+        sum + Number(item.price || 0) * Number(item.quantity || 0),
+      0,
+    ) ||
+    0;
+  const isStockSlipReady =
+    !isWarehouse ||
+    Boolean(
+      stockSlipForm.issueNumber.trim() &&
+        stockSlipForm.issueDate &&
+        stockSlipForm.receiverName.trim() &&
+        stockSlipForm.receiverAddress.trim() &&
+        stockSlipForm.exportReason.trim(),
+    );
+
+  const resetShippingModal = () => {
+    setShippingOrderId(null);
+    setSelectedShipperId("");
+    setStockSlipForm(createStockSlipForm());
+  };
+
+  const openShippingModal = (order: any) => {
+    setShippingOrderId(order._id);
+    setSelectedShipperId("");
+    setStockSlipForm(createStockSlipForm(order));
+    setOpenDropdownId(null);
+  };
+
+  const handleStockSlipChange = (field: keyof StockSlipForm, value: string) => {
+    setStockSlipForm((current) => ({ ...current, [field]: value }));
+  };
   const fetchShippers = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -169,7 +534,9 @@ export function SellerOrders() {
   }, []);
 
   const handleAssignShipperAndShip = async () => {
-    if (!shippingOrderId || !selectedShipperId) return;
+    if (!shippingOrderId || !selectedShipperId || !isStockSlipReady) return;
+
+    setIsExportingStockSlip(true);
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
@@ -189,12 +556,30 @@ export function SellerOrders() {
 
       if (res.ok) {
         const updatedOrder = await res.json();
-        setOrders(
-          orders.map((order) =>
+        setOrders((currentOrders) =>
+          currentOrders.map((order) =>
             order._id === shippingOrderId ? updatedOrder : order,
           ),
         );
-        alert("Đã chuyển giao đơn hàng cho shipper thành công!");
+
+        if (isWarehouse) {
+          try {
+            await downloadStockSlipPdf({
+              order: updatedOrder,
+              form: stockSlipForm,
+              warehouseName: user?.name || "Quản lý kho",
+              siteName: settings.siteName,
+            });
+            alert("Đã xác nhận giao hàng và tải phiếu xuất kho thành công!");
+          } catch (pdfError) {
+            console.error("Error exporting stock slip", pdfError);
+            alert(
+              "Đã chuyển giao đơn hàng cho shipper, nhưng không thể tải phiếu xuất kho.",
+            );
+          }
+        } else {
+          alert("Đã chuyển giao đơn hàng cho shipper thành công!");
+        }
       } else {
         const errorData = await res.json();
         alert(`Lỗi: ${errorData.message}`);
@@ -203,8 +588,8 @@ export function SellerOrders() {
       console.error("Error assigning shipper", error);
       alert("Lỗi kết nối khi cập nhật shipper");
     } finally {
-      setShippingOrderId(null);
-      setSelectedShipperId("");
+      setIsExportingStockSlip(false);
+      resetShippingModal();
     }
   };
 
@@ -529,8 +914,7 @@ export function SellerOrders() {
                                       key={status}
                                       onClick={() => {
                                         if (status === "shipped") {
-                                          setShippingOrderId(order._id);
-                                          setOpenDropdownId(null);
+                                          openShippingModal(order);
                                         } else {
                                           handleStatusChange(order._id, {
                                             status,
@@ -549,13 +933,15 @@ export function SellerOrders() {
                             )}
                           </div>
                         )}
-                        <button
-                          onClick={() => printInvoice(order)}
-                          className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
-                          title="In hóa đơn"
-                        >
-                          <PrinterIcon className="h-5 w-5" />
-                        </button>
+                        {canPrintInvoice && (
+                          <button
+                            onClick={() => printInvoice(order)}
+                            className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
+                            title="In hóa đơn"
+                          >
+                            <PrinterIcon className="h-5 w-5" />
+                          </button>
+                        )}
                         <button
                           onClick={() => setSelectedOrder(order)}
                           className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
@@ -835,12 +1221,14 @@ export function SellerOrders() {
             </div>
 
             <div className="p-6 border-t border-gray-100 bg-gray-50 shrink-0 flex justify-between items-center rounded-b-2xl">
-              <button
-                onClick={() => printInvoice(selectedOrder)}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
-              >
-                In hóa đơn
-              </button>
+              {canPrintInvoice && (
+                <button
+                  onClick={() => printInvoice(selectedOrder)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
+                >
+                  In hóa đơn
+                </button>
+              )}
               <div className="flex items-center space-x-4">
                 <span className="font-medium text-gray-500 uppercase tracking-wider text-sm">
                   Tổng tiền
@@ -859,49 +1247,205 @@ export function SellerOrders() {
 
       {shippingOrderId && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in zoom-in-95">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Chọn nhân viên giao hàng (Shipper)
-            </h3>
-            <p className="text-sm text-gray-500 mb-6">
-              Vui lòng chọn một shipper hoạt động để bàn giao đơn hàng #
-              {shippingOrderId.substring(0, 8).toUpperCase()}.
-            </p>
-
-            <div className="space-y-4 mb-6">
-              <label className="block text-sm font-semibold text-gray-700">
-                Nhân viên giao hàng
-              </label>
-              <select
-                value={selectedShipperId}
-                onChange={(e) => setSelectedShipperId(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-              >
-                <option value="">-- Chọn Shipper --</option>
-                {shippers.map((s) => (
-                  <option key={s._id} value={s._id}>
-                    {s.name} ({s.phone || "Không có SĐT"})
-                  </option>
-                ))}
-              </select>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 animate-in zoom-in-95">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">
+                  Chọn nhân viên giao hàng (Shipper)
+                </h3>
+                <p className="text-sm text-gray-500 mt-2">
+                  Vui lòng chọn một shipper hoạt động để bàn giao đơn hàng #
+                  {shippingOrderId.substring(0, 8).toUpperCase()}.
+                </p>
+              </div>
+              {isWarehouse && (
+                <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 border border-indigo-100">
+                  Kèm phiếu xuất kho
+                </span>
+              )}
             </div>
 
-            <div className="flex justify-end space-x-3">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Nhân viên giao hàng
+                </label>
+                <select
+                  value={selectedShipperId}
+                  onChange={(e) => setSelectedShipperId(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                >
+                  <option value="">-- Chọn Shipper --</option>
+                  {shippers.map((s) => (
+                    <option key={s._id} value={s._id}>
+                      {s.name} ({s.phone || "Không có SĐT"})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {isWarehouse && shippingOrder && (
+                <div className="border-t border-gray-100 pt-5 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div>
+                      <h4 className="text-base font-bold text-gray-900">
+                        Phiếu xuất kho
+                      </h4>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Đơn vị bộ phận: Quản lý kho
+                      </p>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Người lập phiếu: <span className="font-semibold text-gray-700">{user?.name || "Quản lý kho"}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Số phiếu
+                      </label>
+                      <input
+                        type="text"
+                        value={stockSlipForm.issueNumber}
+                        onChange={(e) =>
+                          handleStockSlipChange("issueNumber", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Ngày lập phiếu
+                      </label>
+                      <input
+                        type="date"
+                        value={stockSlipForm.issueDate}
+                        onChange={(e) =>
+                          handleStockSlipChange("issueDate", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Họ và tên người nhận hàng
+                      </label>
+                      <input
+                        type="text"
+                        value={stockSlipForm.receiverName}
+                        onChange={(e) =>
+                          handleStockSlipChange("receiverName", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Địa chỉ
+                      </label>
+                      <input
+                        type="text"
+                        value={stockSlipForm.receiverAddress}
+                        onChange={(e) =>
+                          handleStockSlipChange("receiverAddress", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Lý do xuất
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={stockSlipForm.exportReason}
+                        onChange={(e) =>
+                          handleStockSlipChange("exportReason", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="bg-gray-50 text-gray-500 border-b border-gray-200">
+                          <tr>
+                            <th className="px-3 py-2 font-semibold">STT</th>
+                            <th className="px-3 py-2 font-semibold">Sản phẩm</th>
+                            <th className="px-3 py-2 font-semibold">Biến thể</th>
+                            <th className="px-3 py-2 font-semibold text-center">SL</th>
+                            <th className="px-3 py-2 font-semibold text-right">Đơn giá</th>
+                            <th className="px-3 py-2 font-semibold text-right">Thành tiền</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {shippingOrder.products?.map((item: any, index: number) => {
+                            const quantity = Number(item.quantity || 0);
+                            const price = Number(item.price || 0);
+                            return (
+                              <tr key={`${item.product?._id || index}-${item.variantName || "default"}`}>
+                                <td className="px-3 py-2 text-gray-500">{index + 1}</td>
+                                <td className="px-3 py-2 font-medium text-gray-900">
+                                  {item.product?.name || "Sản phẩm"}
+                                </td>
+                                <td className="px-3 py-2 text-gray-600">
+                                  {item.variantName && item.variantName !== "Default"
+                                    ? item.variantName
+                                    : "-"}
+                                </td>
+                                <td className="px-3 py-2 text-center text-gray-600">
+                                  {quantity}
+                                </td>
+                                <td className="px-3 py-2 text-right text-gray-600">
+                                  {formatCurrency(price)}
+                                </td>
+                                <td className="px-3 py-2 text-right font-semibold text-gray-900">
+                                  {formatCurrency(price * quantity)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Tổng tiền</span>
+                      <span className="font-bold text-gray-900">
+                        {formatCurrency(stockSlipTotal)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Tổng số tiền bằng chữ: <span className="font-semibold text-gray-900">{amountToVietnameseWords(stockSlipTotal)}</span>
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6 pt-5 border-t border-gray-100">
               <button
-                onClick={() => {
-                  setShippingOrderId(null);
-                  setSelectedShipperId("");
-                }}
-                className="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 text-sm transition-colors"
+                onClick={resetShippingModal}
+                disabled={isExportingStockSlip}
+                className="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50 text-sm transition-colors"
               >
                 Hủy
               </button>
               <button
                 onClick={handleAssignShipperAndShip}
-                disabled={!selectedShipperId}
-                className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 disabled:opacity-50 text-sm transition-all shadow-md active:scale-95"
+                disabled={!selectedShipperId || !isStockSlipReady || isExportingStockSlip}
+                className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-all shadow-md active:scale-95"
               >
-                Xác nhận & Giao hàng
+                {isExportingStockSlip
+                  ? "Đang xử lý..."
+                  : isWarehouse
+                    ? "Xác nhận giao hàng & Xuất phiếu"
+                    : "Xác nhận & Giao hàng"}
               </button>
             </div>
           </div>
