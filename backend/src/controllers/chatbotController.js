@@ -8,6 +8,7 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import Review from "../models/Review.js";
 import User from "../models/User.js";
+import { getSiteIntelligenceAnswer } from "../services/chatbotSiteKnowledge.js";
 
 const STOP_WORDS = new Set([
   "toi",
@@ -1609,20 +1610,23 @@ export const replyToChatbot = async (req, res, next) => {
     const wantsCoupons = isCouponQuestion(message, normalizedMessage);
 
     if (isHelpQuestion(normalizedMessage)) {
-      const helpAnswer = getHelpAnswer();
+      const helpAnswer =
+        (await getSiteIntelligenceAnswer({ message, normalizedMessage, user: req.user })) || getHelpAnswer();
       await safeLog({
         sessionId,
         user: req.user,
         role: "bot",
         content: helpAnswer.reply,
-        intent: "help",
+        intent: helpAnswer.intent || "help",
+        metadata: helpAnswer.metadata || {},
       });
       return res.json({
         sessionId,
-        intent: "help",
+        intent: helpAnswer.intent || "help",
+        action: helpAnswer.action,
         reply: helpAnswer.reply,
-        products: [],
-        coupons: [],
+        products: helpAnswer.products || [],
+        coupons: helpAnswer.coupons || [],
         quickReplies: helpAnswer.quickReplies,
       });
     }
@@ -1725,6 +1729,29 @@ export const replyToChatbot = async (req, res, next) => {
       });
     }
 
+    const siteIntelligenceAnswer = await getSiteIntelligenceAnswer({ message, normalizedMessage, user: req.user });
+    if (siteIntelligenceAnswer) {
+      await safeLog({
+        sessionId,
+        user: req.user,
+        role: "bot",
+        content: siteIntelligenceAnswer.reply,
+        intent: siteIntelligenceAnswer.intent,
+        metadata: {
+          ...(siteIntelligenceAnswer.metadata || {}),
+          action: siteIntelligenceAnswer.action,
+        },
+      });
+      return res.json({
+        sessionId,
+        intent: siteIntelligenceAnswer.intent,
+        action: siteIntelligenceAnswer.action,
+        reply: siteIntelligenceAnswer.reply,
+        products: siteIntelligenceAnswer.products || [],
+        coupons: siteIntelligenceAnswer.coupons || [],
+        quickReplies: siteIntelligenceAnswer.quickReplies,
+      });
+    }
     const systemGuideAnswer = getSystemGuideAnswer(normalizedMessage);
     if (systemGuideAnswer) {
       await safeLog({
@@ -1978,7 +2005,7 @@ export const handoffChatbot = async (req, res, next) => {
     await Message.create({
       sender: req.user._id,
       receiver: staff._id,
-      content: "Khách cần tư vấn từ chatbot.",
+      content,
     });
 
     const reply = `Mình đã chuyển nội dung cho ${staff.name}. Bạn có thể mở hộp thư để tiếp tục trao đổi trực tiếp.`;
