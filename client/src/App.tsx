@@ -28,6 +28,7 @@ import { SellerPromotions } from "./pages/seller/SellerPromotions";
 // Admin Pages
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { AdminCategories } from "./pages/admin/AdminCategories";
+import { AdminCategoryForm } from "./pages/admin/AdminCategoryForm";
 import { AdminUsers } from "./pages/admin/AdminUsers";
 import { AdminOrders } from "./pages/admin/AdminOrders";
 import { AdminCMS } from "./pages/admin/AdminCMS";
@@ -103,6 +104,8 @@ export function App() {
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/categories" element={<AdminCategories />} />
+              <Route path="/admin/categories/new" element={<AdminCategoryForm />} />
+              <Route path="/admin/categories/:id/edit" element={<AdminCategoryForm />} />
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/products" element={<SellerProducts />} />
               <Route path="/admin/products/new" element={<SellerProductForm />} />

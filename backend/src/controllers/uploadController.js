@@ -88,3 +88,45 @@ export const uploadMessageImage = (req, res) => {
       res.status(500).json({ message: "Upload ảnh thất bại", error: error.message });
     });
 };
+
+/**
+ * Upload one category image to Cloudinary.
+ * Route: POST /api/categories/upload-image
+ * Requires: admin JWT + multer (upload.single("image"))
+ */
+export const uploadCategoryImage = async (req, res, next) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "Không có file ảnh được gửi lên" });
+  }
+
+  try {
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: "ecommerce/categories",
+          resource_type: "image",
+          transformation: [
+            { width: 1600, height: 1000, crop: "limit" },
+            { quality: "auto", fetch_format: "auto" },
+          ],
+        },
+        (error, uploadedImage) => {
+          if (error) return reject(error);
+          resolve(uploadedImage);
+        },
+      );
+
+      streamifier.createReadStream(req.file.buffer).pipe(stream);
+    });
+
+    return res.status(200).json({
+      url: result.secure_url,
+      public_id: result.public_id,
+    });
+  } catch (error) {
+    console.error("Category image upload error:", error);
+    const uploadError = new Error("Upload ảnh danh mục thất bại");
+    uploadError.statusCode = 502;
+    return next(uploadError);
+  }
+};

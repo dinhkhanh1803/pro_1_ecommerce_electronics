@@ -3,7 +3,6 @@ import { DashboardLayout } from '../../components/DashboardLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useSiteSettings } from '../../context/SiteSettingsContext';
 import {
-  PackageIcon,
   PlusIcon,
   EditIcon,
   Trash2Icon,
@@ -12,14 +11,15 @@ import {
   XIcon } from
 'lucide-react';
 import { ADMIN_SIDEBAR } from '../../constants/sidebar';
+import { useToast } from "../../context/ToastContext";
 
 export function AdminCMS() {
   const [activeTab, setActiveTab] = useState('banners');
   const [banners, setBanners] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const { refreshSettings } = useSiteSettings();
+  const { showConfirm } = useToast();
 
   // Banner Modal State
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
@@ -42,14 +42,6 @@ export function AdminCMS() {
     } catch (err) {}
   };
 
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/categories`);
-      const data = await res.json();
-      setCategories(data);
-    } catch (err) {}
-  };
-
   const fetchSettings = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/cms/settings`);
@@ -61,16 +53,11 @@ export function AdminCMS() {
   useEffect(() => {
     fetchBanners();
     fetchSettings();
-    fetchCategories();
   }, []);
   const tabs = [
   {
     id: 'banners',
     label: 'Banner trang chủ'
-  },
-  {
-    id: 'categories',
-    label: 'Danh mục hiển thị'
   },
   {
     id: 'settings',
@@ -116,7 +103,7 @@ export function AdminCMS() {
     setIsBannerModalOpen(true);
   };
 
-  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>, target: 'banner' | 'category', categoryId?: string) => {
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -126,24 +113,18 @@ export function AdminCMS() {
 
     try {
       const token = localStorage.getItem("token");
+      if (!token) throw new Error("Phiên đăng nhập đã hết hạn");
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products/upload-image`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
       });
-      const data = await res.json();
+      const data = await res.json() as { url?: string; message?: string };
+      if (!res.ok) throw new Error(data.message || "Tải ảnh lên thất bại");
+      if (!data.url) throw new Error("Máy chủ không trả về đường dẫn ảnh hợp lệ");
+      const imageUrl = data.url;
 
-      if (target === 'banner') {
-        setBannerForm(prev => ({ ...prev, image: data.url }));
-      } else if (target === 'category' && categoryId) {
-        // Update category image immediately
-        await fetch(`${import.meta.env.VITE_API_URL}/api/categories/${categoryId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ image: data.url })
-        });
-        fetchCategories();
-      }
+      setBannerForm(prev => ({ ...prev, image: imageUrl }));
     } catch (err) {
       console.error("Upload failed", err);
     } finally {
@@ -315,14 +296,14 @@ export function AdminCMS() {
                       <EditIcon className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm("Bạn có chắc chắn muốn xóa banner này?")) {
-                          const token = localStorage.getItem("token");
-                          fetch(`${import.meta.env.VITE_API_URL}/api/cms/banners/${banner._id}`, {
-                            method: 'DELETE',
-                            headers: { Authorization: `Bearer ${token}` }
-                          }).then(() => fetchBanners());
-                        }
+                      onClick={async () => {
+                        const confirmed = await showConfirm("Bạn có chắc chắn muốn xóa banner này?", { confirmLabel: "Xóa" });
+                        if (!confirmed) return;
+                        const token = localStorage.getItem("token");
+                        fetch(`${import.meta.env.VITE_API_URL}/api/cms/banners/${banner._id}`, {
+                          method: 'DELETE',
+                          headers: { Authorization: `Bearer ${token}` }
+                        }).then(() => fetchBanners());
                       }}
                       className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                       title="Xóa"
@@ -337,49 +318,6 @@ export function AdminCMS() {
                 Chưa có banner nào được tạo.
               </div>
             )}
-            </div>
-          </div>
-        </div>
-      }
-
-      {activeTab === 'categories' &&
-        <div className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <div className="p-4 bg-gray-50 border-b border-gray-200 text-sm font-medium text-gray-500 grid grid-cols-12 gap-4">
-              <div className="col-span-5">Tên danh mục / Slug</div>
-              <div className="col-span-4">Hình ảnh hiển thị</div>
-              <div className="col-span-3 text-right">Hành động</div>
-            </div>
-            <div className="divide-y divide-gray-200">
-              {categories.map((cat) => (
-                <div key={cat._id} className="p-4 grid grid-cols-12 gap-4 items-center">
-                   <div className="col-span-5">
-                      <p className="font-bold text-gray-900">{cat.name}</p>
-                      <p className="text-xs text-gray-400 font-mono">/{cat.slug}</p>
-                   </div>
-                   <div className="col-span-4">
-                      {cat.image ? (
-                        <img src={cat.image} className="h-10 w-10 rounded-lg object-cover border border-gray-100" />
-                      ) : (
-                        <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400">
-                          <PackageIcon className="h-5 w-5" />
-                        </div>
-                      )}
-                   </div>
-                   <div className="col-span-3 text-right">
-                      <label className="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors shadow-sm">
-                        <ImagePlusIcon className="h-3 w-3 mr-2" />
-                        Change Image
-                        <input
-                          type="file"
-                          className="hidden"
-                          onChange={(e) => handleUploadImage(e, 'category', cat._id)}
-                          accept="image/*"
-                        />
-                      </label>
-                   </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
@@ -550,7 +488,7 @@ export function AdminCMS() {
                         </div>
                         <label className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 text-center cursor-pointer hover:bg-gray-100 transition-colors">
                           {loading ? 'Đang tải lên...' : 'Chọn tệp'}
-                          <input type="file" className="hidden" onChange={(e) => handleUploadImage(e, 'banner')} accept="image/*" />
+                          <input type="file" className="hidden" onChange={handleUploadImage} accept="image/*" />
                         </label>
                      </div>
                   </div>

@@ -2,10 +2,32 @@ import mongoose from "mongoose";
 
 const categorySchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    slug: { type: String, required: true, unique: true },
-    image: { type: String, default: "" }, // Thêm ảnh cho danh mục
-    description: { type: String, default: "" },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 120,
+    },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      maxlength: 160,
+    },
+    image: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 2048,
+    },
+    description: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 1000,
+    },
   },
   { timestamps: true }
 );
