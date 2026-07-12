@@ -122,7 +122,7 @@ export function SalesChatbot() {
   const navigate = useNavigate();
   const { token } = useAuth();
   const { addToCart } = useCart();
-  const { showToast } = useToast();
+  const { showToast, showConfirm } = useToast();
   const [sessionId, setSessionId] = useState(getOrCreateSessionId);
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -273,7 +273,7 @@ export function SalesChatbot() {
 
   const handleClearHistory = async () => {
     if (isClearingHistory) return;
-    const confirmed = window.confirm('X\u00f3a to\u00e0n b\u1ed9 \u0111o\u1ea1n chat v\u1edbi chatbot?');
+    const confirmed = await showConfirm('Xóa toàn bộ đoạn chat với chatbot?', { confirmLabel: 'Xóa' });
     if (!confirmed) return;
 
     setIsClearingHistory(true);

@@ -15,9 +15,11 @@ import {
 } from "lucide-react";
 
 import { formatVND } from "../../utils/format";
+import { useToast } from "../../context/ToastContext";
 import { useSiteSettings } from "../../context/SiteSettingsContext";
 
 export function OrderHistory() {
+  const { showConfirm } = useToast();
   const { settings } = useSiteSettings();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,8 +51,8 @@ export function OrderHistory() {
   }, []);
 
   const handleCancelOrder = async (orderId: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?"))
-      return;
+    const confirmed = await showConfirm("Bạn có chắc chắn muốn hủy đơn hàng này không?", { confirmLabel: "Hủy đơn" });
+    if (!confirmed) return;
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/orders/${orderId}/cancel`,

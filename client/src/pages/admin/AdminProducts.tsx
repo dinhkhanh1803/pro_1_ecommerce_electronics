@@ -10,8 +10,10 @@ import {
 'lucide-react';
 import { ADMIN_SIDEBAR } from '../../constants/sidebar';
 import { formatVND } from '../../utils/format';
+import { useToast } from "../../context/ToastContext";
 
 export function AdminProducts() {
+  const { showConfirm } = useToast();
   const [activeTab, setActiveTab] = useState('pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [productsList, setProductsList] = useState<any[]>([]);
@@ -80,7 +82,8 @@ export function AdminProducts() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này khỏi hệ thống? Phép toán này không thể hoàn tác.")) return;
+    const confirmed = await showConfirm("Bạn có chắc chắn muốn xóa sản phẩm này khỏi hệ thống? Phép toán này không thể hoàn tác.", { confirmLabel: "Xóa" });
+    if (!confirmed) return;
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`, {
@@ -191,7 +194,7 @@ export function AdminProducts() {
                       {product.category?.name || "Không xác định"}
                     </td>
                     <td className="p-4 text-sm font-medium text-gray-900">
-                      {product.price ? formatVND(product.price) : "0 ₫"}
+                      {product.price ? formatVND(product.price) : "0 â‚«"}
                     </td>
                     <td className="p-4 text-sm text-gray-600">
                       {new Date(product.createdAt).toLocaleDateString("vi-VN")}

@@ -14,8 +14,10 @@ import {
   CalendarIcon,
 } from "lucide-react";
 import { ADMIN_SIDEBAR } from "../../constants/sidebar";
+import { useToast } from "../../context/ToastContext";
 
 export function AdminUsers() {
+  const { showConfirm } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [usersList, setUsersList] = useState<any[]>([]);
@@ -76,8 +78,8 @@ export function AdminUsers() {
   };
 
   const handleRoleChange = async (userId: string, newRole: string) => {
-    if (!window.confirm("Bạn có chắc muốn đổi quyền của người dùng này?"))
-      return;
+    const confirmed = await showConfirm("Bạn có chắc muốn đổi quyền của người dùng này?", { confirmLabel: "Đổi quyền", type: "info" });
+    if (!confirmed) return;
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(

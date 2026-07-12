@@ -11,8 +11,10 @@ import {
   Trash2Icon } from
 'lucide-react';
 import { ADMIN_SIDEBAR, SELLER_SIDEBAR, WAREHOUSE_SIDEBAR } from '../../constants/sidebar';
+import { useToast } from "../../context/ToastContext";
 
 export function SellerProducts() {
+  const { showConfirm } = useToast();
   const { user } = useAuth();
   const isWarehouse = user?.role === 'warehouse';
   const isAdmin = user?.role === 'admin';
@@ -62,7 +64,8 @@ export function SellerProducts() {
   }, [user]);
 
   const handleDelete = async (id: string) => {
-    if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
+    const confirmed = await showConfirm("Bạn có chắc chắn muốn xóa sản phẩm này?", { confirmLabel: "Xóa" });
+    if (confirmed) {
       try {
         const token = localStorage.getItem("token");
         await fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`, {

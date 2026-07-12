@@ -16,6 +16,7 @@ const API = `${import.meta.env.VITE_API_URL}/api`;
 
 import { useAuth } from '../../context/AuthContext';
 import { ADMIN_SIDEBAR, SELLER_SIDEBAR, WAREHOUSE_SIDEBAR } from '../../constants/sidebar';
+import { useToast } from "../../context/ToastContext";
 
 const emptyForm = {
   code: '',
@@ -35,6 +36,7 @@ function generateCode() {
 }
 
 export function SellerPromotions() {
+  const { showConfirm } = useToast();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const isWarehouse = user?.role === 'warehouse';
@@ -159,7 +161,8 @@ export function SellerPromotions() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Xóa mã giảm giá này?')) return;
+    const confirmed = await showConfirm("Xóa mã giảm giá này?", { confirmLabel: "Xóa" });
+    if (!confirmed) return;
     try {
       await fetch(`${API}/coupons/${id}`, {
         method: 'DELETE',
